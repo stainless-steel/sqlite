@@ -11,3 +11,6 @@ description = "The package provides an interface to SQLite."
 [dependencies]
 libc = "*"
 sqlite3-sys = "*"
+
+[dev-dependencies]
+temporary = "*"
