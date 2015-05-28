@@ -45,7 +45,7 @@ macro_rules! path_to_c_str(
     });
 );
 
-/// A result code.
+/// An error code.
 #[derive(Clone, Copy, Debug)]
 pub enum ErrorCode {
     Abort = raw::SQLITE_ABORT as isize,
