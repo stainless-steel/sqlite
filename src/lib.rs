@@ -87,6 +87,7 @@ pub struct Database {
 }
 
 impl Database {
+    /// Open a database.
     pub fn open(path: &Path) -> Result<Database> {
         let mut db = 0 as *mut _;
         unsafe { success!(raw::sqlite3_open(path_to_c_str!(path), &mut db)) };
