@@ -102,6 +102,7 @@ impl Drop for Database {
     }
 }
 
+/// Open a database.
 #[inline]
 pub fn open(path: &Path) -> Result<Database> {
     Database::open(path)
