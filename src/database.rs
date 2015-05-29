@@ -67,21 +67,12 @@ impl<'l> Drop for Database<'l> {
 extern fn execute_callback(callback: *mut c_void, count: c_int, values: *mut *mut c_char,
                            columns: *mut *mut c_char) -> c_int {
 
-    macro_rules! c_str_to_string(
-        ($string:expr) => (
-            match ::std::str::from_utf8(::std::ffi::CStr::from_ptr($string).to_bytes()) {
-                Ok(string) => String::from(string),
-                Err(_) => return 1,
-            }
-        );
-    );
-
     unsafe {
         let mut pairs = Vec::with_capacity(count as usize);
 
         for i in 0..(count as isize) {
-            let column = c_str_to_string!(*columns.offset(i) as *const _);
-            let value = c_str_to_string!(*values.offset(i) as *const _);
+            let column = c_str_to_string!(*columns.offset(i));
+            let value = c_str_to_string!(*values.offset(i));
             pairs.push((column, value));
         }
 

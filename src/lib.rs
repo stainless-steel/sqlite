@@ -98,6 +98,13 @@ macro_rules! str_to_c_str(
     );
 );
 
+macro_rules! c_str_to_string(
+    ($cstr:expr) => (
+        String::from_utf8_lossy(::std::ffi::CStr::from_ptr($cstr as *const _).to_bytes())
+               .into_owned()
+    );
+);
+
 mod database;
 mod statement;
 
