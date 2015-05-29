@@ -8,10 +8,24 @@ macro_rules! raise(
 );
 
 macro_rules! success(
+    ($result:expr, $database:expr) => (
+        match $result {
+            ::raw::SQLITE_OK => {},
+            code => match ::Error::last($database) {
+                Some(error) => return Err(error),
+                None => return Err(::Error::from(::result::code_from_raw(code))),
+            },
+        }
+    );
     ($result:expr) => (
         match $result {
             ::raw::SQLITE_OK => {},
-            code => return Err(::Error::from(::result::code_from_raw(code))),
+            code => return Err(::Error {
+                code: ::result::code_from_raw(code),
+                message: Some(c_str_to_string!(unsafe {
+                    ::raw::sqlite3_errstr(code)
+                })),
+            }),
         }
     );
 );
