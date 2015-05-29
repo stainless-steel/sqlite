@@ -58,7 +58,7 @@ impl<'l> Statement<'l> {
     /// Take a step.
     #[inline]
     pub fn step(&mut self) -> ResultCode {
-        unsafe { ResultCode::from_raw(raw::sqlite3_step(self.raw)) }
+        unsafe { ::result::code_from_raw(raw::sqlite3_step(self.raw)) }
     }
 
     /// Reset.
