@@ -3,6 +3,8 @@
 extern crate libc;
 extern crate sqlite3_sys as raw;
 
+use libc::{c_char, c_int, c_void};
+use std::marker::PhantomData;
 use std::path::Path;
 
 /// A result.
@@ -45,6 +47,15 @@ macro_rules! path_to_c_str(
     });
 );
 
+macro_rules! str_to_c_str(
+    ($string:expr) => (
+        match ::std::ffi::CString::new($string) {
+            Ok(string) => string.as_ptr(),
+            Err(_) => raise!("failed to process a string"),
+        }
+    );
+);
+
 /// An error code.
 #[derive(Clone, Copy, Debug)]
 pub enum ErrorCode {
@@ -82,20 +93,46 @@ pub enum ErrorCode {
 }
 
 /// A database.
-pub struct Database {
+pub struct Database<'d> {
     db: *mut raw::sqlite3,
+    _phantom: PhantomData<&'d raw::sqlite3>,
 }
 
-impl Database {
+struct ExecuteCallback<'d>(Box<FnMut(Vec<(String, String)>) -> bool + 'd>);
+
+impl<'d> Database<'d> {
     /// Open a database.
-    pub fn open(path: &Path) -> Result<Database> {
+    pub fn open(path: &Path) -> Result<Database<'d>> {
         let mut db = 0 as *mut _;
-        unsafe { success!(raw::sqlite3_open(path_to_c_str!(path), &mut db)) };
-        Ok(Database { db: db })
+        unsafe {
+            success!(raw::sqlite3_open(path_to_c_str!(path), &mut db));
+        }
+        Ok(Database { db: db, _phantom: PhantomData })
+    }
+
+    /// Execute an SQL statement.
+    pub fn execute<F>(&mut self, sql: &str, callback: Option<F>) -> Result<()>
+        where F: FnMut(Vec<(String, String)>) -> bool {
+
+        unsafe {
+            match callback {
+                Some(callback) => {
+                    let mut callback = ExecuteCallback(Box::new(callback));
+                    success!(raw::sqlite3_exec(self.db, str_to_c_str!(sql), Some(execute_callback),
+                                               &mut callback as *mut _ as *mut _, 0 as *mut _));
+                },
+                None => {
+                    success!(raw::sqlite3_exec(self.db, str_to_c_str!(sql), None,
+                                               0 as *mut _, 0 as *mut _));
+                },
+            }
+        }
+
+        Ok(())
     }
 }
 
-impl Drop for Database {
+impl<'d> Drop for Database<'d> {
     #[inline]
     fn drop(&mut self) {
         unsafe { ::raw::sqlite3_close(self.db) };
@@ -106,4 +143,30 @@ impl Drop for Database {
 #[inline]
 pub fn open(path: &Path) -> Result<Database> {
     Database::open(path)
+}
+
+extern fn execute_callback(callback: *mut c_void, count: c_int, values: *mut *mut c_char,
+                           columns: *mut *mut c_char) -> c_int {
+
+    macro_rules! c_str_to_string(
+        ($string:expr) => (
+            match ::std::str::from_utf8(::std::ffi::CStr::from_ptr($string).to_bytes()) {
+                Ok(string) => String::from(string),
+                Err(_) => return 1,
+            }
+        );
+    );
+
+    unsafe {
+        let mut pairs = Vec::with_capacity(count as usize);
+
+        for i in 0..(count as isize) {
+            let column = c_str_to_string!(*columns.offset(i) as *const _);
+            let value = c_str_to_string!(*values.offset(i) as *const _);
+            pairs.push((column, value));
+        }
+
+        let ExecuteCallback(ref mut callback) = *(callback as *mut _);
+        if callback(pairs) { 0 } else { 1 }
+    }
 }

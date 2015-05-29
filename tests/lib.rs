@@ -11,7 +11,18 @@ macro_rules! ok(
 #[test]
 fn open() {
     let (path, _directory) = setup();
-    let _database = ok!(sqlite::open(&path));
+    let mut database = ok!(sqlite::open(&path));
+
+    let sql = r#"CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);"#;
+    ok!(database.execute(sql, Some(|_| -> bool { true })));
+
+    let sql = r#"INSERT INTO `users` (id, name, age) VALUES (1, "Alice", 20.99);"#;
+    ok!(database.execute(sql, Some(|_| -> bool { true })));
+
+    let sql = r#"SELECT * FROM `users`;"#;
+    ok!(database.execute(sql, Some(|_| -> bool {
+        true
+    })));
 }
 
 fn setup() -> (PathBuf, Directory) {
