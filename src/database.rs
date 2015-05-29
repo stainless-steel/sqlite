@@ -48,13 +48,9 @@ impl<'l> Database<'l> {
     }
 
     /// Create a prepared statement.
+    #[inline]
     pub fn statement(&mut self, sql: &str) -> Result<Statement<'l>> {
-        let mut raw = 0 as *mut _;
-        unsafe {
-            success!(self, raw::sqlite3_prepare(self.raw, str_to_c_str!(sql), -1, &mut raw,
-                                                0 as *mut _));
-        }
-        Ok(::statement::from_raw(raw))
+        ::statement::new(self, sql)
     }
 }
 

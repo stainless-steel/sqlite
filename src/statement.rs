@@ -2,7 +2,7 @@ use libc::{c_double, c_int};
 use raw;
 use std::marker::PhantomData;
 
-use {Result, ResultCode};
+use {Database, Result, ResultCode};
 
 /// A prepared statement.
 pub struct Statement<'l> {
@@ -101,6 +101,11 @@ impl Value for String {
 }
 
 #[inline]
-pub fn from_raw<'l>(raw: *mut raw::sqlite3_stmt) -> Statement<'l> {
-    Statement { raw: raw, _phantom: PhantomData }
+pub fn new<'l>(database: &mut Database<'l>, sql: &str) -> Result<Statement<'l>> {
+    let mut raw = 0 as *mut _;
+    unsafe {
+        success!(database, raw::sqlite3_prepare(::database::as_raw(database), str_to_c_str!(sql),
+                                                -1, &mut raw, 0 as *mut _));
+    }
+    Ok(Statement { raw: raw, _phantom: PhantomData })
 }
