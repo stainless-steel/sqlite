@@ -60,8 +60,13 @@ impl<'l> Database<'l> {
 impl<'l> Drop for Database<'l> {
     #[inline]
     fn drop(&mut self) {
-        unsafe { ::raw::sqlite3_close(self.raw) };
+        unsafe { raw::sqlite3_close(self.raw) };
     }
+}
+
+#[inline]
+pub fn as_raw(database: &mut Database) -> *mut raw::sqlite3 {
+    database.raw
 }
 
 extern fn execute_callback(callback: *mut c_void, count: c_int, values: *mut *mut c_char,
