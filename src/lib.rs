@@ -109,7 +109,7 @@ mod database;
 mod statement;
 
 pub use database::{Database, ExecuteCallback};
-pub use statement::{Statement, Binding};
+pub use statement::{Statement, Binding, Value};
 
 /// Open a database.
 #[inline]

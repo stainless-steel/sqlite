@@ -11,7 +11,7 @@ pub struct Database<'l> {
     _phantom: PhantomData<&'l raw::sqlite3>,
 }
 
-/// A callback executed for each row of the result of an SQL query.
+/// A callback triggered for each row of an executed SQL query.
 pub type ExecuteCallback<'l> = FnMut(Vec<(String, String)>) -> bool + 'l;
 
 impl<'l> Database<'l> {

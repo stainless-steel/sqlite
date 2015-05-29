@@ -17,25 +17,30 @@ pub enum Binding<'l> {
     Text(usize, &'l str),
 }
 
-/// A value stored in a column.
+/// A value stored in a prepared statement.
 pub trait Value {
-    /// Read the value from a prepared statement at a specific position.
+    /// Read the value at a specific column.
     fn read(statement: &mut Statement, i: usize) -> Result<Self>;
 }
 
 impl<'l> Statement<'l> {
     /// Assign values to the placeholders.
+    ///
+    /// The leftmost parameter has an index of 1.
     pub fn bind(&mut self, bindings: &[Binding]) -> Result<()> {
         for binding in bindings.iter() {
             match *binding {
                 Binding::Float(i, value) => unsafe {
+                    debug_assert!(i > 0, "the indexation starts from 1");
                     success!(raw::sqlite3_bind_double(self.raw, i as c_int, value as c_double));
                 },
                 Binding::Integer(i, value) => unsafe {
+                    debug_assert!(i > 0, "the indexation starts from 1");
                     success!(raw::sqlite3_bind_int64(self.raw, i as c_int,
                                                      value as raw::sqlite3_int64));
                 },
                 Binding::Text(i, value) => unsafe {
+                    debug_assert!(i > 0, "the indexation starts from 1");
                     success!(raw::sqlite3_bind_text(self.raw, i as c_int, str_to_c_str!(value),
                                                     -1, None));
                 },
