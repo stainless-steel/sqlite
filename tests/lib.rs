@@ -18,14 +18,14 @@ fn execute() {
     let mut database = ok!(sqlite::open(&path));
 
     let sql = r#"CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);"#;
-    ok!(database.execute(sql, Some(|_| -> bool { true })));
+    ok!(database.execute(sql, None));
 
     let sql = r#"INSERT INTO `users` (id, name, age) VALUES (1, "Alice", 20.99);"#;
-    ok!(database.execute(sql, Some(|_| -> bool { true })));
+    ok!(database.execute(sql, None));
 
     let mut done = false;
     let sql = r#"SELECT * FROM `users`;"#;
-    ok!(database.execute(sql, Some(|pairs: Vec<(String, String)>| -> bool {
+    ok!(database.execute(sql, Some(&mut |pairs: Vec<(String, String)>| -> bool {
         assert!(pairs.len() == 3);
         assert!(pairs[0] == pair!("id", "1"));
         assert!(pairs[1] == pair!("name", "Alice"));

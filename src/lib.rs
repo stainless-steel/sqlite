@@ -98,7 +98,7 @@ pub struct Database<'d> {
     _phantom: PhantomData<&'d raw::sqlite3>,
 }
 
-struct ExecuteCallback<'d>(Box<FnMut(Vec<(String, String)>) -> bool + 'd>);
+pub type ExecuteCallback<'c> = FnMut(Vec<(String, String)>) -> bool + 'c;
 
 impl<'d> Database<'d> {
     /// Open a database.
@@ -111,13 +111,13 @@ impl<'d> Database<'d> {
     }
 
     /// Execute an SQL statement.
-    pub fn execute<F>(&mut self, sql: &str, callback: Option<F>) -> Result<()>
-        where F: FnMut(Vec<(String, String)>) -> bool {
+    pub fn execute<'c>(&mut self, sql: &str,
+                       callback: Option<&mut ExecuteCallback<'c>>) -> Result<()> {
 
         unsafe {
             match callback {
                 Some(callback) => {
-                    let mut callback = ExecuteCallback(Box::new(callback));
+                    let mut callback = Box::new(callback);
                     success!(raw::sqlite3_exec(self.db, str_to_c_str!(sql), Some(execute_callback),
                                                &mut callback as *mut _ as *mut _, 0 as *mut _));
                 },
@@ -166,7 +166,7 @@ extern fn execute_callback(callback: *mut c_void, count: c_int, values: *mut *mu
             pairs.push((column, value));
         }
 
-        let ExecuteCallback(ref mut callback) = *(callback as *mut _);
+        let ref mut callback = *(callback as *mut Box<&mut ExecuteCallback>);
         if callback(pairs) { 0 } else { 1 }
     }
 }
