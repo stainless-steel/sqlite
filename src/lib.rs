@@ -3,22 +3,15 @@
 extern crate libc;
 extern crate sqlite3_sys as raw;
 
-use std::path::Path;
-
 macro_rules! raise(
-    ($message:expr) => (
-        return Err(::Error { code: ::ResultCode::Error, message: Some($message.to_string()) })
-    );
-    ($code:expr, $message:expr) => (
-        return Err(::Error { code: $code, message: $message })
-    );
+    ($message:expr) => (return Err(::Error::from($message)));
 );
 
 macro_rules! success(
     ($result:expr) => (
         match $result {
             ::raw::SQLITE_OK => {},
-            code => raise!(::result::code_from_raw(code), None),
+            code => return Err(::Error::from(::result::code_from_raw(code))),
         }
     );
 );
@@ -63,6 +56,6 @@ pub use statement::{Statement, Binding, Value};
 
 /// Open a database.
 #[inline]
-pub fn open(path: &Path) -> Result<Database> {
+pub fn open(path: &std::path::Path) -> Result<Database> {
     Database::open(path)
 }
