@@ -60,8 +60,7 @@ fn failure() {
     let (path, _directory) = setup();
     let mut database = ok!(sqlite::open(&path));
     match database.execute(":)", None) {
-        Err(error) => assert_eq!(error.message,
-                                 Some(String::from("SQL logic error or missing database"))),
+        Err(error) => assert_eq!(error.message, Some(String::from(r#"unrecognized token: ":""#))),
         _ => assert!(false),
     }
 }

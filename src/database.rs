@@ -32,13 +32,14 @@ impl<'l> Database<'l> {
             match callback {
                 Some(callback) => {
                     let mut callback = Box::new(callback);
-                    success!(raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
-                                               Some(execute_callback),
-                                               &mut callback as *mut _ as *mut _, 0 as *mut _));
+                    success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
+                                                     Some(execute_callback),
+                                                     &mut callback as *mut _ as *mut _,
+                                                     0 as *mut _));
                 },
                 None => {
-                    success!(raw::sqlite3_exec(self.raw, str_to_c_str!(sql), None, 0 as *mut _,
-                                               0 as *mut _));
+                    success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql), None,
+                                                     0 as *mut _, 0 as *mut _));
                 },
             }
         }
@@ -50,8 +51,8 @@ impl<'l> Database<'l> {
     pub fn statement(&mut self, sql: &str) -> Result<Statement<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
-            success!(raw::sqlite3_prepare(self.raw, str_to_c_str!(sql), -1, &mut raw,
-                                          0 as *mut _));
+            success!(self, raw::sqlite3_prepare(self.raw, str_to_c_str!(sql), -1, &mut raw,
+                                                0 as *mut _));
         }
         Ok(::statement::from_raw(raw))
     }
