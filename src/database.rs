@@ -3,25 +3,25 @@ use raw;
 use std::marker::PhantomData;
 use std::path::Path;
 
-use Result;
+use {Result, Statement};
 
 /// A database.
-pub struct Database<'d> {
-    db: *mut raw::sqlite3,
-    _phantom: PhantomData<&'d raw::sqlite3>,
+pub struct Database<'l> {
+    raw: *mut raw::sqlite3,
+    _phantom: PhantomData<&'l raw::sqlite3>,
 }
 
 /// A callback executed for each row of the result of an SQL query.
-pub type ExecuteCallback<'c> = FnMut(Vec<(String, String)>) -> bool + 'c;
+pub type ExecuteCallback<'l> = FnMut(Vec<(String, String)>) -> bool + 'l;
 
-impl<'d> Database<'d> {
+impl<'l> Database<'l> {
     /// Open a database.
-    pub fn open(path: &Path) -> Result<Database<'d>> {
-        let mut db = 0 as *mut _;
+    pub fn open(path: &Path) -> Result<Database> {
+        let mut raw = 0 as *mut _;
         unsafe {
-            success!(raw::sqlite3_open(path_to_c_str!(path), &mut db));
+            success!(raw::sqlite3_open(path_to_c_str!(path), &mut raw));
         }
-        Ok(Database { db: db, _phantom: PhantomData })
+        Ok(Database { raw: raw, _phantom: PhantomData })
     }
 
     /// Execute an SQL statement.
@@ -32,24 +32,35 @@ impl<'d> Database<'d> {
             match callback {
                 Some(callback) => {
                     let mut callback = Box::new(callback);
-                    success!(raw::sqlite3_exec(self.db, str_to_c_str!(sql), Some(execute_callback),
+                    success!(raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
+                                               Some(execute_callback),
                                                &mut callback as *mut _ as *mut _, 0 as *mut _));
                 },
                 None => {
-                    success!(raw::sqlite3_exec(self.db, str_to_c_str!(sql), None,
-                                               0 as *mut _, 0 as *mut _));
+                    success!(raw::sqlite3_exec(self.raw, str_to_c_str!(sql), None, 0 as *mut _,
+                                               0 as *mut _));
                 },
             }
         }
 
         Ok(())
     }
+
+    /// Create a prepared statement.
+    pub fn statement(&mut self, sql: &str) -> Result<Statement<'l>> {
+        let mut raw = 0 as *mut _;
+        unsafe {
+            success!(raw::sqlite3_prepare(self.raw, str_to_c_str!(sql), -1, &mut raw,
+                                          0 as *mut _));
+        }
+        Ok(::statement::from_raw(raw))
+    }
 }
 
-impl<'d> Drop for Database<'d> {
+impl<'l> Drop for Database<'l> {
     #[inline]
     fn drop(&mut self) {
-        unsafe { ::raw::sqlite3_close(self.db) };
+        unsafe { ::raw::sqlite3_close(self.raw) };
     }
 }
 

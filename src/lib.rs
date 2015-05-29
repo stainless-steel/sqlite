@@ -3,6 +3,7 @@
 extern crate libc;
 extern crate sqlite3_sys as raw;
 
+use libc::c_int;
 use std::path::Path;
 
 /// A result.
@@ -11,13 +12,13 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// An error.
 #[derive(Debug)]
 pub struct Error {
-    pub code: ErrorCode,
+    pub code: ResultCode,
     pub message: Option<String>,
 }
 
-/// An error code.
-#[derive(Clone, Copy, Debug)]
-pub enum ErrorCode {
+/// A result code.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResultCode {
     Abort = raw::SQLITE_ABORT as isize,
     Authorization = raw::SQLITE_AUTH as isize,
     Busy = raw::SQLITE_BUSY as isize,
@@ -51,9 +52,16 @@ pub enum ErrorCode {
     Warning = raw::SQLITE_WARNING as isize,
 }
 
+impl ResultCode {
+    #[inline]
+    fn from_raw(code: c_int) -> ResultCode {
+        unsafe { std::mem::transmute(code as i8) }
+    }
+}
+
 macro_rules! raise(
     ($message:expr) => (
-        return Err(::Error { code: ::ErrorCode::Error, message: Some($message.to_string()) })
+        return Err(::Error { code: ::ResultCode::Error, message: Some($message.to_string()) })
     );
     ($code:expr, $message:expr) => (
         return Err(::Error { code: $code, message: $message })
@@ -64,7 +72,7 @@ macro_rules! success(
     ($result:expr) => (
         match $result {
             ::raw::SQLITE_OK => {},
-            code => raise!(unsafe { ::std::mem::transmute(code as i8) }, None),
+            code => raise!(::ResultCode::from_raw(code), None),
         }
     );
 );
@@ -91,8 +99,10 @@ macro_rules! str_to_c_str(
 );
 
 mod database;
+mod statement;
 
 pub use database::{Database, ExecuteCallback};
+pub use statement::{Statement, Binding};
 
 /// Open a database.
 #[inline]

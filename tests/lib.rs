@@ -9,7 +9,10 @@ macro_rules! ok(
 );
 
 #[test]
-fn execute() {
+fn workflow() {
+    use sqlite::Binding::*;
+    use sqlite::ResultCode;
+
     macro_rules! pair(
         ($one:expr, $two:expr) => ((String::from($one), String::from($two)));
     );
@@ -20,8 +23,10 @@ fn execute() {
     let sql = r#"CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);"#;
     ok!(database.execute(sql, None));
 
-    let sql = r#"INSERT INTO `users` (id, name, age) VALUES (1, "Alice", 20.99);"#;
-    ok!(database.execute(sql, None));
+    let sql = r#"INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);"#;
+    let mut statement = ok!(database.statement(sql));
+    ok!(statement.bind(&[Integer(1, 1), Text(2, "Alice"), Float(3, 20.99)]));
+    assert!(statement.step() == ResultCode::Done);
 
     let mut done = false;
     let sql = r#"SELECT * FROM `users`;"#;
