@@ -8,7 +8,7 @@ use {Result, Statement};
 /// A database.
 pub struct Database<'l> {
     raw: *mut raw::sqlite3,
-    _phantom: PhantomData<&'l raw::sqlite3>,
+    phantom: PhantomData<&'l raw::sqlite3>,
 }
 
 /// A callback triggered for each row of an executed SQL query.
@@ -21,7 +21,7 @@ impl<'l> Database<'l> {
         unsafe {
             success!(raw::sqlite3_open(path_to_c_str!(path), &mut raw));
         }
-        Ok(Database { raw: raw, _phantom: PhantomData })
+        Ok(Database { raw: raw, phantom: PhantomData })
     }
 
     /// Execute an SQL statement.
