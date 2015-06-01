@@ -7,7 +7,7 @@ use {Database, Result, ResultCode};
 /// A prepared statement.
 pub struct Statement<'l> {
     raw: *mut raw::sqlite3_stmt,
-    phantom: PhantomData<&'l raw::sqlite3_stmt>,
+    phantom: PhantomData<(&'l raw::sqlite3, raw::sqlite3_stmt)>,
 }
 
 /// A binding of a prepared statement.
@@ -101,7 +101,7 @@ impl Value for String {
 }
 
 #[inline]
-pub fn new<'l>(database: &mut Database<'l>, sql: &str) -> Result<Statement<'l>> {
+pub fn new<'l>(database: &'l mut Database, sql: &str) -> Result<Statement<'l>> {
     let mut raw = 0 as *mut _;
     unsafe {
         success!(database, raw::sqlite3_prepare(::database::as_raw(database), str_to_c_str!(sql),

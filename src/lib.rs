@@ -65,6 +65,6 @@ pub use statement::{Statement, Binding, Value};
 
 /// Open a database.
 #[inline]
-pub fn open<'l>(path: &std::path::Path) -> Result<Database<'l>> {
+pub fn open(path: &std::path::Path) -> Result<Database> {
     Database::open(path)
 }

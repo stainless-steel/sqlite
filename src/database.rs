@@ -6,17 +6,17 @@ use std::path::Path;
 use {Result, Statement};
 
 /// A database.
-pub struct Database<'l> {
+pub struct Database {
     raw: *mut raw::sqlite3,
-    phantom: PhantomData<&'l raw::sqlite3>,
+    phantom: PhantomData<raw::sqlite3>,
 }
 
 /// A callback triggered for each row of an executed SQL query.
 pub type ExecuteCallback<'l> = FnMut(Vec<(String, String)>) -> bool + 'l;
 
-impl<'l> Database<'l> {
+impl Database {
     /// Open a database.
-    pub fn open(path: &Path) -> Result<Database<'l>> {
+    pub fn open(path: &Path) -> Result<Database> {
         let mut raw = 0 as *mut _;
         unsafe {
             success!(raw::sqlite3_open(path_to_c_str!(path), &mut raw));
@@ -25,8 +25,8 @@ impl<'l> Database<'l> {
     }
 
     /// Execute an SQL statement.
-    pub fn execute<'c>(&mut self, sql: &str,
-                       callback: Option<&mut ExecuteCallback<'c>>) -> Result<()> {
+    pub fn execute<'l>(&mut self, sql: &str,
+                       callback: Option<&mut ExecuteCallback<'l>>) -> Result<()> {
 
         unsafe {
             match callback {
@@ -49,12 +49,12 @@ impl<'l> Database<'l> {
 
     /// Create a prepared statement.
     #[inline]
-    pub fn statement(&mut self, sql: &str) -> Result<Statement<'l>> {
+    pub fn statement<'l>(&'l mut self, sql: &str) -> Result<Statement<'l>> {
         ::statement::new(self, sql)
     }
 }
 
-impl<'l> Drop for Database<'l> {
+impl Drop for Database {
     #[inline]
     fn drop(&mut self) {
         unsafe { raw::sqlite3_close(self.raw) };
