@@ -16,7 +16,7 @@ pub type ExecuteCallback<'l> = FnMut(Vec<(String, String)>) -> bool + 'l;
 
 impl<'l> Database<'l> {
     /// Open a database.
-    pub fn open(path: &Path) -> Result<Database> {
+    pub fn open(path: &Path) -> Result<Database<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
             success!(raw::sqlite3_open(path_to_c_str!(path), &mut raw));
