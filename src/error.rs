@@ -1,5 +1,6 @@
 use raw;
 use std::convert::{From, Into};
+use std::fmt::{self, Display, Formatter};
 
 use {Database, ResultCode};
 
@@ -46,6 +47,15 @@ impl From<ResultCode> for Error {
         Error {
             code: code,
             message: None,
+        }
+    }
+}
+
+impl Display for Error {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+        match self.message {
+            Some(ref message) => Display::fmt(message, formatter),
+            None => Display::fmt(&self.code, formatter),
         }
     }
 }

@@ -1,4 +1,5 @@
 use libc::c_int;
+use std::fmt::{self, Display, Formatter};
 
 use raw;
 use Error;
@@ -6,43 +7,75 @@ use Error;
 /// A result.
 pub type Result<T> = ::std::result::Result<T, Error>;
 
-/// A result code.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ResultCode {
-    Abort = raw::SQLITE_ABORT as isize,
-    Authorization = raw::SQLITE_AUTH as isize,
-    Busy = raw::SQLITE_BUSY as isize,
-    CantOpen = raw::SQLITE_CANTOPEN as isize,
-    Constraint = raw::SQLITE_CONSTRAINT as isize,
-    Corruption = raw::SQLITE_CORRUPT as isize,
-    Done = raw::SQLITE_DONE as isize,
-    Empty = raw::SQLITE_EMPTY as isize,
-    Error = raw::SQLITE_ERROR as isize,
-    Format = raw::SQLITE_FORMAT as isize,
-    Full = raw::SQLITE_FULL as isize,
-    Internal = raw::SQLITE_INTERNAL as isize,
-    Interruption = raw::SQLITE_INTERRUPT as isize,
-    IOError = raw::SQLITE_IOERR as isize,
-    Locked = raw::SQLITE_LOCKED as isize,
-    Mismatch = raw::SQLITE_MISMATCH as isize,
-    Misuse = raw::SQLITE_MISUSE as isize,
-    NoLargeFileSupport = raw::SQLITE_NOLFS as isize,
-    NoMemory = raw::SQLITE_NOMEM as isize,
-    NotDatabase = raw::SQLITE_NOTADB as isize,
-    NotFound = raw::SQLITE_NOTFOUND as isize,
-    Notice = raw::SQLITE_NOTICE as isize,
-    OK = raw::SQLITE_OK as isize,
-    Permission = raw::SQLITE_PERM as isize,
-    Protocol = raw::SQLITE_PROTOCOL as isize,
-    Range = raw::SQLITE_RANGE as isize,
-    ReadOnly = raw::SQLITE_READONLY as isize,
-    Row = raw::SQLITE_ROW as isize,
-    Schema = raw::SQLITE_SCHEMA as isize,
-    TooBig = raw::SQLITE_TOOBIG as isize,
-    Warning = raw::SQLITE_WARNING as isize,
+macro_rules! declare(
+    ($($left:ident => $right:ident,)*) => (
+        /// A result code.
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        pub enum ResultCode {
+            $($left = raw::$right as isize,)*
+            Unknown,
+        }
+
+        pub fn code_from_raw(code: c_int) -> ResultCode {
+            match code {
+                $(raw::$right => ResultCode::$left,)*
+                _ => ResultCode::Unknown,
+            }
+        }
+    );
+);
+
+declare!(
+    Abort => SQLITE_ABORT,
+    Authorization => SQLITE_AUTH,
+    Busy => SQLITE_BUSY,
+    CantOpen => SQLITE_CANTOPEN,
+    Constraint => SQLITE_CONSTRAINT,
+    Corruption => SQLITE_CORRUPT,
+    Done => SQLITE_DONE,
+    Empty => SQLITE_EMPTY,
+    Error => SQLITE_ERROR,
+    Format => SQLITE_FORMAT,
+    Full => SQLITE_FULL,
+    Internal => SQLITE_INTERNAL,
+    Interruption => SQLITE_INTERRUPT,
+    IOError => SQLITE_IOERR,
+    Locked => SQLITE_LOCKED,
+    Mismatch => SQLITE_MISMATCH,
+    Misuse => SQLITE_MISUSE,
+    NoLargeFileSupport => SQLITE_NOLFS,
+    NoMemory => SQLITE_NOMEM,
+    NotDatabase => SQLITE_NOTADB,
+    NotFound => SQLITE_NOTFOUND,
+    Notice => SQLITE_NOTICE,
+    OK => SQLITE_OK,
+    Permission => SQLITE_PERM,
+    Protocol => SQLITE_PROTOCOL,
+    Range => SQLITE_RANGE,
+    ReadOnly => SQLITE_READONLY,
+    Row => SQLITE_ROW,
+    Schema => SQLITE_SCHEMA,
+    TooBig => SQLITE_TOOBIG,
+    Warning => SQLITE_WARNING,
+);
+
+impl Display for ResultCode {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+        match *self {
+            ResultCode::Unknown => write!(formatter, "an unknown SQLite code"),
+            _ => write!(formatter, "SQLite code {}", *self as isize),
+        }
+    }
 }
 
-#[inline]
-pub fn code_from_raw(code: c_int) -> ResultCode {
-    unsafe { ::std::mem::transmute(code as i8) }
+#[cfg(test)]
+mod tests {
+    use ResultCode;
+    use super::code_from_raw;
+
+    #[test]
+    fn fmt() {
+        assert_eq!(format!("{}", ResultCode::OK), String::from("SQLite code 0"));
+        assert_eq!(format!("{}", code_from_raw(777)), String::from("an unknown SQLite code"));
+    }
 }
