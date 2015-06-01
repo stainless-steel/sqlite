@@ -20,7 +20,7 @@ pub enum Binding<'l> {
 /// A value stored in a prepared statement.
 pub trait Value {
     /// Read the value at a specific column.
-    fn read(statement: &mut Statement, i: usize) -> Result<Self>;
+    fn read(statement: &Statement, i: usize) -> Result<Self>;
 }
 
 impl<'l> Statement<'l> {
@@ -51,7 +51,7 @@ impl<'l> Statement<'l> {
 
     /// Return the value of a column.
     #[inline]
-    pub fn column<T: Value>(&mut self, i: usize) -> Result<T> {
+    pub fn column<T: Value>(&self, i: usize) -> Result<T> {
         <T as Value>::read(self, i)
     }
 
@@ -77,19 +77,19 @@ impl<'l> Drop for Statement<'l> {
 }
 
 impl Value for f64 {
-    fn read(statement: &mut Statement, i: usize) -> Result<f64> {
+    fn read(statement: &Statement, i: usize) -> Result<f64> {
         Ok(unsafe { ::raw::sqlite3_column_double(statement.raw, i as c_int) as f64 })
     }
 }
 
 impl Value for i64 {
-    fn read(statement: &mut Statement, i: usize) -> Result<i64> {
+    fn read(statement: &Statement, i: usize) -> Result<i64> {
         Ok(unsafe { ::raw::sqlite3_column_int64(statement.raw, i as c_int) as i64 })
     }
 }
 
 impl Value for String {
-    fn read(statement: &mut Statement, i: usize) -> Result<String> {
+    fn read(statement: &Statement, i: usize) -> Result<String> {
         unsafe {
             let pointer = ::raw::sqlite3_column_text(statement.raw, i as c_int);
             if pointer.is_null() {
