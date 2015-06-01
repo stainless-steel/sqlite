@@ -13,7 +13,7 @@ pub struct Error {
 
 impl Error {
     /// Return the last occurred error if any.
-    pub fn last(database: &mut Database) -> Option<Error> {
+    pub fn last(database: &Database) -> Option<Error> {
         unsafe {
             let code = raw::sqlite3_errcode(::database::as_raw(database));
             if code == raw::SQLITE_OK {

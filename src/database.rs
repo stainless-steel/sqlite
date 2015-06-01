@@ -25,8 +25,8 @@ impl Database {
     }
 
     /// Execute an SQL statement.
-    pub fn execute<'l>(&mut self, sql: &str,
-                       callback: Option<&mut ExecuteCallback<'l>>) -> Result<()> {
+    pub fn execute<'l>(&self, sql: &str, callback: Option<&mut ExecuteCallback<'l>>)
+                      -> Result<()> {
 
         unsafe {
             match callback {
@@ -49,7 +49,7 @@ impl Database {
 
     /// Create a prepared statement.
     #[inline]
-    pub fn statement<'l>(&'l mut self, sql: &str) -> Result<Statement<'l>> {
+    pub fn statement<'l>(&'l self, sql: &str) -> Result<Statement<'l>> {
         ::statement::new(self, sql)
     }
 }
@@ -62,7 +62,7 @@ impl Drop for Database {
 }
 
 #[inline]
-pub fn as_raw(database: &mut Database) -> *mut raw::sqlite3 {
+pub fn as_raw(database: &Database) -> *mut raw::sqlite3 {
     database.raw
 }
 

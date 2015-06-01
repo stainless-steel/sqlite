@@ -19,7 +19,7 @@ use std::path::PathBuf;
 
 fn main() {
     let path = setup();
-    let mut database = sqlite::open(&path).unwrap();
+    let database = sqlite::open(&path).unwrap();
 
     database.execute(r#"
         CREATE TABLE `users` (id INTEGER, name VARCHAR(255));

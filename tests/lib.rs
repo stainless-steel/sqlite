@@ -18,7 +18,7 @@ fn workflow() {
     );
 
     let (path, _directory) = setup();
-    let mut database = ok!(sqlite::open(&path));
+    let database = ok!(sqlite::open(&path));
 
     let sql = r#"CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);"#;
     ok!(database.execute(sql, None));
@@ -58,7 +58,7 @@ fn workflow() {
 #[test]
 fn failure() {
     let (path, _directory) = setup();
-    let mut database = ok!(sqlite::open(&path));
+    let database = ok!(sqlite::open(&path));
     match database.execute(":)", None) {
         Err(error) => assert_eq!(error.message, Some(String::from(r#"unrecognized token: ":""#))),
         _ => assert!(false),
