@@ -26,7 +26,7 @@ impl Database {
 
     /// Execute an SQL statement.
     pub fn execute<'l>(&self, sql: &str, callback: Option<&mut ExecuteCallback<'l>>)
-                      -> Result<()> {
+                       -> Result<()> {
 
         unsafe {
             match callback {
