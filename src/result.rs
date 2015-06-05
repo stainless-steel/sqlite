@@ -62,8 +62,8 @@ declare!(
 impl Display for ResultCode {
     fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
         match *self {
-            ResultCode::Unknown => write!(formatter, "an unknown SQLite code"),
-            _ => write!(formatter, "SQLite code {}", *self as isize),
+            ResultCode::Unknown => write!(formatter, "an unknown SQLite result code"),
+            _ => write!(formatter, "SQLite result code {}", *self as isize),
         }
     }
 }
@@ -75,7 +75,9 @@ mod tests {
 
     #[test]
     fn fmt() {
-        assert_eq!(format!("{}", ResultCode::OK), String::from("SQLite code 0"));
-        assert_eq!(format!("{}", code_from_raw(777)), String::from("an unknown SQLite code"));
+        assert_eq!(format!("{}", ResultCode::OK),
+                   String::from("SQLite result code 0"));
+        assert_eq!(format!("{}", code_from_raw(777)),
+                   String::from("an unknown SQLite result code"));
     }
 }
