@@ -65,7 +65,7 @@ declare!(
 impl<T> From<T> for Error where T: Into<String> {
     #[inline]
     fn from(message: T) -> Error {
-        Error { kind: ErrorKind::Error, message: Some(message.into()) }
+        Error { kind: ErrorKind::Unknown, message: Some(message.into()) }
     }
 }
 
