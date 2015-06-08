@@ -13,7 +13,7 @@ pub struct Database<'l> {
 }
 
 impl<'l> Database<'l> {
-    /// Establish a database connect.
+    /// Open a database.
     pub fn open(path: &Path) -> Result<Database<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
