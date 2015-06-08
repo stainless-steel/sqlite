@@ -6,19 +6,24 @@ use std::path::Path;
 use {Result, Statement};
 
 /// A database.
-pub struct Database {
+pub struct Database<'l> {
     raw: *mut raw::sqlite3,
+    busy_callback: Option<Box<FnMut(usize) -> bool + 'l>>,
     phantom: PhantomData<raw::sqlite3>,
 }
 
-impl Database {
+impl<'l> Database<'l> {
     /// Establish a database connect.
-    pub fn open(path: &Path) -> Result<Database> {
+    pub fn open(path: &Path) -> Result<Database<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
             success!(raw::sqlite3_open(path_to_c_str!(path), &mut raw));
         }
-        Ok(Database { raw: raw, phantom: PhantomData })
+        Ok(Database {
+            raw: raw,
+            busy_callback: None,
+            phantom: PhantomData,
+        })
     }
 
     /// Execute a query without processing the resulting rows if any.
@@ -39,12 +44,11 @@ impl Database {
     pub fn iterate<F>(&self, sql: &str, callback: F) -> Result<()>
         where F: FnMut(Vec<(String, String)>) -> bool
     {
-        use std::ops::Deref;
-        let callback = Box::new(callback);
         unsafe {
+            let callback = Box::new(callback);
             success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
                                              Some(execute_callback::<F>),
-                                             callback.deref() as *const _ as *mut _ as *mut _,
+                                             &*callback as *const _ as *mut _ as *mut _,
                                              0 as *mut _));
         }
         Ok(())
@@ -52,7 +56,7 @@ impl Database {
 
     /// Create a prepared statement.
     #[inline]
-    pub fn prepare<'l>(&'l self, sql: &str) -> Result<Statement<'l>> {
+    pub fn prepare(&'l self, sql: &str) -> Result<Statement<'l>> {
         ::statement::new(self, sql)
     }
 
@@ -63,13 +67,15 @@ impl Database {
     /// the operation will be repeated.
     #[inline]
     pub fn set_busy_handler<F>(&mut self, callback: F) -> Result<()>
-        where F: FnMut(usize) -> bool
+        where F: FnMut(usize) -> bool + 'l
     {
-        use std::mem::transmute;
-        let callback = Box::new(callback);
+        try!(self.remove_busy_handler());
         unsafe {
-            success!(raw::sqlite3_busy_handler(self.raw, Some(busy_callback::<F>),
-                                               transmute::<_, *mut c_void>(callback)));
+            let callback = Box::new(callback);
+            let result = raw::sqlite3_busy_handler(self.raw, Some(busy_callback::<F>),
+                                                   &*callback as *const _ as *mut _ as *mut _);
+            self.busy_callback = Some(callback);
+            success!(result);
         }
         Ok(())
     }
@@ -85,16 +91,17 @@ impl Database {
     /// Remove the callback handling busy events.
     #[inline]
     pub fn remove_busy_handler(&mut self) -> Result<()> {
-        unsafe {
-            success!(raw::sqlite3_busy_handler(self.raw, None, 0 as *mut _));
-        }
+        ::std::mem::replace(&mut self.busy_callback, None);
+        unsafe { success!(raw::sqlite3_busy_handler(self.raw, None, 0 as *mut _)) };
         Ok(())
     }
 }
 
-impl Drop for Database {
+impl<'l> Drop for Database<'l> {
     #[inline]
+    #[allow(unused_must_use)]
     fn drop(&mut self) {
+        self.remove_busy_handler();
         unsafe { raw::sqlite3_close(self.raw) };
     }
 }
@@ -107,9 +114,7 @@ pub fn as_raw(database: &Database) -> *mut raw::sqlite3 {
 extern fn busy_callback<F>(callback: *mut c_void, attempts: c_int) -> c_int
     where F: FnMut(usize) -> bool
 {
-    unsafe {
-        if (*(callback as *mut F))(attempts as usize) { 1 } else { 0 }
-    }
+    unsafe { if (*(callback as *mut F))(attempts as usize) { 1 } else { 0 } }
 }
 
 extern fn execute_callback<F>(callback: *mut c_void, count: c_int, values: *mut *mut c_char,
