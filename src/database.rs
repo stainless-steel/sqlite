@@ -11,10 +11,6 @@ pub struct Database {
     phantom: PhantomData<raw::sqlite3>,
 }
 
-/// A callback triggered when the database is busy and rejects an operation. If
-/// the callback returns `true`, the operation will be repeated.
-pub type BusyCallback<'l> = FnMut(usize) -> bool + 'l;
-
 /// A callback triggered for each row of an executed SQL query. If the callback
 /// returns `false`, no more rows will be processed.
 pub type ExecuteCallback<'l> = FnMut(Vec<(String, String)>) -> bool + 'l;
@@ -36,10 +32,10 @@ impl Database {
         match callback {
             Some(callback) => unsafe {
                 let mut callback = Box::new(callback);
-                    success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
-                                                     Some(execute_callback),
-                                                     &mut callback as *mut _ as *mut _,
-                                                     0 as *mut _));
+                success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
+                                                 Some(execute_callback),
+                                                 &mut callback as *mut _ as *mut _,
+                                                 0 as *mut _));
             },
             None => unsafe {
                 success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql), None,
@@ -56,15 +52,22 @@ impl Database {
     }
 
     /// Set a callback to handle rejected operations when the database is busy.
-    pub fn set_busy_handler(&mut self, callback: Option<&mut BusyCallback>) -> Result<()> {
+    ///
+    /// The callback is triggered when the database cannot perform an operation
+    /// due to processing of a request from another client. If the callback
+    /// returns `true`, the operation will be repeated.
+    pub fn set_busy_handler<F: FnMut(usize) -> bool>(&mut self, callback: Option<F>)
+                                                     -> Result<()> {
+
         match callback {
             Some(callback) => unsafe {
-                let mut callback = Box::new(callback);
-                success!(self, raw::sqlite3_busy_handler(self.raw, Some(busy_callback),
-                                                         &mut callback as *mut _ as *mut _));
+                use std::mem::transmute;
+                let callback = Box::new(callback);
+                success!(raw::sqlite3_busy_handler(self.raw, Some(busy_callback::<F>),
+                                                   transmute::<_, *mut c_void>(callback)));
             },
             None => unsafe {
-                success!(self, raw::sqlite3_busy_handler(self.raw, None, 0 as *mut _));
+                success!(raw::sqlite3_busy_handler(self.raw, None, 0 as *mut _));
             },
         }
         Ok(())
@@ -90,11 +93,8 @@ pub fn as_raw(database: &Database) -> *mut raw::sqlite3 {
     database.raw
 }
 
-extern fn busy_callback(callback: *mut c_void, attempts: c_int) -> c_int {
-    unsafe {
-        let ref mut callback = *(callback as *mut Box<&mut BusyCallback>);
-        if callback(attempts as usize) { 1 } else { 0 }
-    }
+extern fn busy_callback<F: FnMut(usize) -> bool>(callback: *mut c_void, attempts: c_int) -> c_int {
+    if unsafe { (*(callback as *mut F))(attempts as usize) } { 1 } else { 0 }
 }
 
 extern fn execute_callback(callback: *mut c_void, count: c_int, values: *mut *mut c_char,
@@ -137,6 +137,10 @@ mod tests {
     fn set_busy_handler() {
         let (path, _directory) = setup();
         let mut database = ok!(Database::open(&path));
-        ok!(database.set_busy_handler(Some(&mut |_| true)));
+        do_set_busy_handler(&mut database);
+    }
+
+    fn do_set_busy_handler(database: &mut Database) {
+        ok!(database.set_busy_handler(Some(|_| true)));
     }
 }

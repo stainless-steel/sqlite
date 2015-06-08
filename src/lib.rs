@@ -62,7 +62,7 @@ mod result;
 mod statement;
 
 pub use error::Error;
-pub use database::{BusyCallback, Database, ExecuteCallback};
+pub use database::{Database, ExecuteCallback};
 pub use result::{Result, ResultCode};
 pub use statement::{Statement, Binding, Value};
 
