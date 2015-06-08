@@ -21,7 +21,7 @@ fn workflow() {
     let database = ok!(sqlite::open(&path));
 
     let sql = r#"CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);"#;
-    ok!(database.execute(sql, None));
+    ok!(database.instruct(sql));
 
     {
         let sql = r#"INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);"#;
@@ -33,14 +33,14 @@ fn workflow() {
     {
         let mut done = false;
         let sql = r#"SELECT * FROM `users`;"#;
-        ok!(database.execute(sql, Some(&mut |pairs: Vec<(String, String)>| -> bool {
+        ok!(database.iterate(sql, |pairs| {
             assert!(pairs.len() == 3);
             assert!(pairs[0] == pair!("id", "1"));
             assert!(pairs[1] == pair!("name", "Alice"));
             assert!(pairs[2] == pair!("age", "20.99"));
             done = true;
             true
-        })));
+        }));
         assert!(done);
     }
 

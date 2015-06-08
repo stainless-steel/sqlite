@@ -6,17 +6,17 @@ fn main() {
     let path = setup();
     let database = sqlite::open(&path).unwrap();
 
-    database.execute(r#"
+    database.instruct(r#"
         CREATE TABLE `users` (id INTEGER, name VARCHAR(255));
         INSERT INTO `users` (id, name) VALUES (1, 'Alice');
-    "#, None).unwrap();
+    "#).unwrap();
 
-    database.execute("SELECT * FROM `users`;", Some(&mut |pairs| -> bool {
+    database.iterate("SELECT * FROM `users`;", |pairs| {
         for (ref column, ref value) in pairs {
             println!("{} = {}", column, value);
         }
         true
-    })).unwrap();
+    }).unwrap();
 }
 
 fn setup() -> PathBuf {
