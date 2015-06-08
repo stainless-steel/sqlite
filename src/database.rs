@@ -11,7 +11,7 @@ pub struct Database {
     phantom: PhantomData<raw::sqlite3>,
 }
 
-/// A callback triggered when an operation fails due to concurrent activity. If
+/// A callback triggered when the database is busy and rejects an operation. If
 /// the callback returns `true`, the operation will be repeated.
 pub type BusyCallback<'l> = FnMut(usize) -> bool + 'l;
 
@@ -20,7 +20,7 @@ pub type BusyCallback<'l> = FnMut(usize) -> bool + 'l;
 pub type ExecuteCallback<'l> = FnMut(Vec<(String, String)>) -> bool + 'l;
 
 impl Database {
-    /// Open a database.
+    /// Open a database connect.
     pub fn open(path: &Path) -> Result<Database> {
         let mut raw = 0 as *mut _;
         unsafe {
@@ -29,48 +29,51 @@ impl Database {
         Ok(Database { raw: raw, phantom: PhantomData })
     }
 
-    /// Execute an SQL statement.
+    /// Execute an SQL query.
     pub fn execute<'l>(&self, sql: &str, callback: Option<&mut ExecuteCallback<'l>>)
                        -> Result<()> {
 
-        unsafe {
-            match callback {
-                Some(callback) => {
-                    let mut callback = Box::new(callback);
+        match callback {
+            Some(callback) => unsafe {
+                let mut callback = Box::new(callback);
                     success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
                                                      Some(execute_callback),
                                                      &mut callback as *mut _ as *mut _,
                                                      0 as *mut _));
-                },
-                None => {
-                    success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql), None,
-                                                     0 as *mut _, 0 as *mut _));
-                },
-            }
+            },
+            None => unsafe {
+                success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql), None,
+                                                 0 as *mut _, 0 as *mut _));
+            },
         }
         Ok(())
     }
 
-    /// Create a prepared statement.
+    /// Compile an SQL statement.
     #[inline]
-    pub fn prepare_statement<'l>(&'l self, sql: &str) -> Result<Statement<'l>> {
+    pub fn prepare<'l>(&'l self, sql: &str) -> Result<Statement<'l>> {
         ::statement::new(self, sql)
     }
 
-    /// Set a callback for handling failures due to concurrent activity.
+    /// Set a callback to handle rejected operations when the database is busy.
     pub fn set_busy_handler(&mut self, callback: Option<&mut BusyCallback>) -> Result<()> {
-        unsafe {
-            match callback {
-                Some(callback) => {
-                    let mut callback = Box::new(callback);
-                    success!(self, raw::sqlite3_busy_handler(self.raw, Some(busy_callback),
-                                                             &mut callback as *mut _ as *mut _));
-                },
-                None => {
-                    success!(self, raw::sqlite3_busy_handler(self.raw, None, 0 as *mut _));
-                },
-            }
+        match callback {
+            Some(callback) => unsafe {
+                let mut callback = Box::new(callback);
+                success!(self, raw::sqlite3_busy_handler(self.raw, Some(busy_callback),
+                                                         &mut callback as *mut _ as *mut _));
+            },
+            None => unsafe {
+                success!(self, raw::sqlite3_busy_handler(self.raw, None, 0 as *mut _));
+            },
         }
+        Ok(())
+    }
+
+    /// Set a timeout before rejecting an operation when the database is busy.
+    #[inline]
+    pub fn set_busy_timeout(&mut self, milliseconds: usize) -> Result<()> {
+        unsafe { success!(self, raw::sqlite3_busy_timeout(self.raw, milliseconds as c_int)) };
         Ok(())
     }
 }

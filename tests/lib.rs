@@ -25,7 +25,7 @@ fn workflow() {
 
     {
         let sql = r#"INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);"#;
-        let mut statement = ok!(database.prepare_statement(sql));
+        let mut statement = ok!(database.prepare(sql));
         ok!(statement.bind(&[Integer(1, 1), Text(2, "Alice"), Float(3, 20.99)]));
         assert!(statement.step() == ResultCode::Done);
     }
@@ -46,7 +46,7 @@ fn workflow() {
 
     {
         let sql = r#"SELECT * FROM `users`;"#;
-        let mut statement = ok!(database.prepare_statement(sql));
+        let mut statement = ok!(database.prepare(sql));
         assert!(statement.step() == ResultCode::Row);
         assert!(ok!(statement.column::<i64>(0)) == 1);
         assert!(ok!(statement.column::<String>(1)) == String::from("Alice"));

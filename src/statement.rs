@@ -10,58 +10,60 @@ pub struct Statement<'l> {
     phantom: PhantomData<(&'l raw::sqlite3, raw::sqlite3_stmt)>,
 }
 
-/// A binding of a prepared statement.
+/// A binding of a parameter of a prepared statement.
 pub enum Binding<'l> {
     Float(usize, f64),
     Integer(usize, i64),
     Text(usize, &'l str),
 }
 
-/// A value stored in a prepared statement.
+/// A value stored in a result row of a query.
 pub trait Value {
-    /// Read the value at a specific column.
+    /// Read the value stored in a specific column.
     fn read(statement: &Statement, i: usize) -> Result<Self>;
 }
 
 impl<'l> Statement<'l> {
-    /// Assign values to the placeholders.
+    /// Bind values to the parameters.
     ///
-    /// The leftmost parameter has an index of 1.
+    /// The leftmost parameter has the index 1.
     pub fn bind(&mut self, bindings: &[Binding]) -> Result<()> {
         for binding in bindings.iter() {
             match *binding {
                 Binding::Float(i, value) => unsafe {
-                    debug_assert!(i > 0, "the indexation starts from 1");
+                    debug_assert!(i > 0, "the indexing starts from 1");
                     success!(raw::sqlite3_bind_double(self.raw, i as c_int, value as c_double));
                 },
                 Binding::Integer(i, value) => unsafe {
-                    debug_assert!(i > 0, "the indexation starts from 1");
+                    debug_assert!(i > 0, "the indexing starts from 1");
                     success!(raw::sqlite3_bind_int64(self.raw, i as c_int,
                                                      value as raw::sqlite3_int64));
                 },
                 Binding::Text(i, value) => unsafe {
-                    debug_assert!(i > 0, "the indexation starts from 1");
-                    success!(raw::sqlite3_bind_text(self.raw, i as c_int, str_to_c_str!(value),
-                                                    -1, None));
+                    debug_assert!(i > 0, "the indexing starts from 1");
+                    success!(raw::sqlite3_bind_text(self.raw, i as c_int, str_to_c_str!(value), -1,
+                                                    None));
                 },
             }
         }
         Ok(())
     }
 
-    /// Return the value of a column.
+    /// Return the value stored in a specific column of the current result row.
+    ///
+    /// The leftmost column has the index 0.
     #[inline]
     pub fn column<T: Value>(&self, i: usize) -> Result<T> {
         <T as Value>::read(self, i)
     }
 
-    /// Take a step.
+    /// Evaluate the statement.
     #[inline]
     pub fn step(&mut self) -> ResultCode {
         unsafe { ::result::code_from_raw(raw::sqlite3_step(self.raw)) }
     }
 
-    /// Reset.
+    /// Reset the statement.
     #[inline]
     pub fn reset(&mut self) -> Result<()> {
         unsafe { success!(raw::sqlite3_reset(self.raw)) };
