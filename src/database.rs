@@ -39,12 +39,12 @@ impl Database {
     pub fn iterate<F>(&self, sql: &str, callback: F) -> Result<()>
         where F: FnMut(Vec<(String, String)>) -> bool
     {
-        use std::mem::transmute;
+        use std::ops::Deref;
         let callback = Box::new(callback);
         unsafe {
             success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
                                              Some(execute_callback::<F>),
-                                             transmute::<_, *mut c_void>(callback),
+                                             callback.deref() as *const _ as *mut _ as *mut _,
                                              0 as *mut _));
         }
         Ok(())
