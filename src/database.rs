@@ -30,8 +30,8 @@ impl<'l> Database<'l> {
     #[inline]
     pub fn execute(&self, sql: &str) -> Result<()> {
         unsafe {
-            success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql), None, 0 as *mut _,
-                                             0 as *mut _));
+            success!(self.raw, raw::sqlite3_exec(self.raw, str_to_c_str!(sql), None, 0 as *mut _,
+                                                 0 as *mut _));
         }
         Ok(())
     }
@@ -46,10 +46,10 @@ impl<'l> Database<'l> {
     {
         unsafe {
             let callback = Box::new(callback);
-            success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
-                                             Some(execute_callback::<F>),
-                                             &*callback as *const _ as *mut _ as *mut _,
-                                             0 as *mut _));
+            success!(self.raw, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
+                                                 Some(execute_callback::<F>),
+                                                 &*callback as *const _ as *mut _ as *mut _,
+                                                 0 as *mut _));
         }
         Ok(())
     }
@@ -57,7 +57,7 @@ impl<'l> Database<'l> {
     /// Create a prepared statement.
     #[inline]
     pub fn prepare(&'l self, sql: &str) -> Result<Statement<'l>> {
-        ::statement::new(self, sql)
+        ::statement::new(self.raw, sql)
     }
 
     /// Set a callback for handling busy events.
@@ -74,7 +74,7 @@ impl<'l> Database<'l> {
             let result = raw::sqlite3_busy_handler(self.raw, Some(busy_callback::<F>),
                                                    &*callback as *const _ as *mut _ as *mut _);
             self.busy_callback = Some(callback);
-            success!(result);
+            success!(self.raw, result);
         }
         Ok(())
     }
@@ -83,7 +83,7 @@ impl<'l> Database<'l> {
     /// rejected operations until a timeout expires.
     #[inline]
     pub fn set_busy_timeout(&mut self, milliseconds: usize) -> Result<()> {
-        unsafe { success!(self, raw::sqlite3_busy_timeout(self.raw, milliseconds as c_int)) };
+        unsafe { success!(self.raw, raw::sqlite3_busy_timeout(self.raw, milliseconds as c_int)) };
         Ok(())
     }
 
@@ -91,7 +91,7 @@ impl<'l> Database<'l> {
     #[inline]
     pub fn remove_busy_handler(&mut self) -> Result<()> {
         ::std::mem::replace(&mut self.busy_callback, None);
-        unsafe { success!(raw::sqlite3_busy_handler(self.raw, None, 0 as *mut _)) };
+        unsafe { success!(self.raw, raw::sqlite3_busy_handler(self.raw, None, 0 as *mut _)) };
         Ok(())
     }
 }
@@ -103,11 +103,6 @@ impl<'l> Drop for Database<'l> {
         self.remove_busy_handler();
         unsafe { raw::sqlite3_close(self.raw) };
     }
-}
-
-#[inline]
-pub fn as_raw(database: &Database) -> *mut raw::sqlite3 {
-    database.raw
 }
 
 extern fn busy_callback<F>(callback: *mut c_void, attempts: c_int) -> c_int

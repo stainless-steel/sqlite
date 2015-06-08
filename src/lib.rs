@@ -10,14 +10,20 @@ macro_rules! raise(
     ($message:expr) => (return Err(::Error::from($message)));
 );
 
+macro_rules! failure(
+    ($database:expr, $code:expr) => (
+        match ::error::last($database) {
+            Some(error) => return Err(error),
+            None => return Err(::Error::from(::result::code_from_raw($code))),
+        }
+    );
+);
+
 macro_rules! success(
     ($database:expr, $result:expr) => (
         match $result {
             ::raw::SQLITE_OK => {},
-            code => match ::Error::last($database) {
-                Some(error) => return Err(error),
-                None => return Err(::Error::from(::result::code_from_raw(code))),
-            },
+            code => failure!($database, code),
         }
     );
     ($result:expr) => (
@@ -64,7 +70,7 @@ mod statement;
 pub use error::Error;
 pub use database::Database;
 pub use result::{Result, ResultCode};
-pub use statement::{Statement, Binding, Value};
+pub use statement::{Statement, Binding, Value, State};
 
 /// Open a database.
 #[inline]
