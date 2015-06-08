@@ -132,4 +132,11 @@ mod tests {
             _ => assert!(false),
         }
     }
+
+    #[test]
+    fn set_busy_handler() {
+        let (path, _directory) = setup();
+        let mut database = ok!(Database::open(&path));
+        ok!(database.set_busy_handler(Some(&mut |_| true)));
+    }
 }
