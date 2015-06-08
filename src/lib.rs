@@ -14,7 +14,7 @@ macro_rules! failure(
     ($database:expr, $code:expr) => (
         match ::error::last($database) {
             Some(error) => return Err(error),
-            None => return Err(::Error::from(::result::code_from_raw($code))),
+            None => return Err(::Error::from(::error::kind_from_code($code))),
         }
     );
 );
@@ -29,7 +29,7 @@ macro_rules! success(
     ($result:expr) => (
         match $result {
             ::raw::SQLITE_OK => {},
-            code => return Err(::Error::from(::result::code_from_raw(code))),
+            code => return Err(::Error::from(::error::kind_from_code(code))),
         }
     );
 );
@@ -64,13 +64,14 @@ macro_rules! c_str_to_string(
 
 mod database;
 mod error;
-mod result;
 mod statement;
 
-pub use error::Error;
 pub use database::Database;
-pub use result::{Result, ResultCode};
+pub use error::{Error, ErrorKind};
 pub use statement::{Statement, Binding, Value, State};
+
+/// A result.
+pub type Result<T> = ::std::result::Result<T, Error>;
 
 /// Open a database.
 #[inline]
