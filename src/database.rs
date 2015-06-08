@@ -28,7 +28,7 @@ impl<'l> Database<'l> {
 
     /// Execute a query without processing the resulting rows if any.
     #[inline]
-    pub fn instruct(&self, sql: &str) -> Result<()> {
+    pub fn execute(&self, sql: &str) -> Result<()> {
         unsafe {
             success!(self, raw::sqlite3_exec(self.raw, str_to_c_str!(sql), None, 0 as *mut _,
                                              0 as *mut _));
@@ -41,7 +41,7 @@ impl<'l> Database<'l> {
     /// The callback is triggered for each row. If the callback returns `false`,
     /// no more rows will be processed.
     #[inline]
-    pub fn iterate<F>(&self, sql: &str, callback: F) -> Result<()>
+    pub fn process<F>(&self, sql: &str, callback: F) -> Result<()>
         where F: FnMut(Vec<(String, String)>) -> bool
     {
         unsafe {
@@ -143,10 +143,10 @@ mod tests {
     );
 
     #[test]
-    fn iterate() {
+    fn execute() {
         let (path, _directory) = setup();
         let database = ok!(Database::open(&path));
-        match database.instruct(":)") {
+        match database.execute(":)") {
             Err(error) => assert_eq!(error.message,
                                      Some(String::from(r#"unrecognized token: ":""#))),
             _ => assert!(false),
