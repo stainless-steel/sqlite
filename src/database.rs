@@ -11,7 +11,12 @@ pub struct Database {
     phantom: PhantomData<raw::sqlite3>,
 }
 
-/// A callback triggered for each row of an executed SQL query.
+/// A callback triggered when an operation fails due to concurrent activity. If
+/// the callback returns `true`, the operation will be repeated.
+pub type BusyCallback<'l> = FnMut(usize) -> bool + 'l;
+
+/// A callback triggered for each row of an executed SQL query. If the callback
+/// returns `false`, no more rows will be processed.
 pub type ExecuteCallback<'l> = FnMut(Vec<(String, String)>) -> bool + 'l;
 
 impl Database {
@@ -43,7 +48,6 @@ impl Database {
                 },
             }
         }
-
         Ok(())
     }
 
@@ -51,6 +55,23 @@ impl Database {
     #[inline]
     pub fn statement<'l>(&'l self, sql: &str) -> Result<Statement<'l>> {
         ::statement::new(self, sql)
+    }
+
+    /// Set a callback for handling failures due to concurrent activity.
+    pub fn set_busy_handler(&mut self, callback: Option<&mut BusyCallback>) -> Result<()> {
+        unsafe {
+            match callback {
+                Some(callback) => {
+                    let mut callback = Box::new(callback);
+                    success!(self, raw::sqlite3_busy_handler(self.raw, Some(busy_callback),
+                                                             &mut callback as *mut _ as *mut _));
+                },
+                None => {
+                    success!(self, raw::sqlite3_busy_handler(self.raw, None, 0 as *mut _));
+                },
+            }
+        }
+        Ok(())
     }
 }
 
@@ -64,6 +85,13 @@ impl Drop for Database {
 #[inline]
 pub fn as_raw(database: &Database) -> *mut raw::sqlite3 {
     database.raw
+}
+
+extern fn busy_callback(callback: *mut c_void, attempts: c_int) -> c_int {
+    unsafe {
+        let ref mut callback = *(callback as *mut Box<&mut BusyCallback>);
+        if callback(attempts as usize) { 1 } else { 0 }
+    }
 }
 
 extern fn execute_callback(callback: *mut c_void, count: c_int, values: *mut *mut c_char,
