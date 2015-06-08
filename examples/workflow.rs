@@ -1,5 +1,6 @@
 extern crate sqlite;
 
+use std::fs;
 use std::path::PathBuf;
 
 fn main() {
@@ -21,8 +22,8 @@ fn main() {
 
 fn setup() -> PathBuf {
     let path = PathBuf::from("database.sqlite3");
-    if std::fs::metadata(&path).is_ok() {
-        std::fs::remove_file(&path).unwrap();
+    if fs::metadata(&path).is_ok() {
+        fs::remove_file(&path).unwrap();
     }
     path
 }
