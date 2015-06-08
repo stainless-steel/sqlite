@@ -14,7 +14,7 @@ macro_rules! failure(
     ($database:expr, $code:expr) => (
         match ::error::last($database) {
             Some(error) => return Err(error),
-            None => return Err(::Error::from(::error::kind_from_code($code))),
+            None => return Err(::Error::from(::ErrorKind::from($code as isize))),
         }
     );
 );
@@ -29,7 +29,7 @@ macro_rules! success(
     ($result:expr) => (
         match $result {
             ::raw::SQLITE_OK => {},
-            code => return Err(::Error::from(::error::kind_from_code(code))),
+            code => return Err(::Error::from(::ErrorKind::from(code as isize))),
         }
     );
 );

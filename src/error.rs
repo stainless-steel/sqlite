@@ -1,4 +1,3 @@
-use libc::c_int;
 use raw;
 use std::convert::{From, Into};
 use std::fmt::{self, Display, Formatter};
@@ -19,10 +18,12 @@ macro_rules! declare(
             Unknown,
         }
 
-        pub fn kind_from_code(code: c_int) -> ErrorKind {
-            match code {
-                $(raw::$right => ErrorKind::$left,)*
-                _ => ErrorKind::Unknown,
+        impl From<isize> for ErrorKind {
+            fn from(code: isize) -> ErrorKind {
+                match code as ::libc::c_int {
+                    $(raw::$right => ErrorKind::$left,)*
+                    _ => ErrorKind::Unknown,
+                }
             }
         }
     );
@@ -105,7 +106,7 @@ pub fn last(raw: *mut raw::sqlite3) -> Option<Error> {
             return None;
         }
         Some(Error {
-            kind: kind_from_code(code),
+            kind: ErrorKind::from(code as isize),
             message: Some(c_str_to_string!(message)),
         })
     }
@@ -113,13 +114,13 @@ pub fn last(raw: *mut raw::sqlite3) -> Option<Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::{ErrorKind, kind_from_code};
+    use super::ErrorKind;
 
     #[test]
     fn fmt() {
         assert_eq!(format!("{}", ErrorKind::OK),
                    String::from("SQLite result code 0"));
-        assert_eq!(format!("{}", kind_from_code(777)),
+        assert_eq!(format!("{}", ErrorKind::from(777)),
                    String::from("an unknown SQLite result code"));
     }
 }
