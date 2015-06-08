@@ -53,7 +53,7 @@ impl Database {
 
     /// Create a prepared statement.
     #[inline]
-    pub fn statement<'l>(&'l self, sql: &str) -> Result<Statement<'l>> {
+    pub fn prepare_statement<'l>(&'l self, sql: &str) -> Result<Statement<'l>> {
         ::statement::new(self, sql)
     }
 
