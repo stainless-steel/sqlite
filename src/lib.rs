@@ -3,6 +3,9 @@
 extern crate libc;
 extern crate sqlite3_sys as raw;
 
+#[cfg(test)]
+extern crate temporary;
+
 macro_rules! raise(
     ($message:expr) => (return Err(::Error::from($message)));
 );
@@ -67,4 +70,19 @@ pub use statement::{Statement, Binding, Value};
 #[inline]
 pub fn open(path: &std::path::Path) -> Result<Database> {
     Database::open(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+    use temporary::Directory;
+
+    macro_rules! ok(
+        ($result:expr) => ($result.unwrap());
+    );
+
+    pub fn setup() -> (PathBuf, Directory) {
+        let directory = ok!(Directory::new("sqlite"));
+        (directory.path().join("database.sqlite3"), directory)
+    }
 }

@@ -113,3 +113,23 @@ extern fn execute_callback(callback: *mut c_void, count: c_int, values: *mut *mu
         if callback(pairs) { 0 } else { 1 }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Database;
+    use tests::setup;
+
+    macro_rules! ok(
+        ($result:expr) => ($result.unwrap());
+    );
+
+    #[test]
+    fn execute() {
+        let (path, _directory) = setup();
+        let database = ok!(Database::open(&path));
+        match database.execute(":)", None) {
+            Err(error) => assert_eq!(error.message, Some(String::from(r#"unrecognized token: ":""#))),
+            _ => assert!(false),
+        }
+    }
+}

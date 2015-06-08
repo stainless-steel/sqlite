@@ -55,16 +55,6 @@ fn workflow() {
     }
 }
 
-#[test]
-fn failure() {
-    let (path, _directory) = setup();
-    let database = ok!(sqlite::open(&path));
-    match database.execute(":)", None) {
-        Err(error) => assert_eq!(error.message, Some(String::from(r#"unrecognized token: ":""#))),
-        _ => assert!(false),
-    }
-}
-
 fn setup() -> (PathBuf, Directory) {
     let directory = ok!(Directory::new("sqlite"));
     (directory.path().join("database.sqlite3"), directory)
