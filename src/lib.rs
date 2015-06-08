@@ -58,8 +58,8 @@ mod error;
 mod result;
 mod statement;
 
-pub use database::{Database, ExecuteCallback};
 pub use error::Error;
+pub use database::{BusyCallback, Database, ExecuteCallback};
 pub use result::{Result, ResultCode};
 pub use statement::{Statement, Binding, Value};
 
