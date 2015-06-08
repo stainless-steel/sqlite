@@ -65,7 +65,6 @@ impl<'l> Database<'l> {
     /// The callback is triggered when the database cannot perform an operation
     /// due to processing of some other request. If the callback returns `true`,
     /// the operation will be repeated.
-    #[inline]
     pub fn set_busy_handler<F>(&mut self, callback: F) -> Result<()>
         where F: FnMut(usize) -> bool + 'l
     {
