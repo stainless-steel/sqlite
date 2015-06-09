@@ -14,7 +14,7 @@ fn workflow() {
     use sqlite::State;
 
     macro_rules! pair(
-        ($one:expr, $two:expr) => ((String::from($one), String::from($two)));
+        ($one:expr, $two:expr) => (($one, Some($two)));
     );
 
     let (path, _directory) = setup();

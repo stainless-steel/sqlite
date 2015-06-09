@@ -42,12 +42,12 @@ impl<'l> Database<'l> {
     /// no more rows will be processed.
     #[inline]
     pub fn process<F>(&self, sql: &str, callback: F) -> Result<()>
-        where F: FnMut(Vec<(String, String)>) -> bool
+        where F: FnMut(&[(&str, Option<&str>)]) -> bool
     {
         unsafe {
             let callback = Box::new(callback);
             success!(self.raw, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
-                                                 Some(execute_callback::<F>),
+                                                 Some(process_callback::<F>),
                                                  &*callback as *const _ as *mut _ as *mut _,
                                                  0 as *mut _));
         }
@@ -111,20 +111,38 @@ extern fn busy_callback<F>(callback: *mut c_void, attempts: c_int) -> c_int
     unsafe { if (*(callback as *mut F))(attempts as usize) { 1 } else { 0 } }
 }
 
-extern fn execute_callback<F>(callback: *mut c_void, count: c_int, values: *mut *mut c_char,
+extern fn process_callback<F>(callback: *mut c_void, count: c_int, values: *mut *mut c_char,
                               columns: *mut *mut c_char) -> c_int
-    where F: FnMut(Vec<(String, String)>) -> bool
+    where F: FnMut(&[(&str, Option<&str>)]) -> bool
 {
+    use std::str;
+    use std::ffi::CStr;
+
+    macro_rules! c_str_to_str(
+        ($string:expr) => (str::from_utf8(CStr::from_ptr($string).to_bytes()));
+    );
+
     unsafe {
         let mut pairs = Vec::with_capacity(count as usize);
 
         for i in 0..(count as isize) {
-            let column = c_str_to_string!(*columns.offset(i));
-            let value = c_str_to_string!(*values.offset(i));
+            let column = {
+                let pointer = *columns.offset(i);
+                debug_assert!(!pointer.is_null());
+                c_str_to_str!(pointer).unwrap()
+            };
+            let value = {
+                let pointer = *values.offset(i);
+                if pointer.is_null() {
+                    None
+                } else {
+                    Some(c_str_to_str!(pointer).unwrap())
+                }
+            };
             pairs.push((column, value));
         }
 
-        if (*(callback as *mut F))(pairs) { 0 } else { 1 }
+        if (*(callback as *mut F))(&pairs) { 0 } else { 1 }
     }
 }
 

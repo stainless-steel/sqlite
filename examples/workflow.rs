@@ -13,8 +13,8 @@ fn main() {
     "#).unwrap();
 
     database.process("SELECT * FROM `users`;", |pairs| {
-        for (ref column, ref value) in pairs {
-            println!("{} = {}", column, value);
+        for &(column, value) in pairs.iter() {
+            println!("{} = {}", column, value.unwrap());
         }
         true
     }).unwrap();
