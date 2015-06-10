@@ -48,7 +48,7 @@ impl<'l> Database<'l> {
             let callback = Box::new(callback);
             success!(self.raw, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
                                                  Some(process_callback::<F>),
-                                                 &*callback as *const _ as *mut _ as *mut _,
+                                                 &*callback as *const F as *mut F as *mut _,
                                                  0 as *mut _));
         }
         Ok(())
@@ -72,7 +72,7 @@ impl<'l> Database<'l> {
         unsafe {
             let callback = Box::new(callback);
             let result = raw::sqlite3_busy_handler(self.raw, Some(busy_callback::<F>),
-                                                   &*callback as *const _ as *mut _ as *mut _);
+                                                   &*callback as *const F as *mut F as *mut _);
             self.busy_callback = Some(callback);
             success!(self.raw, result);
         }
