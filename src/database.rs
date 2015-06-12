@@ -99,6 +99,15 @@ impl<'l> Database<'l> {
 }
 
 impl<'l> Drop for Database<'l> {
+    #[cfg(not(feature = "edge"))]
+    #[inline]
+    #[allow(unused_must_use)]
+    fn drop(&mut self) {
+        self.remove_busy_handler();
+        unsafe { ffi::sqlite3_close(self.raw) };
+    }
+
+    #[cfg(feature = "edge")]
     #[inline]
     #[allow(unused_must_use)]
     fn drop(&mut self) {

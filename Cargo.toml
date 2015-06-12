@@ -1,12 +1,15 @@
 [package]
 name = "sqlite"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["Ivan Ukhov <ivan.ukhov@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/stainless-steel/sqlite"
 homepage = "https://github.com/stainless-steel/sqlite"
 documentation = "https://stainless-steel.github.io/sqlite"
 description = "The package provides an interface to SQLite."
+
+[features]
+edge = ["sqlite3-sys/edge"]
 
 [dependencies]
 libc = "*"
