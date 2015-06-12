@@ -1,5 +1,5 @@
+use ffi;
 use libc::{c_char, c_int, c_void};
-use raw;
 use std::marker::PhantomData;
 use std::path::Path;
 
@@ -7,9 +7,9 @@ use {Result, Statement};
 
 /// A connection to a database.
 pub struct Database<'l> {
-    raw: *mut raw::sqlite3,
+    raw: *mut ffi::sqlite3,
     busy_callback: Option<Box<FnMut(usize) -> bool + 'l>>,
-    phantom: PhantomData<raw::sqlite3>,
+    phantom: PhantomData<ffi::sqlite3>,
 }
 
 impl<'l> Database<'l> {
@@ -17,7 +17,7 @@ impl<'l> Database<'l> {
     pub fn open(path: &Path) -> Result<Database<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
-            success!(raw::sqlite3_open(path_to_c_str!(path), &mut raw));
+            success!(ffi::sqlite3_open(path_to_c_str!(path), &mut raw));
         }
         Ok(Database {
             raw: raw,
@@ -30,7 +30,7 @@ impl<'l> Database<'l> {
     #[inline]
     pub fn execute(&self, sql: &str) -> Result<()> {
         unsafe {
-            success!(self.raw, raw::sqlite3_exec(self.raw, str_to_c_str!(sql), None, 0 as *mut _,
+            success!(self.raw, ffi::sqlite3_exec(self.raw, str_to_c_str!(sql), None, 0 as *mut _,
                                                  0 as *mut _));
         }
         Ok(())
@@ -46,7 +46,7 @@ impl<'l> Database<'l> {
     {
         unsafe {
             let callback = Box::new(callback);
-            success!(self.raw, raw::sqlite3_exec(self.raw, str_to_c_str!(sql),
+            success!(self.raw, ffi::sqlite3_exec(self.raw, str_to_c_str!(sql),
                                                  Some(process_callback::<F>),
                                                  &*callback as *const F as *mut F as *mut _,
                                                  0 as *mut _));
@@ -71,7 +71,7 @@ impl<'l> Database<'l> {
         try!(self.remove_busy_handler());
         unsafe {
             let callback = Box::new(callback);
-            let result = raw::sqlite3_busy_handler(self.raw, Some(busy_callback::<F>),
+            let result = ffi::sqlite3_busy_handler(self.raw, Some(busy_callback::<F>),
                                                    &*callback as *const F as *mut F as *mut _);
             self.busy_callback = Some(callback);
             success!(self.raw, result);
@@ -83,7 +83,7 @@ impl<'l> Database<'l> {
     /// rejected operations until a timeout expires.
     #[inline]
     pub fn set_busy_timeout(&mut self, milliseconds: usize) -> Result<()> {
-        unsafe { success!(self.raw, raw::sqlite3_busy_timeout(self.raw, milliseconds as c_int)) };
+        unsafe { success!(self.raw, ffi::sqlite3_busy_timeout(self.raw, milliseconds as c_int)) };
         Ok(())
     }
 
@@ -91,7 +91,7 @@ impl<'l> Database<'l> {
     #[inline]
     pub fn remove_busy_handler(&mut self) -> Result<()> {
         ::std::mem::replace(&mut self.busy_callback, None);
-        unsafe { success!(self.raw, raw::sqlite3_busy_handler(self.raw, None, 0 as *mut _)) };
+        unsafe { success!(self.raw, ffi::sqlite3_busy_handler(self.raw, None, 0 as *mut _)) };
         Ok(())
     }
 }
@@ -101,7 +101,7 @@ impl<'l> Drop for Database<'l> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.remove_busy_handler();
-        unsafe { raw::sqlite3_close(self.raw) };
+        unsafe { ffi::sqlite3_close(self.raw) };
     }
 }
 

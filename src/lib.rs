@@ -1,7 +1,7 @@
 #![allow(unused_unsafe)]
 
 extern crate libc;
-extern crate sqlite3_sys as raw;
+extern crate sqlite3_sys as ffi;
 
 #[cfg(test)]
 extern crate temporary;
@@ -22,13 +22,13 @@ macro_rules! failure(
 macro_rules! success(
     ($database:expr, $result:expr) => (
         match $result {
-            ::raw::SQLITE_OK => {},
+            ::ffi::SQLITE_OK => {},
             code => failure!($database, code),
         }
     );
     ($result:expr) => (
         match $result {
-            ::raw::SQLITE_OK => {},
+            ::ffi::SQLITE_OK => {},
             code => return Err(::Error::from(::ErrorKind::from(code as isize))),
         }
     );

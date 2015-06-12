@@ -1,13 +1,13 @@
+use ffi;
 use libc::{c_double, c_int};
-use raw;
 use std::marker::PhantomData;
 
 use Result;
 
 /// A prepared statement.
 pub struct Statement<'l> {
-    raw: (*mut raw::sqlite3_stmt, *mut raw::sqlite3),
-    phantom: PhantomData<(raw::sqlite3_stmt, &'l raw::sqlite3)>,
+    raw: (*mut ffi::sqlite3_stmt, *mut ffi::sqlite3),
+    phantom: PhantomData<(ffi::sqlite3_stmt, &'l ffi::sqlite3)>,
 }
 
 /// A binding of a parameter of a prepared statement.
@@ -39,17 +39,17 @@ impl<'l> Statement<'l> {
             match *binding {
                 Binding::Float(i, value) => unsafe {
                     debug_assert!(i > 0, "the indexing starts from 1");
-                    success!(self.raw.1, raw::sqlite3_bind_double(self.raw.0, i as c_int,
+                    success!(self.raw.1, ffi::sqlite3_bind_double(self.raw.0, i as c_int,
                                                                   value as c_double));
                 },
                 Binding::Integer(i, value) => unsafe {
                     debug_assert!(i > 0, "the indexing starts from 1");
-                    success!(self.raw.1, raw::sqlite3_bind_int64(self.raw.0, i as c_int,
-                                                                 value as raw::sqlite3_int64));
+                    success!(self.raw.1, ffi::sqlite3_bind_int64(self.raw.0, i as c_int,
+                                                                 value as ffi::sqlite3_int64));
                 },
                 Binding::Text(i, value) => unsafe {
                     debug_assert!(i > 0, "the indexing starts from 1");
-                    success!(self.raw.1, raw::sqlite3_bind_text(self.raw.0, i as c_int,
+                    success!(self.raw.1, ffi::sqlite3_bind_text(self.raw.0, i as c_int,
                                                                 str_to_c_str!(value), -1, None));
                 },
             }
@@ -67,9 +67,9 @@ impl<'l> Statement<'l> {
 
     /// Evaluate the statement.
     pub fn step(&mut self) -> Result<State> {
-        match unsafe { raw::sqlite3_step(self.raw.0) } {
-            raw::SQLITE_DONE => Ok(State::Done),
-            raw::SQLITE_ROW => Ok(State::Row),
+        match unsafe { ffi::sqlite3_step(self.raw.0) } {
+            ffi::SQLITE_DONE => Ok(State::Done),
+            ffi::SQLITE_ROW => Ok(State::Row),
             code => failure!(self.raw.1, code),
         }
     }
@@ -77,7 +77,7 @@ impl<'l> Statement<'l> {
     /// Reset the statement.
     #[inline]
     pub fn reset(&mut self) -> Result<()> {
-        unsafe { success!(self.raw.1, raw::sqlite3_reset(self.raw.0)) };
+        unsafe { success!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
         Ok(())
     }
 }
@@ -85,26 +85,26 @@ impl<'l> Statement<'l> {
 impl<'l> Drop for Statement<'l> {
     #[inline]
     fn drop(&mut self) {
-        unsafe { raw::sqlite3_finalize(self.raw.0) };
+        unsafe { ffi::sqlite3_finalize(self.raw.0) };
     }
 }
 
 impl Value for f64 {
     fn read(statement: &Statement, i: usize) -> Result<f64> {
-        Ok(unsafe { raw::sqlite3_column_double(statement.raw.0, i as c_int) as f64 })
+        Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, i as c_int) as f64 })
     }
 }
 
 impl Value for i64 {
     fn read(statement: &Statement, i: usize) -> Result<i64> {
-        Ok(unsafe { raw::sqlite3_column_int64(statement.raw.0, i as c_int) as i64 })
+        Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, i as c_int) as i64 })
     }
 }
 
 impl Value for String {
     fn read(statement: &Statement, i: usize) -> Result<String> {
         unsafe {
-            let pointer = raw::sqlite3_column_text(statement.raw.0, i as c_int);
+            let pointer = ffi::sqlite3_column_text(statement.raw.0, i as c_int);
             if pointer.is_null() {
                 raise!("cannot read a TEXT column");
             }
@@ -114,10 +114,10 @@ impl Value for String {
 }
 
 #[inline]
-pub fn new<'l>(raw1: *mut raw::sqlite3, sql: &str) -> Result<Statement<'l>> {
+pub fn new<'l>(raw1: *mut ffi::sqlite3, sql: &str) -> Result<Statement<'l>> {
     let mut raw0 = 0 as *mut _;
     unsafe {
-        success!(raw1, raw::sqlite3_prepare(raw1, str_to_c_str!(sql), -1, &mut raw0, 0 as *mut _));
+        success!(raw1, ffi::sqlite3_prepare(raw1, str_to_c_str!(sql), -1, &mut raw0, 0 as *mut _));
     }
     Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })
 }

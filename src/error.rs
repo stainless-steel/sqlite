@@ -1,4 +1,4 @@
-use raw;
+use ffi;
 use std::convert::{From, Into};
 use std::fmt::{self, Display, Formatter};
 
@@ -14,14 +14,14 @@ macro_rules! declare(
         /// An error kind.
         #[derive(Clone, Copy, Debug, PartialEq, Eq)]
         pub enum ErrorKind {
-            $($left = raw::$right as isize,)*
+            $($left = ffi::$right as isize,)*
             Unknown,
         }
 
         impl From<isize> for ErrorKind {
             fn from(code: isize) -> ErrorKind {
                 match code as ::libc::c_int {
-                    $(raw::$right => ErrorKind::$left,)*
+                    $(ffi::$right => ErrorKind::$left,)*
                     _ => ErrorKind::Unknown,
                 }
             }
@@ -95,13 +95,13 @@ impl Display for ErrorKind {
     }
 }
 
-pub fn last(raw: *mut raw::sqlite3) -> Option<Error> {
+pub fn last(raw: *mut ffi::sqlite3) -> Option<Error> {
     unsafe {
-        let code = raw::sqlite3_errcode(raw);
-        if code == raw::SQLITE_OK {
+        let code = ffi::sqlite3_errcode(raw);
+        if code == ffi::SQLITE_OK {
             return None;
         }
-        let message = raw::sqlite3_errmsg(raw);
+        let message = ffi::sqlite3_errmsg(raw);
         if message.is_null() {
             return None;
         }
