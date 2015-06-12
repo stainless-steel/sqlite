@@ -5,7 +5,7 @@ use std::path::Path;
 
 use {Result, Statement};
 
-/// A database.
+/// A connection to a database.
 pub struct Database<'l> {
     raw: *mut raw::sqlite3,
     busy_callback: Option<Box<FnMut(usize) -> bool + 'l>>,
@@ -13,7 +13,7 @@ pub struct Database<'l> {
 }
 
 impl<'l> Database<'l> {
-    /// Open a database.
+    /// Open a connection to a new or existing database.
     pub fn open(path: &Path) -> Result<Database<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {

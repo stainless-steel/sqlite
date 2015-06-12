@@ -73,7 +73,7 @@ pub use statement::{Statement, Binding, Value, State};
 /// A result.
 pub type Result<T> = ::std::result::Result<T, Error>;
 
-/// Open a database.
+/// Open a connection to a new or existing database.
 #[inline]
 pub fn open<'l>(path: &std::path::Path) -> Result<Database<'l>> {
     Database::open(path)
