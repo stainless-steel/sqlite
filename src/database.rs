@@ -17,7 +17,9 @@ impl<'l> Database<'l> {
     pub fn open(path: &Path) -> Result<Database<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
-            success!(ffi::sqlite3_open(path_to_c_str!(path), &mut raw));
+            success!(ffi::sqlite3_open_v2(path_to_c_str!(path), &mut raw,
+                                          ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_READWRITE,
+                                          0 as *const _));
         }
         Ok(Database {
             raw: raw,
@@ -101,7 +103,7 @@ impl<'l> Drop for Database<'l> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.remove_busy_handler();
-        unsafe { ffi::sqlite3_close(self.raw) };
+        unsafe { ffi::sqlite3_close_v2(self.raw) };
     }
 }
 

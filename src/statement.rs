@@ -117,7 +117,8 @@ impl Value for String {
 pub fn new<'l>(raw1: *mut ffi::sqlite3, sql: &str) -> Result<Statement<'l>> {
     let mut raw0 = 0 as *mut _;
     unsafe {
-        success!(raw1, ffi::sqlite3_prepare(raw1, str_to_c_str!(sql), -1, &mut raw0, 0 as *mut _));
+        success!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_c_str!(sql), -1, &mut raw0,
+                                               0 as *mut _));
     }
     Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })
 }
