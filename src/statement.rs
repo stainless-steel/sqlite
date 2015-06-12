@@ -36,18 +36,18 @@ impl<'l> Statement<'l> {
     /// The leftmost parameter has the index 1.
     pub fn bind(&mut self, bindings: &[Binding]) -> Result<()> {
         for binding in bindings.iter() {
-            match *binding {
-                Binding::Float(i, value) => unsafe {
+            match binding {
+                &Binding::Float(i, value) => unsafe {
                     debug_assert!(i > 0, "the indexing starts from 1");
                     success!(self.raw.1, ffi::sqlite3_bind_double(self.raw.0, i as c_int,
                                                                   value as c_double));
                 },
-                Binding::Integer(i, value) => unsafe {
+                &Binding::Integer(i, value) => unsafe {
                     debug_assert!(i > 0, "the indexing starts from 1");
                     success!(self.raw.1, ffi::sqlite3_bind_int64(self.raw.0, i as c_int,
                                                                  value as ffi::sqlite3_int64));
                 },
-                Binding::Text(i, value) => unsafe {
+                &Binding::Text(i, value) => unsafe {
                     debug_assert!(i > 0, "the indexing starts from 1");
                     success!(self.raw.1, ffi::sqlite3_bind_text(self.raw.0, i as c_int,
                                                                 str_to_c_str!(value), -1, None));
