@@ -15,12 +15,10 @@ cargo run --example workflow
 ```rust
 extern crate sqlite;
 
-use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 
 fn main() {
-    let path = setup();
-    let database = sqlite::open(&path).unwrap();
+    let database = sqlite::open(&Path::new(":memory:")).unwrap();
 
     database.execute(r#"
         CREATE TABLE `users` (id INTEGER, name VARCHAR(255));
@@ -33,14 +31,6 @@ fn main() {
         }
         true
     }).unwrap();
-}
-
-fn setup() -> PathBuf {
-    let path = PathBuf::from("database.sqlite3");
-    if fs::metadata(&path).is_ok() {
-        fs::remove_file(&path).unwrap();
-    }
-    path
 }
 ```
 

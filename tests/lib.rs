@@ -1,10 +1,6 @@
 extern crate sqlite;
 extern crate temporary;
 
-use std::path::PathBuf;
-use std::thread;
-use temporary::Directory;
-
 macro_rules! ok(
     ($result:expr) => ($result.unwrap());
 );
@@ -13,13 +9,13 @@ macro_rules! ok(
 fn workflow() {
     use sqlite::Binding::*;
     use sqlite::State;
+    use std::path::Path;
 
     macro_rules! pair(
         ($one:expr, $two:expr) => (($one, Some($two)));
     );
 
-    let (path, _directory) = setup();
-    let database = ok!(sqlite::open(&path));
+    let database = ok!(sqlite::open(&Path::new(":memory:")));
 
     let sql = r#"CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);"#;
     ok!(database.execute(sql));
@@ -60,8 +56,12 @@ fn workflow() {
 fn stress() {
     use sqlite::Binding::*;
     use sqlite::State;
+    use std::path::PathBuf;
+    use std::thread;
+    use temporary::Directory;
 
-    let (path, _directory) = setup();
+    let directory = ok!(Directory::new("sqlite"));
+    let path = directory.path().join("database.sqlite3");
 
     let database = ok!(sqlite::open(&path));
     let sql = r#"CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);"#;
@@ -83,9 +83,4 @@ fn stress() {
     for guard in guards {
         assert!(guard.join().unwrap());
     }
-}
-
-fn setup() -> (PathBuf, Directory) {
-    let directory = ok!(Directory::new("sqlite"));
-    (directory.path().join("database.sqlite3"), directory)
 }

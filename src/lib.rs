@@ -1,3 +1,27 @@
+//! Interface to [SQLite][1].
+//!
+//! ## Example
+//!
+//! ```
+//! use std::path::Path;
+//!
+//! let database = sqlite::open(&Path::new(":memory:")).unwrap();
+//!
+//! database.execute(r#"
+//!     CREATE TABLE `users` (id INTEGER, name VARCHAR(255));
+//!     INSERT INTO `users` (id, name) VALUES (1, 'Alice');
+//! "#).unwrap();
+//!
+//! database.process("SELECT * FROM `users`;", |pairs| {
+//!     for &(column, value) in pairs.iter() {
+//!         println!("{} = {}", column, value.unwrap());
+//!     }
+//!     true
+//! }).unwrap();
+//! ```
+//!
+//! [1]: https://www.sqlite.org
+
 #![allow(unused_unsafe)]
 
 extern crate libc;
