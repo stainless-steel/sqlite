@@ -13,8 +13,10 @@ pub struct Statement<'l> {
 /// A state of a prepared statement.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum State {
-    Done,
+    /// There is a row available for reading.
     Row,
+    /// There is nothing else to read.
+    Done,
 }
 
 /// A parameter of a prepared statement.
