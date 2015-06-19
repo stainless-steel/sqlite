@@ -104,8 +104,7 @@ impl<'l> Parameter for &'l str {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             success!(statement.raw.1, ffi::sqlite3_bind_text(statement.raw.0, i as c_int,
-                                                             str_to_c_str!(self.as_bytes()),
-                                                             -1, None));
+                                                             str_to_c_str!(*self), -1, None));
         }
         Ok(())
     }
