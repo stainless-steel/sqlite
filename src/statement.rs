@@ -10,17 +10,20 @@ pub struct Statement<'l> {
     phantom: PhantomData<(ffi::sqlite3_stmt, &'l ffi::sqlite3)>,
 }
 
-/// A binding of a parameter of a prepared statement.
-pub enum Binding<'l> {
-    Float(usize, f64),
-    Integer(usize, i64),
-    Text(usize, &'l str),
+/// A parameter of a prepared statement.
+pub trait Parameter {
+    /// Bind the parameter at a specific location.
+    ///
+    /// The leftmost location has the index 1.
+    fn bind(&self, &Statement, usize) -> Result<()>;
 }
 
-/// A value stored in a result row of a query.
+/// A value stored in a prepared statement.
 pub trait Value {
     /// Read the value stored in a specific column.
-    fn read(statement: &Statement, i: usize) -> Result<Self>;
+    ///
+    /// The leftmost column has the index 0.
+    fn read(&Statement, usize) -> Result<Self>;
 }
 
 /// A state of a prepared statement.
@@ -31,38 +34,20 @@ pub enum State {
 }
 
 impl<'l> Statement<'l> {
-    /// Bind values to the parameters.
+    /// Bind the parameter at a specific location.
     ///
-    /// The leftmost parameter has the index 1.
-    pub fn bind(&mut self, bindings: &[Binding]) -> Result<()> {
-        for binding in bindings.iter() {
-            match binding {
-                &Binding::Float(i, value) => unsafe {
-                    debug_assert!(i > 0, "the indexing starts from 1");
-                    success!(self.raw.1, ffi::sqlite3_bind_double(self.raw.0, i as c_int,
-                                                                  value as c_double));
-                },
-                &Binding::Integer(i, value) => unsafe {
-                    debug_assert!(i > 0, "the indexing starts from 1");
-                    success!(self.raw.1, ffi::sqlite3_bind_int64(self.raw.0, i as c_int,
-                                                                 value as ffi::sqlite3_int64));
-                },
-                &Binding::Text(i, value) => unsafe {
-                    debug_assert!(i > 0, "the indexing starts from 1");
-                    success!(self.raw.1, ffi::sqlite3_bind_text(self.raw.0, i as c_int,
-                                                                str_to_c_str!(value), -1, None));
-                },
-            }
-        }
-        Ok(())
+    /// The leftmost location has the index 1.
+    #[inline]
+    pub fn bind<P: Parameter>(&mut self, i: usize, parameter: P) -> Result<()> {
+        parameter.bind(self, i)
     }
 
-    /// Return the value stored in a specific column of the current result row.
+    /// Read the value stored in a specific column.
     ///
     /// The leftmost column has the index 0.
     #[inline]
-    pub fn column<T: Value>(&self, i: usize) -> Result<T> {
-        <T as Value>::read(self, i)
+    pub fn read<V: Value>(&self, i: usize) -> Result<V> {
+        Value::read(self, i)
     }
 
     /// Evaluate the statement.
@@ -89,19 +74,59 @@ impl<'l> Drop for Statement<'l> {
     }
 }
 
+impl Parameter for f64 {
+    #[inline]
+    fn bind(&self, statement: &Statement, i: usize) -> Result<()> {
+        debug_assert!(i > 0, "the indexing starts from 1");
+        unsafe {
+            success!(statement.raw.1, ffi::sqlite3_bind_double(statement.raw.0, i as c_int,
+                                                               *self as c_double));
+        }
+        Ok(())
+    }
+}
+
+impl Parameter for i64 {
+    #[inline]
+    fn bind(&self, statement: &Statement, i: usize) -> Result<()> {
+        debug_assert!(i > 0, "the indexing starts from 1");
+        unsafe {
+            success!(statement.raw.1, ffi::sqlite3_bind_int64(statement.raw.0, i as c_int,
+                                                              *self as ffi::sqlite3_int64));
+        }
+        Ok(())
+    }
+}
+
+impl<'l> Parameter for &'l str {
+    #[inline]
+    fn bind(&self, statement: &Statement, i: usize) -> Result<()> {
+        debug_assert!(i > 0, "the indexing starts from 1");
+        unsafe {
+            success!(statement.raw.1, ffi::sqlite3_bind_text(statement.raw.0, i as c_int,
+                                                             str_to_c_str!(self.as_bytes()),
+                                                             -1, None));
+        }
+        Ok(())
+    }
+}
+
 impl Value for f64 {
+    #[inline]
     fn read(statement: &Statement, i: usize) -> Result<f64> {
         Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, i as c_int) as f64 })
     }
 }
 
 impl Value for i64 {
+    #[inline]
     fn read(statement: &Statement, i: usize) -> Result<i64> {
         Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, i as c_int) as i64 })
     }
 }
 
 impl Value for String {
+    #[inline]
     fn read(statement: &Statement, i: usize) -> Result<String> {
         unsafe {
             let pointer = ffi::sqlite3_column_text(statement.raw.0, i as c_int);

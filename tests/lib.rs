@@ -7,7 +7,6 @@ macro_rules! ok(
 
 #[test]
 fn workflow() {
-    use sqlite::Binding::*;
     use sqlite::State;
 
     macro_rules! pair(
@@ -22,7 +21,9 @@ fn workflow() {
     {
         let sql = r#"INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);"#;
         let mut statement = ok!(database.prepare(sql));
-        ok!(statement.bind(&[Integer(1, 1), Text(2, "Alice"), Float(3, 20.99)]));
+        ok!(statement.bind(1, 1));
+        ok!(statement.bind(2, "Alice"));
+        ok!(statement.bind(3, 20.99));
         assert!(ok!(statement.step()) == State::Done);
     }
 
@@ -44,16 +45,15 @@ fn workflow() {
         let sql = r#"SELECT * FROM `users`;"#;
         let mut statement = ok!(database.prepare(sql));
         assert!(ok!(statement.step()) == State::Row);
-        assert!(ok!(statement.column::<i64>(0)) == 1);
-        assert!(ok!(statement.column::<String>(1)) == String::from("Alice"));
-        assert!(ok!(statement.column::<f64>(2)) == 20.99);
+        assert!(ok!(statement.read::<i64>(0)) == 1);
+        assert!(ok!(statement.read::<String>(1)) == String::from("Alice"));
+        assert!(ok!(statement.read::<f64>(2)) == 20.99);
         assert!(ok!(statement.step()) == State::Done);
     }
 }
 
 #[test]
 fn stress() {
-    use sqlite::Binding::*;
     use sqlite::State;
     use std::path::PathBuf;
     use std::thread;
@@ -73,7 +73,9 @@ fn stress() {
             ok!(database.set_busy_handler(|_| true));
             let sql = r#"INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);"#;
             let mut statement = ok!(database.prepare(sql));
-            ok!(statement.bind(&[Integer(1, 1), Text(2, "Alice"), Float(3, 20.99)]));
+            ok!(statement.bind(1, 1));
+            ok!(statement.bind(2, "Alice"));
+            ok!(statement.bind(3, 20.99));
             assert!(ok!(statement.step()) == State::Done);
             true
         })

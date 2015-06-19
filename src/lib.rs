@@ -90,10 +90,10 @@ mod statement;
 
 pub use database::Database;
 pub use error::{Error, ErrorKind};
-pub use statement::{Statement, Binding, Value, State};
+pub use statement::{Statement, State, Parameter, Value};
 
 /// A result.
-pub type Result<T> = ::std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 /// Open a connection to a new or existing database.
 #[inline]
