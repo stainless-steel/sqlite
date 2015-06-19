@@ -21,7 +21,7 @@ fn workflow() {
     {
         let sql = r#"INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);"#;
         let mut statement = ok!(database.prepare(sql));
-        ok!(statement.bind(1, 1));
+        ok!(statement.bind(1, 1i64));
         ok!(statement.bind(2, "Alice"));
         ok!(statement.bind(3, 20.99));
         assert!(ok!(statement.step()) == State::Done);
@@ -73,7 +73,7 @@ fn stress() {
             ok!(database.set_busy_handler(|_| true));
             let sql = r#"INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);"#;
             let mut statement = ok!(database.prepare(sql));
-            ok!(statement.bind(1, 1));
+            ok!(statement.bind(1, 1i64));
             ok!(statement.bind(2, "Alice"));
             ok!(statement.bind(3, 20.99));
             assert!(ok!(statement.step()) == State::Done);
