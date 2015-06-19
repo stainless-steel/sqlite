@@ -9,7 +9,7 @@ The package provides an interface to [SQLite][1].
 ```rust
 use std::path::Path;
 
-let database = sqlite::open(&Path::new(":memory:")).unwrap();
+let database = sqlite::open(":memory:").unwrap();
 
 database.execute(r#"
     CREATE TABLE `users` (id INTEGER, name VARCHAR(255));

@@ -9,13 +9,12 @@ macro_rules! ok(
 fn workflow() {
     use sqlite::Binding::*;
     use sqlite::State;
-    use std::path::Path;
 
     macro_rules! pair(
         ($one:expr, $two:expr) => (($one, Some($two)));
     );
 
-    let database = ok!(sqlite::open(&Path::new(":memory:")));
+    let database = ok!(sqlite::open(":memory:"));
 
     let sql = r#"CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);"#;
     ok!(database.execute(sql));

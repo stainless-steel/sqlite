@@ -5,7 +5,7 @@
 //! ```
 //! use std::path::Path;
 //!
-//! let database = sqlite::open(&Path::new(":memory:")).unwrap();
+//! let database = sqlite::open(":memory:").unwrap();
 //!
 //! database.execute(r#"
 //!     CREATE TABLE `users` (id INTEGER, name VARCHAR(255));
@@ -99,7 +99,7 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 
 /// Open a connection to a new or existing database.
 #[inline]
-pub fn open<'l, P: std::convert::AsRef<std::path::Path>>(path: P) -> Result<Database<'l>> {
+pub fn open<'l, P: AsRef<std::path::Path>>(path: P) -> Result<Database<'l>> {
     Database::open(path)
 }
 
