@@ -14,10 +14,10 @@ pub struct Database<'l> {
 
 impl<'l> Database<'l> {
     /// Open a connection to a new or existing database.
-    pub fn open(path: &Path) -> Result<Database<'l>> {
+    pub fn open<P: AsRef<Path>>(path: P) -> Result<Database<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
-            success!(ffi::sqlite3_open_v2(path_to_c_str!(path), &mut raw,
+            success!(ffi::sqlite3_open_v2(path_to_c_str!(path.as_ref()), &mut raw,
                                           ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_READWRITE,
                                           0 as *const _));
         }
