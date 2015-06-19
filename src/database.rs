@@ -14,7 +14,7 @@ pub struct Database<'l> {
 
 impl<'l> Database<'l> {
     /// Open a connection to a new or existing database.
-    pub fn open<P: AsRef<Path>>(path: P) -> Result<Database<'l>> {
+    pub fn open<T: AsRef<Path>>(path: T) -> Result<Database<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
             success!(ffi::sqlite3_open_v2(path_to_c_str!(path.as_ref()), &mut raw,

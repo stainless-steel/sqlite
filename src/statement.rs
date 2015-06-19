@@ -40,7 +40,7 @@ impl<'l> Statement<'l> {
     ///
     /// The leftmost location has the index 1.
     #[inline]
-    pub fn bind<P: Parameter>(&mut self, i: usize, parameter: P) -> Result<()> {
+    pub fn bind<T: Parameter>(&mut self, i: usize, parameter: T) -> Result<()> {
         parameter.bind(self, i)
     }
 
@@ -48,7 +48,7 @@ impl<'l> Statement<'l> {
     ///
     /// The leftmost column has the index 0.
     #[inline]
-    pub fn read<V: Value>(&self, i: usize) -> Result<V> {
+    pub fn read<T: Value>(&self, i: usize) -> Result<T> {
         Value::read(self, i)
     }
 
