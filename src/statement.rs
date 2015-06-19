@@ -10,6 +10,13 @@ pub struct Statement<'l> {
     phantom: PhantomData<(ffi::sqlite3_stmt, &'l ffi::sqlite3)>,
 }
 
+/// A state of a prepared statement.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum State {
+    Done,
+    Row,
+}
+
 /// A parameter of a prepared statement.
 pub trait Parameter {
     /// Bind the parameter at a specific location.
@@ -24,13 +31,6 @@ pub trait Value {
     ///
     /// The leftmost column has the index 0.
     fn read(&Statement, usize) -> Result<Self>;
-}
-
-/// A state of a prepared statement.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum State {
-    Done,
-    Row,
 }
 
 impl<'l> Statement<'l> {
