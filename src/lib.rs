@@ -3,8 +3,6 @@
 //! ## Example
 //!
 //! ```
-//! use std::path::Path;
-//!
 //! let database = sqlite::open(":memory:").unwrap();
 //!
 //! database.execute(r#"

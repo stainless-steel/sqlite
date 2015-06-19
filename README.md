@@ -7,8 +7,6 @@ The package provides an interface to [SQLite][1].
 ## Example
 
 ```rust
-use std::path::Path;
-
 let database = sqlite::open(":memory:").unwrap();
 
 database.execute(r#"
