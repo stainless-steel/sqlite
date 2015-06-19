@@ -24,7 +24,7 @@ pub trait Parameter {
     /// Bind the parameter at a specific location.
     ///
     /// The leftmost location has the index 1.
-    fn bind(&self, &Statement, usize) -> Result<()>;
+    fn bind(&self, &mut Statement, usize) -> Result<()>;
 }
 
 /// A value stored in a prepared statement.
@@ -78,7 +78,7 @@ impl<'l> Drop for Statement<'l> {
 
 impl Parameter for f64 {
     #[inline]
-    fn bind(&self, statement: &Statement, i: usize) -> Result<()> {
+    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             success!(statement.raw.1, ffi::sqlite3_bind_double(statement.raw.0, i as c_int,
@@ -90,7 +90,7 @@ impl Parameter for f64 {
 
 impl Parameter for i64 {
     #[inline]
-    fn bind(&self, statement: &Statement, i: usize) -> Result<()> {
+    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             success!(statement.raw.1, ffi::sqlite3_bind_int64(statement.raw.0, i as c_int,
@@ -102,7 +102,7 @@ impl Parameter for i64 {
 
 impl<'l> Parameter for &'l str {
     #[inline]
-    fn bind(&self, statement: &Statement, i: usize) -> Result<()> {
+    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             success!(statement.raw.1, ffi::sqlite3_bind_text(statement.raw.0, i as c_int,
