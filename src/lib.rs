@@ -20,8 +20,6 @@
 //!
 //! [1]: https://www.sqlite.org
 
-#![allow(unused_unsafe)]
-
 extern crate libc;
 extern crate sqlite3_sys as ffi;
 
