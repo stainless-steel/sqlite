@@ -132,7 +132,7 @@ impl Value for String {
         unsafe {
             let pointer = ffi::sqlite3_column_text(statement.raw.0, i as c_int);
             if pointer.is_null() {
-                raise!("cannot read a TEXT column");
+                raise!("cannot read a text column");
             }
             Ok(c_str_to_string!(pointer))
         }
