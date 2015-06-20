@@ -30,7 +30,7 @@ macro_rules! raise(
     ($message:expr) => (return Err(::Error::from($message)));
 );
 
-macro_rules! failure(
+macro_rules! error(
     ($database:expr, $code:expr) => (
         match ::error::last($database) {
             Some(error) => return Err(error),
@@ -39,11 +39,11 @@ macro_rules! failure(
     );
 );
 
-macro_rules! success(
+macro_rules! ok(
     ($database:expr, $result:expr) => (
         match $result {
             ::ffi::SQLITE_OK => {},
-            code => failure!($database, code),
+            code => error!($database, code),
         }
     );
     ($result:expr) => (
@@ -108,12 +108,8 @@ mod tests {
     use std::path::PathBuf;
     use temporary::Directory;
 
-    macro_rules! ok(
-        ($result:expr) => ($result.unwrap());
-    );
-
     pub fn setup() -> (PathBuf, Directory) {
-        let directory = ok!(Directory::new("sqlite"));
+        let directory = Directory::new("sqlite").unwrap();
         (directory.path().join("database.sqlite3"), directory)
     }
 }

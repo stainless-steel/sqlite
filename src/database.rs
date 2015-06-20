@@ -17,9 +17,9 @@ impl<'l> Database<'l> {
     pub fn open<T: AsRef<Path>>(path: T) -> Result<Database<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
-            success!(ffi::sqlite3_open_v2(path_to_c_str!(path.as_ref()), &mut raw,
-                                          ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_READWRITE,
-                                          0 as *const _));
+            ok!(ffi::sqlite3_open_v2(path_to_c_str!(path.as_ref()), &mut raw,
+                                     ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_READWRITE,
+                                     0 as *const _));
         }
         Ok(Database {
             raw: raw,
@@ -32,8 +32,8 @@ impl<'l> Database<'l> {
     #[inline]
     pub fn execute(&self, sql: &str) -> Result<()> {
         unsafe {
-            success!(self.raw, ffi::sqlite3_exec(self.raw, str_to_c_str!(sql), None, 0 as *mut _,
-                                                 0 as *mut _));
+            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_c_str!(sql), None, 0 as *mut _,
+                                            0 as *mut _));
         }
         Ok(())
     }
@@ -48,10 +48,10 @@ impl<'l> Database<'l> {
     {
         unsafe {
             let callback = Box::new(callback);
-            success!(self.raw, ffi::sqlite3_exec(self.raw, str_to_c_str!(sql),
-                                                 Some(process_callback::<F>),
-                                                 &*callback as *const F as *mut F as *mut _,
-                                                 0 as *mut _));
+            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_c_str!(sql),
+                                            Some(process_callback::<F>),
+                                            &*callback as *const F as *mut F as *mut _,
+                                            0 as *mut _));
         }
         Ok(())
     }
@@ -76,7 +76,7 @@ impl<'l> Database<'l> {
             let result = ffi::sqlite3_busy_handler(self.raw, Some(busy_callback::<F>),
                                                    &*callback as *const F as *mut F as *mut _);
             self.busy_callback = Some(callback);
-            success!(self.raw, result);
+            ok!(self.raw, result);
         }
         Ok(())
     }
@@ -85,7 +85,7 @@ impl<'l> Database<'l> {
     /// rejected operations until a timeout expires.
     #[inline]
     pub fn set_busy_timeout(&mut self, milliseconds: usize) -> Result<()> {
-        unsafe { success!(self.raw, ffi::sqlite3_busy_timeout(self.raw, milliseconds as c_int)) };
+        unsafe { ok!(self.raw, ffi::sqlite3_busy_timeout(self.raw, milliseconds as c_int)) };
         Ok(())
     }
 
@@ -93,7 +93,7 @@ impl<'l> Database<'l> {
     #[inline]
     pub fn remove_busy_handler(&mut self) -> Result<()> {
         ::std::mem::replace(&mut self.busy_callback, None);
-        unsafe { success!(self.raw, ffi::sqlite3_busy_handler(self.raw, None, 0 as *mut _)) };
+        unsafe { ok!(self.raw, ffi::sqlite3_busy_handler(self.raw, None, 0 as *mut _)) };
         Ok(())
     }
 }
@@ -155,25 +155,21 @@ mod tests {
     use super::Database;
     use tests::setup;
 
-    macro_rules! ok(
-        ($result:expr) => ($result.unwrap());
-    );
-
     #[test]
     fn execute() {
         let (path, _directory) = setup();
-        let database = ok!(Database::open(&path));
+        let database = Database::open(&path).unwrap();
         match database.execute(":)") {
             Err(error) => assert_eq!(error.message,
                                      Some(String::from(r#"unrecognized token: ":""#))),
-            _ => assert!(false),
+            _ => unreachable!(),
         }
     }
 
     #[test]
     fn set_busy_handler() {
         let (path, _directory) = setup();
-        let mut database = ok!(Database::open(&path));
-        ok!(database.set_busy_handler(|_| true));
+        let mut database = Database::open(&path).unwrap();
+        database.set_busy_handler(|_| true).unwrap();
     }
 }

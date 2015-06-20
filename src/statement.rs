@@ -57,14 +57,14 @@ impl<'l> Statement<'l> {
         match unsafe { ffi::sqlite3_step(self.raw.0) } {
             ffi::SQLITE_DONE => Ok(State::Done),
             ffi::SQLITE_ROW => Ok(State::Row),
-            code => failure!(self.raw.1, code),
+            code => error!(self.raw.1, code),
         }
     }
 
     /// Reset the statement.
     #[inline]
     pub fn reset(&mut self) -> Result<()> {
-        unsafe { success!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
+        unsafe { ok!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
         Ok(())
     }
 }
@@ -81,8 +81,8 @@ impl Parameter for f64 {
     fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            success!(statement.raw.1, ffi::sqlite3_bind_double(statement.raw.0, i as c_int,
-                                                               *self as c_double));
+            ok!(statement.raw.1, ffi::sqlite3_bind_double(statement.raw.0, i as c_int,
+                                                          *self as c_double));
         }
         Ok(())
     }
@@ -93,8 +93,8 @@ impl Parameter for i64 {
     fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            success!(statement.raw.1, ffi::sqlite3_bind_int64(statement.raw.0, i as c_int,
-                                                              *self as ffi::sqlite3_int64));
+            ok!(statement.raw.1, ffi::sqlite3_bind_int64(statement.raw.0, i as c_int,
+                                                         *self as ffi::sqlite3_int64));
         }
         Ok(())
     }
@@ -105,8 +105,8 @@ impl<'l> Parameter for &'l str {
     fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            success!(statement.raw.1, ffi::sqlite3_bind_text(statement.raw.0, i as c_int,
-                                                             str_to_c_str!(*self), -1, None));
+            ok!(statement.raw.1, ffi::sqlite3_bind_text(statement.raw.0, i as c_int,
+                                                        str_to_c_str!(*self), -1, None));
         }
         Ok(())
     }
@@ -143,8 +143,7 @@ impl Value for String {
 pub fn new<'l>(raw1: *mut ffi::sqlite3, sql: &str) -> Result<Statement<'l>> {
     let mut raw0 = 0 as *mut _;
     unsafe {
-        success!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_c_str!(sql), -1, &mut raw0,
-                                               0 as *mut _));
+        ok!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_c_str!(sql), -1, &mut raw0, 0 as *mut _));
     }
     Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })
 }
