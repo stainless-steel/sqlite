@@ -126,13 +126,6 @@ extern fn process_callback<F>(callback: *mut c_void, count: c_int, values: *mut 
                               columns: *mut *mut c_char) -> c_int
     where F: FnMut(&[(&str, Option<&str>)]) -> bool
 {
-    use std::str;
-    use std::ffi::CStr;
-
-    macro_rules! c_str_to_str(
-        ($string:expr) => (str::from_utf8(CStr::from_ptr($string).to_bytes()));
-    );
-
     unsafe {
         let mut pairs = Vec::with_capacity(count as usize);
 

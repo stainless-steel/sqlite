@@ -66,19 +66,23 @@ macro_rules! path_to_c_str(
     });
 );
 
+macro_rules! c_str_to_str(
+    ($string:expr) => (::std::str::from_utf8(::std::ffi::CStr::from_ptr($string).to_bytes()));
+);
+
+macro_rules! c_str_to_string(
+    ($string:expr) => (
+        String::from_utf8_lossy(::std::ffi::CStr::from_ptr($string as *const _).to_bytes())
+               .into_owned()
+    );
+);
+
 macro_rules! str_to_c_str(
     ($string:expr) => (
         match ::std::ffi::CString::new($string) {
             Ok(string) => string.as_ptr(),
             Err(_) => raise!("failed to process a string"),
         }
-    );
-);
-
-macro_rules! c_str_to_string(
-    ($cstr:expr) => (
-        String::from_utf8_lossy(::std::ffi::CStr::from_ptr($cstr as *const _).to_bytes())
-               .into_owned()
     );
 );
 
