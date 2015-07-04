@@ -7,14 +7,14 @@ The package provides an interface to [SQLite][1].
 ## Example
 
 ```rust
-let database = sqlite::open(":memory:").unwrap();
+let connection = sqlite::open(":memory:").unwrap();
 
-database.execute(r#"
+connection.execute(r#"
     CREATE TABLE `users` (id INTEGER, name VARCHAR(255));
     INSERT INTO `users` (id, name) VALUES (1, 'Alice');
 "#).unwrap();
 
-database.process("SELECT * FROM `users`;", |pairs| {
+connection.process("SELECT * FROM `users`;", |pairs| {
     for &(column, value) in pairs.iter() {
         println!("{} = {}", column, value.unwrap());
     }

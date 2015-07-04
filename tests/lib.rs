@@ -13,14 +13,14 @@ fn workflow() {
         ($one:expr, $two:expr) => (($one, Some($two)));
     );
 
-    let database = ok!(sqlite::open(":memory:"));
+    let connection = ok!(sqlite::open(":memory:"));
 
     let sql = r#"CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);"#;
-    ok!(database.execute(sql));
+    ok!(connection.execute(sql));
 
     {
         let sql = r#"INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);"#;
-        let mut statement = ok!(database.prepare(sql));
+        let mut statement = ok!(connection.prepare(sql));
         ok!(statement.bind(1, 1i64));
         ok!(statement.bind(2, "Alice"));
         ok!(statement.bind(3, 20.99));
@@ -30,7 +30,7 @@ fn workflow() {
     {
         let mut done = false;
         let sql = r#"SELECT * FROM `users`;"#;
-        ok!(database.process(sql, |pairs| {
+        ok!(connection.process(sql, |pairs| {
             assert!(pairs.len() == 3);
             assert!(pairs[0] == pair!("id", "1"));
             assert!(pairs[1] == pair!("name", "Alice"));
@@ -43,7 +43,7 @@ fn workflow() {
 
     {
         let sql = r#"SELECT * FROM `users`;"#;
-        let mut statement = ok!(database.prepare(sql));
+        let mut statement = ok!(connection.prepare(sql));
         assert!(ok!(statement.step()) == State::Row);
         assert!(ok!(statement.read::<i64>(0)) == 1);
         assert!(ok!(statement.read::<String>(1)) == String::from("Alice"));
@@ -62,17 +62,17 @@ fn stress() {
     let directory = ok!(Directory::new("sqlite"));
     let path = directory.path().join("database.sqlite3");
 
-    let database = ok!(sqlite::open(&path));
+    let connection = ok!(sqlite::open(&path));
     let sql = r#"CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);"#;
-    ok!(database.execute(sql));
+    ok!(connection.execute(sql));
 
     let guards = (0..100).map(|_| {
         let path = PathBuf::from(&path);
         thread::spawn(move || {
-            let mut database = ok!(sqlite::open(&path));
-            ok!(database.set_busy_handler(|_| true));
+            let mut connection = ok!(sqlite::open(&path));
+            ok!(connection.set_busy_handler(|_| true));
             let sql = r#"INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);"#;
-            let mut statement = ok!(database.prepare(sql));
+            let mut statement = ok!(connection.prepare(sql));
             ok!(statement.bind(1, 1i64));
             ok!(statement.bind(2, "Alice"));
             ok!(statement.bind(3, 20.99));

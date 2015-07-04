@@ -3,14 +3,14 @@
 //! ## Example
 //!
 //! ```
-//! let database = sqlite::open(":memory:").unwrap();
+//! let connection = sqlite::open(":memory:").unwrap();
 //!
-//! database.execute(r#"
+//! connection.execute(r#"
 //!     CREATE TABLE `users` (id INTEGER, name VARCHAR(255));
 //!     INSERT INTO `users` (id, name) VALUES (1, 'Alice');
 //! "#).unwrap();
 //!
-//! database.process("SELECT * FROM `users`;", |pairs| {
+//! connection.process("SELECT * FROM `users`;", |pairs| {
 //!     for &(column, value) in pairs.iter() {
 //!         println!("{} = {}", column, value.unwrap());
 //!     }
@@ -31,8 +31,8 @@ macro_rules! raise(
 );
 
 macro_rules! error(
-    ($database:expr, $code:expr) => (
-        match ::error::last($database) {
+    ($connection:expr, $code:expr) => (
+        match ::error::last($connection) {
             Some(error) => return Err(error),
             None => return Err(::Error::from(::ErrorKind::from($code as isize))),
         }
@@ -40,10 +40,10 @@ macro_rules! error(
 );
 
 macro_rules! ok(
-    ($database:expr, $result:expr) => (
+    ($connection:expr, $result:expr) => (
         match $result {
             ::ffi::SQLITE_OK => {},
-            code => error!($database, code),
+            code => error!($connection, code),
         }
     );
     ($result:expr) => (
@@ -86,11 +86,11 @@ macro_rules! str_to_c_str(
     );
 );
 
-mod database;
+mod connection;
 mod error;
 mod statement;
 
-pub use database::Database;
+pub use connection::Connection;
 pub use error::{Error, ErrorKind};
 pub use statement::{Statement, State, Parameter, Value};
 
@@ -99,8 +99,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// Open a connection to a new or existing database.
 #[inline]
-pub fn open<'l, T: AsRef<std::path::Path>>(path: T) -> Result<Database<'l>> {
-    Database::open(path)
+pub fn open<'l, T: AsRef<std::path::Path>>(path: T) -> Result<Connection<'l>> {
+    Connection::open(path)
 }
 
 #[cfg(test)]

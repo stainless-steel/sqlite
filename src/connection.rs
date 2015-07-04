@@ -6,22 +6,22 @@ use std::path::Path;
 use {Result, Statement};
 
 /// A connection to a database.
-pub struct Database<'l> {
+pub struct Connection<'l> {
     raw: *mut ffi::sqlite3,
     busy_callback: Option<Box<FnMut(usize) -> bool + 'l>>,
     phantom: PhantomData<ffi::sqlite3>,
 }
 
-impl<'l> Database<'l> {
+impl<'l> Connection<'l> {
     /// Open a connection to a new or existing database.
-    pub fn open<T: AsRef<Path>>(path: T) -> Result<Database<'l>> {
+    pub fn open<T: AsRef<Path>>(path: T) -> Result<Connection<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
             ok!(ffi::sqlite3_open_v2(path_to_c_str!(path.as_ref()), &mut raw,
                                      ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_READWRITE,
                                      0 as *const _));
         }
-        Ok(Database {
+        Ok(Connection {
             raw: raw,
             busy_callback: None,
             phantom: PhantomData,
@@ -98,7 +98,7 @@ impl<'l> Database<'l> {
     }
 }
 
-impl<'l> Drop for Database<'l> {
+impl<'l> Drop for Connection<'l> {
     #[cfg(not(feature = "edge"))]
     #[inline]
     #[allow(unused_must_use)]
@@ -152,14 +152,14 @@ extern fn process_callback<F>(callback: *mut c_void, count: c_int, values: *mut 
 
 #[cfg(test)]
 mod tests {
-    use super::Database;
+    use super::Connection;
     use tests::setup;
 
     #[test]
     fn execute() {
         let (path, _directory) = setup();
-        let database = Database::open(&path).unwrap();
-        match database.execute(":)") {
+        let connection = Connection::open(&path).unwrap();
+        match connection.execute(":)") {
             Err(error) => assert_eq!(error.message,
                                      Some(String::from(r#"unrecognized token: ":""#))),
             _ => unreachable!(),
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn set_busy_handler() {
         let (path, _directory) = setup();
-        let mut database = Database::open(&path).unwrap();
-        database.set_busy_handler(|_| true).unwrap();
+        let mut connection = Connection::open(&path).unwrap();
+        connection.set_busy_handler(|_| true).unwrap();
     }
 }
