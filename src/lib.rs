@@ -18,7 +18,7 @@
 //! }).unwrap();
 //!
 //! let mut statement = connection.prepare("SELECT * FROM `users`;").unwrap();
-//! while statement.step().unwrap() == sqlite::State::Row {
+//! while let sqlite::State::Row = statement.step().unwrap() {
 //!     println!("id = {}", statement.read::<i64>(0).unwrap());
 //!     println!("name = {}", statement.read::<String>(1).unwrap());
 //! }
