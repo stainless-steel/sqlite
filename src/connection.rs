@@ -41,7 +41,8 @@ impl<'l> Connection<'l> {
     /// Execute a query and process the resulting rows if any.
     ///
     /// The callback is triggered for each row. If the callback returns `false`,
-    /// no more rows will be processed.
+    /// no more rows will be processed. For large queries and non-string data
+    /// types, prepared statement are highly preferable; see `prepare`.
     #[inline]
     pub fn process<F>(&self, sql: &str, callback: F) -> Result<()>
         where F: FnMut(&[(&str, Option<&str>)]) -> bool

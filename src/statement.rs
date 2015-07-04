@@ -52,7 +52,10 @@ impl<'l> Statement<'l> {
         Value::read(self, i)
     }
 
-    /// Evaluate the statement.
+    /// Evaluate the statement one step at a time.
+    ///
+    /// The function should be called multiple times until `State::Done` is
+    /// reached in order to evaluate the statement entirely.
     pub fn step(&mut self) -> Result<State> {
         match unsafe { ffi::sqlite3_step(self.raw.0) } {
             ffi::SQLITE_DONE => Ok(State::Done),
