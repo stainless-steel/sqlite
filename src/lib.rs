@@ -5,10 +5,10 @@
 //! ```
 //! let connection = sqlite::open(":memory:").unwrap();
 //!
-//! connection.execute(r#"
+//! connection.execute("
 //!     CREATE TABLE `users` (id INTEGER, name VARCHAR(255));
 //!     INSERT INTO `users` (id, name) VALUES (1, 'Alice');
-//! "#).unwrap();
+//! ").unwrap();
 //!
 //! connection.process("SELECT * FROM `users`;", |pairs| {
 //!     for &(column, value) in pairs.iter() {
