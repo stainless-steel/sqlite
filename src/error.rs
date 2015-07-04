@@ -1,6 +1,6 @@
 use ffi;
 use std::convert::{From, Into};
-use std::fmt::{self, Display, Formatter};
+use std::{error, fmt};
 
 /// An error.
 #[derive(Debug)]
@@ -77,17 +77,26 @@ impl From<ErrorKind> for Error {
     }
 }
 
-impl Display for Error {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+impl fmt::Display for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self.message {
-            Some(ref message) => Display::fmt(message, formatter),
-            None => Display::fmt(&self.kind, formatter),
+            Some(ref message) => message.fmt(formatter),
+            _ => self.kind.fmt(formatter),
         }
     }
 }
 
-impl Display for ErrorKind {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        match self.message {
+            Some(ref message) => message,
+            _ => "an SQLite error",
+        }
+    }
+}
+
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             ErrorKind::Unknown => write!(formatter, "an unknown SQLite result code"),
             _ => write!(formatter, "SQLite result code {}", *self as isize),
