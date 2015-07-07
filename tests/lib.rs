@@ -15,11 +15,11 @@ fn workflow() {
 
     let connection = ok!(sqlite::open(":memory:"));
 
-    let sql = "CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);";
+    let sql = "CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL)";
     ok!(connection.execute(sql));
 
     {
-        let sql = "INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);";
+        let sql = "INSERT INTO `users` (id, name, age) VALUES (?, ?, ?)";
         let mut statement = ok!(connection.prepare(sql));
         ok!(statement.bind(1, 1i64));
         ok!(statement.bind(2, "Alice"));
@@ -29,7 +29,7 @@ fn workflow() {
 
     {
         let mut done = false;
-        let sql = "SELECT * FROM `users`;";
+        let sql = "SELECT * FROM `users`";
         ok!(connection.process(sql, |pairs| {
             assert!(pairs.len() == 3);
             assert!(pairs[0] == pair!("id", "1"));
@@ -42,7 +42,7 @@ fn workflow() {
     }
 
     {
-        let sql = "SELECT * FROM `users`;";
+        let sql = "SELECT * FROM `users`";
         let mut statement = ok!(connection.prepare(sql));
         assert!(ok!(statement.step()) == State::Row);
         assert!(ok!(statement.read::<i64>(0)) == 1);
@@ -63,7 +63,7 @@ fn stress() {
     let path = directory.path().join("database.sqlite3");
 
     let connection = ok!(sqlite::open(&path));
-    let sql = "CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL);";
+    let sql = "CREATE TABLE `users` (id INTEGER, name VARCHAR(255), age REAL)";
     ok!(connection.execute(sql));
 
     let guards = (0..100).map(|_| {
@@ -71,7 +71,7 @@ fn stress() {
         thread::spawn(move || {
             let mut connection = ok!(sqlite::open(&path));
             ok!(connection.set_busy_handler(|_| true));
-            let sql = "INSERT INTO `users` (id, name, age) VALUES (?, ?, ?);";
+            let sql = "INSERT INTO `users` (id, name, age) VALUES (?, ?, ?)";
             let mut statement = ok!(connection.prepare(sql));
             ok!(statement.bind(1, 1i64));
             ok!(statement.bind(2, "Alice"));
