@@ -93,7 +93,7 @@ impl<'l> Connection<'l> {
     /// Remove the callback handling busy events.
     #[inline]
     pub fn remove_busy_handler(&mut self) -> Result<()> {
-        ::std::mem::replace(&mut self.busy_callback, None);
+        self.busy_callback.take();
         unsafe { ok!(self.raw, ffi::sqlite3_busy_handler(self.raw, None, 0 as *mut _)) };
         Ok(())
     }
