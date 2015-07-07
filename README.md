@@ -14,14 +14,14 @@ connection.execute("
     INSERT INTO `users` (id, name) VALUES (1, 'Alice');
 ").unwrap();
 
-connection.process("SELECT * FROM `users`;", |pairs| {
+connection.process("SELECT * FROM `users`", |pairs| {
     for &(column, value) in pairs.iter() {
         println!("{} = {}", column, value.unwrap());
     }
     true
 }).unwrap();
 
-let mut statement = connection.prepare("SELECT * FROM `users`;").unwrap();
+let mut statement = connection.prepare("SELECT * FROM `users`").unwrap();
 while let sqlite::State::Row = statement.step().unwrap() {
     println!("id = {}", statement.read::<i64>(0).unwrap());
     println!("name = {}", statement.read::<String>(1).unwrap());
