@@ -37,38 +37,20 @@ macro_rules! raise(
 );
 
 macro_rules! error(
-    ($connection:expr, $code:expr) => (
-        match ::error::last($connection) {
-            Some(error) => return Err(error),
-            None => return Err(::Error::from(::ErrorKind::from($code as isize))),
-        }
-    );
+    ($connection:expr, $code:expr) => (match ::error::last($connection) {
+        Some(error) => return Err(error),
+        None => return Err(::Error::from(::ErrorKind::from($code as isize))),
+    });
 );
 
 macro_rules! ok(
-    ($connection:expr, $result:expr) => (
-        match $result {
-            ::ffi::SQLITE_OK => {},
-            code => error!($connection, code),
-        }
-    );
-    ($result:expr) => (
-        match $result {
-            ::ffi::SQLITE_OK => {},
-            code => return Err(::Error::from(::ErrorKind::from(code as isize))),
-        }
-    );
-);
-
-macro_rules! path_to_c_str(
-    ($path:expr) => ({
-        match $path.to_str() {
-            Some(path) => match ::std::ffi::CString::new(path) {
-                Ok(string) => string.as_ptr(),
-                Err(_) => raise!("failed to process a path"),
-            },
-            None => raise!("failed to process a path"),
-        }
+    ($connection:expr, $result:expr) => (match $result {
+        ::ffi::SQLITE_OK => {},
+        code => error!($connection, code),
+    });
+    ($result:expr) => (match $result {
+        ::ffi::SQLITE_OK => {},
+        code => return Err(::Error::from(::ErrorKind::from(code as isize))),
     });
 );
 
@@ -83,13 +65,21 @@ macro_rules! c_str_to_string(
     );
 );
 
-macro_rules! str_to_c_str(
-    ($string:expr) => (
-        match ::std::ffi::CString::new($string) {
-            Ok(string) => string.as_ptr(),
-            Err(_) => raise!("failed to process a string"),
-        }
-    );
+macro_rules! path_to_cstr(
+    ($path:expr) => (match $path.to_str() {
+        Some(path) => match ::std::ffi::CString::new(path) {
+            Ok(string) => string,
+            _ => raise!("failed to process a path"),
+        },
+        _ => raise!("failed to process a path"),
+    });
+);
+
+macro_rules! str_to_cstr(
+    ($string:expr) => (match ::std::ffi::CString::new($string) {
+        Ok(string) => string,
+        _ => raise!("failed to process a string"),
+    });
 );
 
 mod connection;

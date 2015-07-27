@@ -17,7 +17,7 @@ impl<'l> Connection<'l> {
     pub fn open<T: AsRef<Path>>(path: T) -> Result<Connection<'l>> {
         let mut raw = 0 as *mut _;
         unsafe {
-            ok!(ffi::sqlite3_open_v2(path_to_c_str!(path.as_ref()), &mut raw,
+            ok!(ffi::sqlite3_open_v2(path_to_cstr!(path.as_ref()).as_ptr(), &mut raw,
                                      ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_READWRITE,
                                      0 as *const _));
         }
@@ -32,8 +32,8 @@ impl<'l> Connection<'l> {
     #[inline]
     pub fn execute(&self, sql: &str) -> Result<()> {
         unsafe {
-            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_c_str!(sql), None, 0 as *mut _,
-                                            0 as *mut _));
+            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(sql).as_ptr(), None,
+                                            0 as *mut _, 0 as *mut _));
         }
         Ok(())
     }
@@ -49,7 +49,7 @@ impl<'l> Connection<'l> {
     {
         unsafe {
             let callback = Box::new(callback);
-            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_c_str!(sql),
+            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(sql).as_ptr(),
                                             Some(process_callback::<F>),
                                             &*callback as *const F as *mut F as *mut _,
                                             0 as *mut _));

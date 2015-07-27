@@ -109,7 +109,7 @@ impl<'l> Parameter for &'l str {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             ok!(statement.raw.1, ffi::sqlite3_bind_text(statement.raw.0, i as c_int,
-                                                        str_to_c_str!(*self), -1, None));
+                                                        str_to_cstr!(*self).as_ptr(), -1, None));
         }
         Ok(())
     }
@@ -146,7 +146,8 @@ impl Value for String {
 pub fn new<'l>(raw1: *mut ffi::sqlite3, sql: &str) -> Result<Statement<'l>> {
     let mut raw0 = 0 as *mut _;
     unsafe {
-        ok!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_c_str!(sql), -1, &mut raw0, 0 as *mut _));
+        ok!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_cstr!(sql).as_ptr(), -1, &mut raw0,
+                                          0 as *mut _));
     }
     Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })
 }
