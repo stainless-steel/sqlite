@@ -7,7 +7,7 @@
 //!
 //! connection.execute("
 //!     CREATE TABLE `users` (id INTEGER, name VARCHAR(255));
-//!     INSERT INTO `users` (id, name) VALUES (1, 'Alice');
+//!     INSERT INTO `users` (id, name) VALUES (42, 'Alice');
 //! ").unwrap();
 //!
 //! connection.process("SELECT * FROM `users`", |pairs| {
@@ -16,9 +16,28 @@
 //!     }
 //!     true
 //! }).unwrap();
+//! ```
+//!
+//! The same example using prepared statements:
+//!
+//! ```
+//! use sqlite::State;
+//!
+//! let connection = sqlite::open(":memory:").unwrap();
+//!
+//! connection.execute("
+//!     CREATE TABLE `users` (id INTEGER, name VARCHAR(255))
+//! ");
+//!
+//! let mut statement = connection.prepare("
+//!     INSERT INTO `users` (id, name) VALUES (?, ?)
+//! ").unwrap();
+//! statement.bind(1, 42).unwrap();
+//! statement.bind(2, "Alice").unwrap();
+//! assert_eq!(statement.step().unwrap(), State::Done);
 //!
 //! let mut statement = connection.prepare("SELECT * FROM `users`").unwrap();
-//! while let sqlite::State::Row = statement.step().unwrap() {
+//! while let State::Row = statement.step().unwrap() {
 //!     println!("id = {}", statement.read::<i64>(0).unwrap());
 //!     println!("name = {}", statement.read::<String>(1).unwrap());
 //! }
