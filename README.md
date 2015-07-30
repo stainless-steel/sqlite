@@ -55,7 +55,7 @@ while let State::Row = statement.step().unwrap() {
 
 [1]: https://www.sqlite.org
 
-[version-img]: https://img.shields.io/crates/v/sqlite.svg
+[version-img]: http://stainless-steel.github.io/images/crates.svg
 [version-url]: https://crates.io/crates/sqlite
 [status-img]: https://travis-ci.org/stainless-steel/sqlite.svg?branch=master
 [status-url]: https://travis-ci.org/stainless-steel/sqlite
