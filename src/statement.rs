@@ -143,11 +143,11 @@ impl Value for String {
 }
 
 #[inline]
-pub fn new<'l>(raw1: *mut ffi::sqlite3, sql: &str) -> Result<Statement<'l>> {
+pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, query: T) -> Result<Statement<'l>> {
     let mut raw0 = 0 as *mut _;
     unsafe {
-        ok!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_cstr!(sql).as_ptr(), -1, &mut raw0,
-                                          0 as *mut _));
+        ok!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_cstr!(query.as_ref()).as_ptr(), -1,
+                                          &mut raw0, 0 as *mut _));
     }
     Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })
 }

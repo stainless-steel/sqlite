@@ -30,9 +30,9 @@ impl<'l> Connection<'l> {
 
     /// Execute a query without processing the resulting rows if any.
     #[inline]
-    pub fn execute(&self, sql: &str) -> Result<()> {
+    pub fn execute<T: AsRef<str>>(&self, query: T) -> Result<()> {
         unsafe {
-            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(sql).as_ptr(), None,
+            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(query.as_ref()).as_ptr(), None,
                                             0 as *mut _, 0 as *mut _));
         }
         Ok(())
@@ -44,12 +44,12 @@ impl<'l> Connection<'l> {
     /// no more rows will be processed. For large queries and non-string data
     /// types, prepared statement are highly preferable; see `prepare`.
     #[inline]
-    pub fn process<F>(&self, sql: &str, callback: F) -> Result<()>
+    pub fn process<T: AsRef<str>, F>(&self, query: T, callback: F) -> Result<()>
         where F: FnMut(&[(&str, Option<&str>)]) -> bool
     {
         unsafe {
             let callback = Box::new(callback);
-            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(sql).as_ptr(),
+            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(query.as_ref()).as_ptr(),
                                             Some(process_callback::<F>),
                                             &*callback as *const F as *mut F as *mut _,
                                             0 as *mut _));
@@ -59,8 +59,8 @@ impl<'l> Connection<'l> {
 
     /// Create a prepared statement.
     #[inline]
-    pub fn prepare(&'l self, sql: &str) -> Result<Statement<'l>> {
-        ::statement::new(self.raw, sql)
+    pub fn prepare<T: AsRef<str>>(&'l self, query: T) -> Result<Statement<'l>> {
+        ::statement::new(self.raw, query)
     }
 
     /// Set a callback for handling busy events.
