@@ -136,29 +136,60 @@ impl<'l> Parameter for &'l str {
     }
 }
 
+impl<'l> Parameter for &'l [u8] {
+    #[inline]
+    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
+        debug_assert!(i > 0, "the indexing starts from 1");
+        unsafe {
+            ok!(statement.raw.1, ffi::sqlite3_bind_blob(statement.raw.0, i as c_int,
+                                                        self.as_ptr() as *const _,
+                                                        self.len() as c_int, None));
+        }
+        Ok(())
+    }
+}
+
 impl Value for f64 {
     #[inline]
-    fn read(statement: &Statement, i: usize) -> Result<f64> {
+    fn read(statement: &Statement, i: usize) -> Result<Self> {
         Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, i as c_int) as f64 })
     }
 }
 
 impl Value for i64 {
     #[inline]
-    fn read(statement: &Statement, i: usize) -> Result<i64> {
+    fn read(statement: &Statement, i: usize) -> Result<Self> {
         Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, i as c_int) as i64 })
     }
 }
 
 impl Value for String {
     #[inline]
-    fn read(statement: &Statement, i: usize) -> Result<String> {
+    fn read(statement: &Statement, i: usize) -> Result<Self> {
         unsafe {
             let pointer = ffi::sqlite3_column_text(statement.raw.0, i as c_int);
             if pointer.is_null() {
                 raise!("cannot read a text column");
             }
             Ok(c_str_to_string!(pointer))
+        }
+    }
+}
+
+impl Value for Vec<u8> {
+    #[inline]
+    fn read(statement: &Statement, i: usize) -> Result<Self> {
+        use std::ptr::copy_nonoverlapping as copy;
+        unsafe {
+            let pointer = ffi::sqlite3_column_blob(statement.raw.0, i as c_int);
+            if pointer.is_null() {
+                return Ok(vec![]);
+            }
+            let count = ffi::sqlite3_column_bytes(statement.raw.0, i as c_int) as usize;
+            let mut buffer = Vec::with_capacity(count);
+            buffer.set_len(count);
+            copy(pointer as *const u8, buffer.as_mut_ptr(), count);
+            Ok(buffer)
         }
     }
 }

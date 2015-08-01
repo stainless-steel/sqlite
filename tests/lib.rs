@@ -9,7 +9,7 @@ macro_rules! ok(
 );
 
 #[test]
-fn connection_execute() {
+fn connection_error() {
     let connection = setup(":memory:");
     match connection.execute(":)") {
         Err(error) => assert_eq!(error.message, Some(String::from(r#"unrecognized token: ":""#))),
@@ -28,10 +28,11 @@ fn connection_process() {
     let mut done = false;
     let query = "SELECT * FROM users";
     ok!(connection.process(query, |pairs| {
-        assert_eq!(pairs.len(), 3);
+        assert_eq!(pairs.len(), 4);
         assert_eq!(pairs[0], pair!("id", "1"));
         assert_eq!(pairs[1], pair!("name", "Alice"));
         assert_eq!(pairs[2], pair!("age", "42.69"));
+        assert_eq!(pairs[3], pair!("photo", "\x42\x69"));
         done = true;
         true
     }));
@@ -52,11 +53,12 @@ fn connection_set_busy_handler() {
         thread::spawn(move || {
             let mut connection = ok!(sqlite::open(&path));
             ok!(connection.set_busy_handler(|_| true));
-            let query = "INSERT INTO `users` (id, name, age) VALUES (?, ?, ?)";
+            let query = "INSERT INTO `users` (id, name, age, photo) VALUES (?, ?, ?, ?)";
             let mut statement = ok!(connection.prepare(query));
             ok!(statement.bind(1, 2i64));
             ok!(statement.bind(2, "Bob"));
-            ok!(statement.bind(3, 20.99));
+            ok!(statement.bind(3, 69.42));
+            ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
             assert_eq!(ok!(statement.step()), State::Done);
             true
         })
@@ -73,11 +75,11 @@ fn statement_columns() {
     let query = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(query));
 
-    assert_eq!(statement.columns(), 3);
+    assert_eq!(statement.columns(), 4);
 
     assert_eq!(ok!(statement.step()), State::Row);
 
-    assert_eq!(statement.columns(), 3);
+    assert_eq!(statement.columns(), 4);
 }
 
 #[test]
@@ -89,28 +91,31 @@ fn statement_kind() {
     assert_eq!(statement.kind(0), Type::Null);
     assert_eq!(statement.kind(1), Type::Null);
     assert_eq!(statement.kind(2), Type::Null);
+    assert_eq!(statement.kind(3), Type::Null);
 
     assert_eq!(ok!(statement.step()), State::Row);
 
     assert_eq!(statement.kind(0), Type::Integer);
     assert_eq!(statement.kind(1), Type::String);
     assert_eq!(statement.kind(2), Type::Float);
+    assert_eq!(statement.kind(3), Type::Blob);
 }
 
 #[test]
-fn statement_insert() {
+fn statement_bind() {
     let connection = setup(":memory:");
-    let query = "INSERT INTO users (id, name, age) VALUES (?, ?, ?)";
+    let query = "INSERT INTO users (id, name, age, photo) VALUES (?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(query));
 
     ok!(statement.bind(1, 2i64));
     ok!(statement.bind(2, "Bob"));
-    ok!(statement.bind(3, 20.99));
+    ok!(statement.bind(3, 69.42));
+    ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
     assert_eq!(ok!(statement.step()), State::Done);
 }
 
 #[test]
-fn statement_select() {
+fn statement_read() {
     let connection = setup(":memory:");
     let query = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(query));
@@ -119,17 +124,15 @@ fn statement_select() {
     assert_eq!(ok!(statement.read::<i64>(0)), 1);
     assert_eq!(ok!(statement.read::<String>(1)), String::from("Alice"));
     assert_eq!(ok!(statement.read::<f64>(2)), 42.69);
+    assert_eq!(ok!(statement.read::<Vec<u8>>(3)), vec![0x42, 0x69]);
     assert_eq!(ok!(statement.step()), State::Done);
 }
 
 fn setup<T: AsRef<Path>>(path: T) -> Connection {
     let connection = ok!(sqlite::open(path));
-
-    let query = "CREATE TABLE users (id INTEGER, name VARCHAR(255), age REAL)";
-    ok!(connection.execute(query));
-
-    let query = "INSERT INTO users (id, name, age) VALUES (1, 'Alice', 42.69)";
-    ok!(connection.execute(query));
-
+    ok!(connection.execute("
+        CREATE TABLE users (id INTEGER, name VARCHAR(255), age REAL, photo BLOB);
+        INSERT INTO users (id, name, age, photo) VALUES (1, 'Alice', 42.69, X'4269');
+    "));
     connection
 }
