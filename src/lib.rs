@@ -58,7 +58,7 @@ macro_rules! raise(
 macro_rules! error(
     ($connection:expr, $code:expr) => (match ::error::last($connection) {
         Some(error) => return Err(error),
-        None => return Err(::Error::from(::ErrorKind::from($code as isize))),
+        _ => return Err(::Error::from(::ErrorKind::from($code as isize))),
     });
 );
 

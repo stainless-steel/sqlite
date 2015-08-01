@@ -36,6 +36,12 @@ pub trait Value {
 }
 
 impl<'l> Statement<'l> {
+    /// Return the number of columns.
+    #[inline]
+    pub fn columns(&mut self) -> usize {
+        unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
+    }
+
     /// Bind the parameter at a specific location.
     ///
     /// The leftmost location has the index 1.

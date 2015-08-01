@@ -21,6 +21,7 @@ fn workflow() {
     {
         let sql = "INSERT INTO `users` (id, name, age) VALUES (?, ?, ?)";
         let mut statement = ok!(connection.prepare(sql));
+        assert_eq!(statement.columns(), 0);
         ok!(statement.bind(1, 1i64));
         ok!(statement.bind(2, "Alice"));
         ok!(statement.bind(3, 20.99));
@@ -44,6 +45,7 @@ fn workflow() {
     {
         let sql = "SELECT * FROM `users`";
         let mut statement = ok!(connection.prepare(sql));
+        assert_eq!(statement.columns(), 3);
         assert_eq!(ok!(statement.step()), State::Row);
         assert_eq!(ok!(statement.read::<i64>(0)), 1);
         assert_eq!(ok!(statement.read::<String>(1)), String::from("Alice"));
