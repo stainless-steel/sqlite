@@ -115,15 +115,15 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// A data type.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Type {
-    /// Binary data.
+    /// The binary type.
     Blob,
-    /// A 64-bit floating-point number.
+    /// The floating-point type (64-bit).
     Float,
-    /// A 64-bit signed integer.
+    /// The integer type (64-bit, signed).
     Integer,
-    /// An absence of a value.
+    /// The null type.
     Null,
-    /// A string.
+    /// The string type.
     String,
 }
 
