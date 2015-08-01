@@ -21,11 +21,7 @@ impl<'l> Connection<'l> {
                                      ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_READWRITE,
                                      0 as *const _));
         }
-        Ok(Connection {
-            raw: raw,
-            busy_callback: None,
-            phantom: PhantomData,
-        })
+        Ok(Connection { raw: raw, busy_callback: None, phantom: PhantomData })
     }
 
     /// Execute a query without processing the resulting rows if any.
