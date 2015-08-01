@@ -6,15 +6,15 @@ use std::path::Path;
 use {Result, Statement};
 
 /// A connection to a database.
-pub struct Connection<'l> {
+pub struct Connection {
     raw: *mut ffi::sqlite3,
-    busy_callback: Option<Box<FnMut(usize) -> bool + 'l>>,
+    busy_callback: Option<Box<FnMut(usize) -> bool>>,
     phantom: PhantomData<ffi::sqlite3>,
 }
 
-impl<'l> Connection<'l> {
+impl Connection {
     /// Open a connection to a new or existing database.
-    pub fn open<T: AsRef<Path>>(path: T) -> Result<Connection<'l>> {
+    pub fn open<T: AsRef<Path>>(path: T) -> Result<Connection> {
         let mut raw = 0 as *mut _;
         unsafe {
             ok!(ffi::sqlite3_open_v2(path_to_cstr!(path.as_ref()).as_ptr(), &mut raw,
@@ -55,7 +55,7 @@ impl<'l> Connection<'l> {
 
     /// Create a prepared statement.
     #[inline]
-    pub fn prepare<T: AsRef<str>>(&'l self, query: T) -> Result<Statement<'l>> {
+    pub fn prepare<'l, T: AsRef<str>>(&'l self, query: T) -> Result<Statement<'l>> {
         ::statement::new(self.raw, query)
     }
 
@@ -65,7 +65,7 @@ impl<'l> Connection<'l> {
     /// due to processing of some other request. If the callback returns `true`,
     /// the operation will be repeated.
     pub fn set_busy_handler<F>(&mut self, callback: F) -> Result<()>
-        where F: FnMut(usize) -> bool + 'l
+        where F: FnMut(usize) -> bool + 'static
     {
         try!(self.remove_busy_handler());
         unsafe {
@@ -95,7 +95,7 @@ impl<'l> Connection<'l> {
     }
 }
 
-impl<'l> Drop for Connection<'l> {
+impl Drop for Connection {
     #[cfg(not(feature = "sqlite3-close-v2"))]
     #[inline]
     #[allow(unused_must_use)]

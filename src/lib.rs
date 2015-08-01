@@ -111,6 +111,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// Open a connection to a new or existing database.
 #[inline]
-pub fn open<'l, T: AsRef<std::path::Path>>(path: T) -> Result<Connection<'l>> {
+pub fn open<T: AsRef<std::path::Path>>(path: T) -> Result<Connection> {
     Connection::open(path)
 }
