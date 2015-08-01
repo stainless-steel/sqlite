@@ -48,14 +48,16 @@
 extern crate libc;
 extern crate sqlite3_sys as ffi;
 
+use std::{error, fmt};
+
 macro_rules! raise(
-    ($message:expr) => (return Err(::Error::from($message)));
+    ($message:expr) => (return Err(::Error { code: None, message: Some($message.to_string()) }));
 );
 
 macro_rules! error(
-    ($connection:expr, $code:expr) => (match ::error::last($connection) {
+    ($connection:expr, $code:expr) => (match ::last_error($connection) {
         Some(error) => return Err(error),
-        _ => return Err(::Error::from(::ErrorKind::from($code as isize))),
+        _ => return Err(::Error { code: Some($code as isize), message: None }),
     });
 );
 
@@ -66,7 +68,7 @@ macro_rules! ok(
     });
     ($result:expr) => (match $result {
         ::ffi::SQLITE_OK => {},
-        code => return Err(::Error::from(::ErrorKind::from(code as isize))),
+        code => return Err(::Error { code: Some(code as isize), message: None }),
     });
 );
 
@@ -98,6 +100,18 @@ macro_rules! str_to_cstr(
     });
 );
 
+/// An error.
+#[derive(Debug)]
+pub struct Error {
+    /// The error code.
+    pub code: Option<isize>,
+    /// The error message.
+    pub message: Option<String>,
+}
+
+/// A result.
+pub type Result<T> = std::result::Result<T, Error>;
+
 /// A data type.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Type {
@@ -113,19 +127,48 @@ pub enum Type {
     String,
 }
 
+impl fmt::Display for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match (self.code, &self.message) {
+            (Some(code), &Some(ref message)) => write!(formatter, "{} (code {})", message, code),
+            (Some(code), _) => write!(formatter, "an SQLite error (code {})", code),
+            (_, &Some(ref message)) => message.fmt(formatter),
+            _ => write!(formatter, "an SQLite error"),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        match self.message {
+            Some(ref message) => message,
+            _ => "an SQLite error",
+        }
+    }
+}
+
 mod connection;
-mod error;
 mod statement;
 
 pub use connection::Connection;
-pub use error::{Error, ErrorKind};
 pub use statement::{Statement, State, Parameter, Value};
-
-/// A result.
-pub type Result<T> = std::result::Result<T, Error>;
 
 /// Open a connection to a new or existing database.
 #[inline]
 pub fn open<T: AsRef<std::path::Path>>(path: T) -> Result<Connection> {
     Connection::open(path)
+}
+
+fn last_error(raw: *mut ffi::sqlite3) -> Option<Error> {
+    unsafe {
+        let code = ffi::sqlite3_errcode(raw);
+        if code == ffi::SQLITE_OK {
+            return None;
+        }
+        let message = ffi::sqlite3_errmsg(raw);
+        if message.is_null() {
+            return None;
+        }
+        Some(Error { code: Some(code as isize), message: Some(c_str_to_string!(message)) })
+    }
 }
