@@ -48,9 +48,6 @@
 extern crate libc;
 extern crate sqlite3_sys as ffi;
 
-#[cfg(test)]
-extern crate temporary;
-
 macro_rules! raise(
     ($message:expr) => (return Err(::Error::from($message)));
 );
@@ -116,15 +113,4 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[inline]
 pub fn open<'l, T: AsRef<std::path::Path>>(path: T) -> Result<Connection<'l>> {
     Connection::open(path)
-}
-
-#[cfg(test)]
-mod tests {
-    use std::path::PathBuf;
-    use temporary::Directory;
-
-    pub fn setup() -> (PathBuf, Directory) {
-        let directory = Directory::new("sqlite").unwrap();
-        (directory.path().join("database.sqlite3"), directory)
-    }
 }

@@ -154,12 +154,10 @@ extern fn process_callback<F>(callback: *mut c_void, count: c_int, values: *mut 
 #[cfg(test)]
 mod tests {
     use super::Connection;
-    use tests::setup;
 
     #[test]
     fn execute() {
-        let (path, _directory) = setup();
-        let connection = Connection::open(&path).unwrap();
+        let connection = Connection::open(":memory:").unwrap();
         match connection.execute(":)") {
             Err(error) => assert_eq!(error.message,
                                      Some(String::from(r#"unrecognized token: ":""#))),
@@ -169,8 +167,7 @@ mod tests {
 
     #[test]
     fn set_busy_handler() {
-        let (path, _directory) = setup();
-        let mut connection = Connection::open(&path).unwrap();
+        let mut connection = Connection::open(":memory:").unwrap();
         connection.set_busy_handler(|_| true).unwrap();
     }
 }
