@@ -98,7 +98,7 @@ fn statement_kind() {
     assert_eq!(statement.kind(0), Type::Integer);
     assert_eq!(statement.kind(1), Type::String);
     assert_eq!(statement.kind(2), Type::Float);
-    assert_eq!(statement.kind(3), Type::Blob);
+    assert_eq!(statement.kind(3), Type::Binary);
 }
 
 #[test]

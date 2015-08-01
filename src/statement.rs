@@ -48,7 +48,7 @@ impl<'l> Statement<'l> {
     #[inline]
     pub fn kind(&self, i: usize) -> Type {
         match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
-            ffi::SQLITE_BLOB => Type::Blob,
+            ffi::SQLITE_BLOB => Type::Binary,
             ffi::SQLITE_FLOAT => Type::Float,
             ffi::SQLITE_INTEGER => Type::Integer,
             ffi::SQLITE_NULL => Type::Null,
