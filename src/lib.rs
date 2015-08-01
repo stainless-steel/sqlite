@@ -117,7 +117,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Type {
     /// Binary data.
     Blob,
-    /// A 64-bit IEEE floating-point number.
+    /// A 64-bit floating-point number.
     Float,
     /// A 64-bit signed integer.
     Integer,
