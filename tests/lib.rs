@@ -24,17 +24,17 @@ fn workflow() {
         ok!(statement.bind(1, 1i64));
         ok!(statement.bind(2, "Alice"));
         ok!(statement.bind(3, 20.99));
-        assert!(ok!(statement.step()) == State::Done);
+        assert_eq!(ok!(statement.step()), State::Done);
     }
 
     {
         let mut done = false;
         let sql = "SELECT * FROM `users`";
         ok!(connection.process(sql, |pairs| {
-            assert!(pairs.len() == 3);
-            assert!(pairs[0] == pair!("id", "1"));
-            assert!(pairs[1] == pair!("name", "Alice"));
-            assert!(pairs[2] == pair!("age", "20.99"));
+            assert_eq!(pairs.len(), 3);
+            assert_eq!(pairs[0], pair!("id", "1"));
+            assert_eq!(pairs[1], pair!("name", "Alice"));
+            assert_eq!(pairs[2], pair!("age", "20.99"));
             done = true;
             true
         }));
@@ -44,11 +44,11 @@ fn workflow() {
     {
         let sql = "SELECT * FROM `users`";
         let mut statement = ok!(connection.prepare(sql));
-        assert!(ok!(statement.step()) == State::Row);
-        assert!(ok!(statement.read::<i64>(0)) == 1);
-        assert!(ok!(statement.read::<String>(1)) == String::from("Alice"));
-        assert!(ok!(statement.read::<f64>(2)) == 20.99);
-        assert!(ok!(statement.step()) == State::Done);
+        assert_eq!(ok!(statement.step()), State::Row);
+        assert_eq!(ok!(statement.read::<i64>(0)), 1);
+        assert_eq!(ok!(statement.read::<String>(1)), String::from("Alice"));
+        assert_eq!(ok!(statement.read::<f64>(2)), 20.99);
+        assert_eq!(ok!(statement.step()), State::Done);
     }
 }
 
@@ -76,7 +76,7 @@ fn stress() {
             ok!(statement.bind(1, 1i64));
             ok!(statement.bind(2, "Alice"));
             ok!(statement.bind(3, 20.99));
-            assert!(ok!(statement.step()) == State::Done);
+            assert_eq!(ok!(statement.step()), State::Done);
             true
         })
     }).collect::<Vec<_>>();
