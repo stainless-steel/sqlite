@@ -10,11 +10,11 @@ The package provides an interface to [SQLite][1].
 let connection = sqlite::open(":memory:").unwrap();
 
 connection.execute("
-    CREATE TABLE `users` (id INTEGER, name VARCHAR(255));
-    INSERT INTO `users` (id, name) VALUES (42, 'Alice');
+    CREATE TABLE users (id INTEGER, name VARCHAR(255));
+    INSERT INTO users (id, name) VALUES (42, 'Alice');
 ").unwrap();
 
-connection.process("SELECT * FROM `users`", |pairs| {
+connection.process("SELECT * FROM users", |pairs| {
     for &(column, value) in pairs.iter() {
         println!("{} = {}", column, value.unwrap());
     }
@@ -30,17 +30,17 @@ use sqlite::State;
 let connection = sqlite::open(":memory:").unwrap();
 
 connection.execute("
-    CREATE TABLE `users` (id INTEGER, name VARCHAR(255))
+    CREATE TABLE users (id INTEGER, name VARCHAR(255))
 ");
 
 let mut statement = connection.prepare("
-    INSERT INTO `users` (id, name) VALUES (?, ?)
+    INSERT INTO users (id, name) VALUES (?, ?)
 ").unwrap();
 statement.bind(1, 42).unwrap();
 statement.bind(2, "Alice").unwrap();
 assert_eq!(statement.step().unwrap(), State::Done);
 
-let mut statement = connection.prepare("SELECT * FROM `users`").unwrap();
+let mut statement = connection.prepare("SELECT * FROM users").unwrap();
 while let State::Row = statement.step().unwrap() {
     println!("id = {}", statement.read::<i64>(0).unwrap());
     println!("name = {}", statement.read::<String>(1).unwrap());

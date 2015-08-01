@@ -2,7 +2,7 @@ use ffi;
 use libc::{c_double, c_int};
 use std::marker::PhantomData;
 
-use Result;
+use {Result, Type};
 
 /// A prepared statement.
 pub struct Statement<'l> {
@@ -38,8 +38,23 @@ pub trait Value {
 impl<'l> Statement<'l> {
     /// Return the number of columns.
     #[inline]
-    pub fn columns(&mut self) -> usize {
+    pub fn columns(&self) -> usize {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
+    }
+
+    /// Return the type of a column.
+    ///
+    /// The type is revealed after the first step has been taken.
+    #[inline]
+    pub fn kind(&self, i: usize) -> Type {
+        match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
+            ffi::SQLITE_BLOB => Type::Blob,
+            ffi::SQLITE_FLOAT => Type::Float,
+            ffi::SQLITE_INTEGER => Type::Integer,
+            ffi::SQLITE_NULL => Type::Null,
+            ffi::SQLITE_TEXT => Type::String,
+            _ => unreachable!(),
+        }
     }
 
     /// Bind the parameter at a specific location.

@@ -146,24 +146,3 @@ extern fn process_callback<F>(callback: *mut c_void, count: c_int, values: *mut 
         if (*(callback as *mut F))(&pairs) { 0 } else { 1 }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::Connection;
-
-    #[test]
-    fn execute() {
-        let connection = Connection::open(":memory:").unwrap();
-        match connection.execute(":)") {
-            Err(error) => assert_eq!(error.message,
-                                     Some(String::from(r#"unrecognized token: ":""#))),
-            _ => unreachable!(),
-        }
-    }
-
-    #[test]
-    fn set_busy_handler() {
-        let mut connection = Connection::open(":memory:").unwrap();
-        connection.set_busy_handler(|_| true).unwrap();
-    }
-}
