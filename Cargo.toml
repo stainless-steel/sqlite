@@ -7,13 +7,11 @@ repository = "https://github.com/stainless-steel/sqlite"
 homepage = "https://github.com/stainless-steel/sqlite"
 documentation = "https://stainless-steel.github.io/sqlite"
 description = "The package provides an interface to SQLite."
-
-[features]
-edge = ["sqlite3-sys/edge"]
+build = "build.rs"
 
 [dependencies]
 libc = "*"
-sqlite3-sys = "*"
+sqlite3-sys = "0.6"
 
 [dev-dependencies]
 temporary = "*"

@@ -100,7 +100,7 @@ impl<'l> Connection<'l> {
 }
 
 impl<'l> Drop for Connection<'l> {
-    #[cfg(not(feature = "edge"))]
+    #[cfg(not(feature = "sqlite3-close-v2"))]
     #[inline]
     #[allow(unused_must_use)]
     fn drop(&mut self) {
@@ -108,7 +108,7 @@ impl<'l> Drop for Connection<'l> {
         unsafe { ffi::sqlite3_close(self.raw) };
     }
 
-    #[cfg(feature = "edge")]
+    #[cfg(feature = "sqlite3-close-v2")]
     #[inline]
     #[allow(unused_must_use)]
     fn drop(&mut self) {
