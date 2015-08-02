@@ -159,6 +159,14 @@ pub fn open<T: AsRef<std::path::Path>>(path: T) -> Result<Connection> {
     Connection::open(path)
 }
 
+/// Return the version number of SQLite.
+///
+/// For instance, the version `3.8.11.1` corresponds to the integer `3008011`.
+#[inline]
+pub fn version() -> usize {
+    unsafe { ffi::sqlite3_libversion_number() as usize }
+}
+
 fn last_error(raw: *mut ffi::sqlite3) -> Option<Error> {
     unsafe {
         let code = ffi::sqlite3_errcode(raw);
