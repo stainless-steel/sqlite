@@ -1,7 +1,7 @@
 use statement::{State, Statement, Bindable, Readable};
 use {Result, Value};
 
-/// An iterator over the results of a prepared statement.
+/// An iterator over the resulting rows of a prepared statement.
 pub struct Iterator<'l> {
     state: Option<State>,
     values: Option<Vec<Value>>,
