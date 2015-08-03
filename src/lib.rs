@@ -121,10 +121,25 @@ pub enum Type {
     Float,
     /// The integer type.
     Integer,
-    /// The null type.
-    Null,
     /// The string type.
     String,
+    /// The null type.
+    Null,
+}
+
+/// A typed value.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Value {
+    /// Binary data.
+    Binary(Vec<u8>),
+    /// A floating-point number.
+    Float(f64),
+    /// An integer.
+    Integer(i64),
+    /// A string.
+    String(String),
+    /// A null value.
+    Null,
 }
 
 impl fmt::Display for Error {
