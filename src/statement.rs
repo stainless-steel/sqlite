@@ -6,6 +6,7 @@ use {Result, Type, Value};
 
 /// A prepared statement.
 pub struct Statement<'l> {
+    state: Option<State>,
     raw: (*mut ffi::sqlite3_stmt, *mut ffi::sqlite3),
     phantom: PhantomData<(ffi::sqlite3_stmt, &'l ffi::sqlite3)>,
 }
@@ -15,37 +16,64 @@ pub struct Statement<'l> {
 pub enum State {
     /// There is a row available for reading.
     Row,
-    /// There is nothing else to read.
+    /// The statement has been entirely evaluated.
     Done,
 }
 
-/// A type suitable for binding to a parameter of a prepared statement.
+/// A type suitable for binding to a prepared statement.
 pub trait Bindable {
-    /// Bind to a particular parameter.
+    /// Bind to a parameter.
     ///
     /// The leftmost parameter has the index 1.
     fn bind(&self, &mut Statement, usize) -> Result<()>;
 }
 
-/// A type suitable for reading from a column of a prepared statement.
+/// A type suitable for reading from a prepared statement.
 pub trait Readable {
-    /// Read from a particular column.
+    /// Read from a column.
     ///
     /// The leftmost column has the index 0.
     fn read(&Statement, usize) -> Result<Self>;
 }
 
 impl<'l> Statement<'l> {
+    /// Bind a value to a parameter.
+    ///
+    /// The leftmost parameter has the index 1.
+    #[inline]
+    pub fn bind<T: Bindable>(&mut self, i: usize, parameter: T) -> Result<()> {
+        parameter.bind(self, i)
+    }
+
     /// Return the number of columns.
     #[inline]
     pub fn columns(&self) -> usize {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
     }
 
+    /// Advance the statement to the next state.
+    ///
+    /// The function should be called multiple times until `State::Done` is
+    /// reached in order to evaluate the statement entirely.
+    pub fn step(&mut self) -> Result<State> {
+        let state = match unsafe { ffi::sqlite3_step(self.raw.0) } {
+            ffi::SQLITE_ROW => State::Row,
+            ffi::SQLITE_DONE => State::Done,
+            code => error!(self.raw.1, code),
+        };
+        self.state = Some(state);
+        Ok(state)
+    }
+
+    /// Return the current state.
+    #[inline]
+    pub fn state(&self) -> Option<State> {
+        self.state
+    }
+
     /// Return the type of a column.
     ///
     /// The type is revealed after the first step has been taken.
-    #[inline]
     pub fn kind(&self, i: usize) -> Type {
         match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
             ffi::SQLITE_BLOB => Type::Binary,
@@ -57,15 +85,7 @@ impl<'l> Statement<'l> {
         }
     }
 
-    /// Bind the parameter at a specific location.
-    ///
-    /// The leftmost location has the index 1.
-    #[inline]
-    pub fn bind<T: Bindable>(&mut self, i: usize, parameter: T) -> Result<()> {
-        parameter.bind(self, i)
-    }
-
-    /// Read the value stored in a specific column.
+    /// Read a value from a column.
     ///
     /// The leftmost column has the index 0.
     #[inline]
@@ -73,22 +93,11 @@ impl<'l> Statement<'l> {
         Readable::read(self, i)
     }
 
-    /// Evaluate the statement one step at a time.
-    ///
-    /// The function should be called multiple times until `State::Done` is
-    /// reached in order to evaluate the statement entirely.
-    pub fn step(&mut self) -> Result<State> {
-        match unsafe { ffi::sqlite3_step(self.raw.0) } {
-            ffi::SQLITE_DONE => Ok(State::Done),
-            ffi::SQLITE_ROW => Ok(State::Row),
-            code => error!(self.raw.1, code),
-        }
-    }
-
     /// Reset the statement.
     #[inline]
     pub fn reset(&mut self) -> Result<()> {
         unsafe { ok!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
+        self.state = None;
         Ok(())
     }
 }
@@ -242,5 +251,5 @@ pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, statement: T) -> Result<S
         ok!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_cstr!(statement.as_ref()).as_ptr(), -1,
                                           &mut raw0, 0 as *mut _));
     }
-    Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })
+    Ok(Statement { state: None, raw: (raw0, raw1), phantom: PhantomData })
 }
