@@ -145,7 +145,7 @@ fn statement_read() {
 fn setup<T: AsRef<Path>>(path: T) -> Connection {
     let connection = ok!(sqlite::open(path));
     ok!(connection.execute("
-        CREATE TABLE users (id INTEGER, name VARCHAR(255), age REAL, photo BLOB);
+        CREATE TABLE users (id INTEGER, name TEXT, age REAL, photo BLOB);
         INSERT INTO users (id, name, age, photo) VALUES (1, 'Alice', 42.69, X'4269');
     "));
     connection

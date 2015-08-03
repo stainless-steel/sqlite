@@ -2,15 +2,18 @@
 //!
 //! ## Example
 //!
+//! Create a table, insert a couple of rows, and fetch one:
+//!
 //! ```
 //! let connection = sqlite::open(":memory:").unwrap();
 //!
 //! connection.execute("
-//!     CREATE TABLE users (id INTEGER, name VARCHAR(255));
-//!     INSERT INTO users (id, name) VALUES (42, 'Alice');
+//!     CREATE TABLE users (name TEXT, age INTEGER);
+//!     INSERT INTO users (name, age) VALUES ('Alice', 42);
+//!     INSERT INTO users (name, age) VALUES ('Bob', 69);
 //! ").unwrap();
 //!
-//! connection.process("SELECT * FROM users", |pairs| {
+//! connection.process("SELECT * FROM users WHERE age > 50", |pairs| {
 //!     for &(column, value) in pairs.iter() {
 //!         println!("{} = {}", column, value.unwrap());
 //!     }
@@ -21,23 +24,31 @@
 //! The same example using prepared statements:
 //!
 //! ```
-//! use sqlite::State;
-//!
 //! let connection = sqlite::open(":memory:").unwrap();
 //!
 //! connection.execute("
-//!     CREATE TABLE users (id INTEGER, name VARCHAR(255))
-//! ");
+//!     CREATE TABLE users (name TEXT, age INTEGER)
+//! ").unwrap();
 //!
 //! let mut statement = connection.prepare("
-//!     INSERT INTO users (id, name) VALUES (?, ?)
+//!     INSERT INTO users (name, age) VALUES (?, ?)
 //! ").unwrap();
-//! statement.bind(1, 42).unwrap();
-//! statement.bind(2, "Alice").unwrap();
-//! assert_eq!(statement.step().unwrap(), State::Done);
 //!
-//! let mut statement = connection.prepare("SELECT * FROM users").unwrap();
-//! while let State::Row = statement.step().unwrap() {
+//! statement.bind(1, "Alice").unwrap();
+//! statement.bind(2, 42).unwrap();
+//! assert_eq!(statement.step().unwrap(), sqlite::State::Done);
+//!
+//! statement.reset().unwrap();
+//!
+//! statement.bind(1, "Bob").unwrap();
+//! statement.bind(2, 69).unwrap();
+//! assert_eq!(statement.step().unwrap(), sqlite::State::Done);
+//!
+//! let mut statement = connection.prepare("
+//!     SELECT * FROM users WHERE age > 50
+//! ").unwrap();
+//!
+//! while let sqlite::State::Row = statement.step().unwrap() {
 //!     println!("id = {}", statement.read::<i64>(0).unwrap());
 //!     println!("name = {}", statement.read::<String>(1).unwrap());
 //! }
