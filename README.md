@@ -28,6 +28,8 @@ connection.process("SELECT * FROM users WHERE age > 50", |pairs| {
 The same example using prepared statements:
 
 ```rust
+use sqlite::State;
+
 let connection = sqlite::open(":memory:").unwrap();
 
 connection.execute("
@@ -40,21 +42,59 @@ let mut statement = connection.prepare("
 
 statement.bind(1, "Alice").unwrap();
 statement.bind(2, 42).unwrap();
-assert_eq!(statement.step().unwrap(), sqlite::State::Done);
+assert_eq!(statement.step().unwrap(), State::Done);
 
 statement.reset().unwrap();
 
 statement.bind(1, "Bob").unwrap();
 statement.bind(2, 69).unwrap();
-assert_eq!(statement.step().unwrap(), sqlite::State::Done);
+assert_eq!(statement.step().unwrap(), State::Done);
 
 let mut statement = connection.prepare("
     SELECT * FROM users WHERE age > 50
 ").unwrap();
 
-while let sqlite::State::Row = statement.step().unwrap() {
-    println!("id = {}", statement.read::<i64>(0).unwrap());
-    println!("name = {}", statement.read::<String>(1).unwrap());
+while let State::Row = statement.step().unwrap() {
+    println!("name = {}", statement.read::<String>(0).unwrap());
+    println!("age = {}", statement.read::<i64>(1).unwrap());
+}
+```
+
+The same example using iterators:
+
+```rust
+use sqlite::Value;
+
+let connection = sqlite::open(":memory:").unwrap();
+
+connection.execute("
+    CREATE TABLE users (name TEXT, age INTEGER)
+").unwrap();
+
+let mut iterator = connection.prepare("
+    INSERT INTO users (name, age) VALUES (?, ?)
+").unwrap().into_iter().unwrap();
+
+iterator.start(&[
+    Value::String("Alice".to_string()), Value::Integer(42),
+]).unwrap();
+
+iterator.start(&[
+    Value::String("Bob".to_string()), Value::Integer(69),
+]).unwrap();
+
+let mut iterator = connection.prepare("
+    SELECT * FROM users WHERE age > 50
+").unwrap().into_iter().unwrap();
+
+while let Some(row) = iterator.next().unwrap() {
+    match (&row[0], &row[1]) {
+        (&Value::String(ref name), &Value::Integer(age)) => {
+            println!("name = {}", name);
+            println!("age = {}", age);
+        },
+        _ => unreachable!(),
+    }
 }
 ```
 
