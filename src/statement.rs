@@ -2,7 +2,7 @@ use ffi;
 use libc::{c_double, c_int};
 use std::marker::PhantomData;
 
-use {Result, Type, Value};
+use {Iterator, Result, Type, Value};
 
 /// A prepared statement.
 pub struct Statement<'l> {
@@ -99,6 +99,12 @@ impl<'l> Statement<'l> {
         unsafe { ok!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
         self.state = None;
         Ok(())
+    }
+
+    /// Upgrade the statement to an iterator.
+    #[inline]
+    pub fn into_iter(self) -> Result<Iterator<'l>> {
+        ::iterator::new(self)
     }
 }
 

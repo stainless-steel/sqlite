@@ -3,7 +3,7 @@ use libc::{c_char, c_int, c_void};
 use std::marker::PhantomData;
 use std::path::Path;
 
-use {Iterator, Result, Statement};
+use {Result, Statement};
 
 /// A database connection.
 pub struct Connection {
@@ -58,12 +58,6 @@ impl Connection {
     #[inline]
     pub fn prepare<'l, T: AsRef<str>>(&'l self, statement: T) -> Result<Statement<'l>> {
         ::statement::new(self.raw, statement)
-    }
-
-    /// Create an iterator over the resulting rows of a prepared statement.
-    #[inline]
-    pub fn iterate<'l, T: AsRef<str>>(&'l self, statement: T) -> Result<Iterator<'l>> {
-        ::iterator::new(try!(::statement::new(self.raw, statement)))
     }
 
     /// Set a callback for handling busy events.
