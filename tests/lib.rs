@@ -76,8 +76,11 @@ fn cursor() {
     let mut cursor = ok!(connection.prepare(statement)).cursor().unwrap();
 
     ok!(cursor.bind(&[Value::Integer(1)]));
-    assert_eq!(ok!(ok!(cursor.next())), &[Value::Integer(1),
-                                            Value::String("Alice".to_string())]);
+    assert_eq!(ok!(ok!(cursor.next())), &[Value::Integer(1), Value::String("Alice".to_string())]);
+    assert_eq!(ok!(cursor.next()), None);
+
+    ok!(cursor.bind(&[Value::Integer(1)]));
+    assert_eq!(ok!(ok!(cursor.next())), &[Value::Integer(1), Value::String("Alice".to_string())]);
     assert_eq!(ok!(cursor.next()), None);
 
     ok!(cursor.bind(&[Value::Integer(42)]));

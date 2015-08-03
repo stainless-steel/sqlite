@@ -11,6 +11,7 @@ pub struct Cursor<'l> {
 impl<'l> Cursor<'l> {
     /// Bind values to all parameters.
     pub fn bind(&mut self, values: &[Value]) -> Result<()> {
+        self.state = None;
         try!(self.statement.reset());
         for (i, value) in values.iter().enumerate() {
             try!(self.statement.bind(i + 1, value));
