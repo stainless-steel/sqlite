@@ -9,30 +9,24 @@ pub struct Iterator<'l> {
 }
 
 impl<'l> Iterator<'l> {
-    /// Bind parameters and start iterating over the resulting rows.
-    ///
-    /// The function assigns values to the parameters of the underlaying
-    /// prepared statement, execute it, and start iterating over the resulting
-    /// rows.
-    pub fn start(&mut self, values: &[Value]) -> Result<()> {
+    /// Bind values to all parameters.
+    pub fn bind(&mut self, values: &[Value]) -> Result<()> {
         try!(self.statement.reset());
         for (i, value) in values.iter().enumerate() {
             try!(self.statement.bind(i + 1, value));
         }
-        self.state = Some(try!(self.statement.step()));
         Ok(())
     }
 
-    /// Read the next row.
+    /// Advance to the next row and read all columns.
     pub fn next(&mut self) -> Result<Option<&[Value]>> {
         match self.state {
+            Some(State::Row) => {},
             Some(State::Done) => return Ok(None),
-            None => {
-                try!(self.statement.reset());
-                self.state = Some(try!(self.statement.step()));
+            _ => {
+                self.state = Some(try!(self.statement.next()));
                 return self.next();
             },
-            _ => {},
         }
         let values = match self.values.take() {
             Some(mut values) => {
@@ -50,7 +44,7 @@ impl<'l> Iterator<'l> {
                 values
             },
         };
-        self.state = Some(try!(self.statement.step()));
+        self.state = Some(try!(self.statement.next()));
         self.values = Some(values);
         Ok(Some(self.values.as_ref().unwrap()))
     }

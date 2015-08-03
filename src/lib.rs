@@ -38,19 +38,19 @@
 //!
 //! statement.bind(1, "Alice").unwrap();
 //! statement.bind(2, 42).unwrap();
-//! assert_eq!(statement.step().unwrap(), State::Done);
+//! assert_eq!(statement.next().unwrap(), State::Done);
 //!
 //! statement.reset().unwrap();
 //!
 //! statement.bind(1, "Bob").unwrap();
 //! statement.bind(2, 69).unwrap();
-//! assert_eq!(statement.step().unwrap(), State::Done);
+//! assert_eq!(statement.next().unwrap(), State::Done);
 //!
 //! let mut statement = connection.prepare("
 //!     SELECT * FROM users WHERE age > 50
 //! ").unwrap();
 //!
-//! while let State::Row = statement.step().unwrap() {
+//! while let State::Row = statement.next().unwrap() {
 //!     println!("name = {}", statement.read::<String>(0).unwrap());
 //!     println!("age = {}", statement.read::<i64>(1).unwrap());
 //! }
@@ -71,11 +71,11 @@
 //!     INSERT INTO users (name, age) VALUES (?, ?)
 //! ").unwrap().into_iter().unwrap();
 //!
-//! iterator.start(&[
+//! iterator.bind(&[
 //!     Value::String("Alice".to_string()), Value::Integer(42),
 //! ]).unwrap();
 //!
-//! iterator.start(&[
+//! iterator.bind(&[
 //!     Value::String("Bob".to_string()), Value::Integer(69),
 //! ]).unwrap();
 //!

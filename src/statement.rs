@@ -51,11 +51,11 @@ impl<'l> Statement<'l> {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
     }
 
-    /// Advance the statement to the next state.
+    /// Advance to the next state.
     ///
     /// The function should be called multiple times until `State::Done` is
     /// reached in order to evaluate the statement entirely.
-    pub fn step(&mut self) -> Result<State> {
+    pub fn next(&mut self) -> Result<State> {
         let state = match unsafe { ffi::sqlite3_step(self.raw.0) } {
             ffi::SQLITE_ROW => State::Row,
             ffi::SQLITE_DONE => State::Done,
@@ -101,7 +101,7 @@ impl<'l> Statement<'l> {
         Ok(())
     }
 
-    /// Upgrade the statement to an iterator.
+    /// Upgrade to an iterator.
     #[inline]
     pub fn into_iter(self) -> Result<Iterator<'l>> {
         ::iterator::new(self)

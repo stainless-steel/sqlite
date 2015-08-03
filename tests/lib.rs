@@ -59,7 +59,7 @@ fn connection_set_busy_handler() {
             ok!(statement.bind(2, "Bob"));
             ok!(statement.bind(3, 69.42));
             ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
-            assert_eq!(ok!(statement.step()), State::Done);
+            assert_eq!(ok!(statement.next()), State::Done);
             true
         })
     }).collect::<Vec<_>>();
@@ -75,12 +75,12 @@ fn iterator() {
     let statement = "SELECT id, name FROM users WHERE id = ?";
     let mut iterator = ok!(connection.prepare(statement)).into_iter().unwrap();
 
-    ok!(iterator.start(&[Value::Integer(1)]));
+    ok!(iterator.bind(&[Value::Integer(1)]));
     assert_eq!(ok!(ok!(iterator.next())), &[Value::Integer(1),
                                             Value::String("Alice".to_string())]);
     assert_eq!(ok!(iterator.next()), None);
 
-    ok!(iterator.start(&[Value::Integer(42)]));
+    ok!(iterator.bind(&[Value::Integer(42)]));
     assert_eq!(ok!(iterator.next()), None);
 }
 
@@ -92,7 +92,7 @@ fn statement_columns() {
 
     assert_eq!(statement.columns(), 4);
 
-    assert_eq!(ok!(statement.step()), State::Row);
+    assert_eq!(ok!(statement.next()), State::Row);
 
     assert_eq!(statement.columns(), 4);
 }
@@ -108,7 +108,7 @@ fn statement_kind() {
     assert_eq!(statement.kind(2), Type::Null);
     assert_eq!(statement.kind(3), Type::Null);
 
-    assert_eq!(ok!(statement.step()), State::Row);
+    assert_eq!(ok!(statement.next()), State::Row);
 
     assert_eq!(statement.kind(0), Type::Integer);
     assert_eq!(statement.kind(1), Type::String);
@@ -126,7 +126,7 @@ fn statement_bind() {
     ok!(statement.bind(2, "Bob"));
     ok!(statement.bind(3, 69.42));
     ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
-    assert_eq!(ok!(statement.step()), State::Done);
+    assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]
@@ -135,12 +135,12 @@ fn statement_read() {
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));
 
-    assert_eq!(ok!(statement.step()), State::Row);
+    assert_eq!(ok!(statement.next()), State::Row);
     assert_eq!(ok!(statement.read::<i64>(0)), 1);
     assert_eq!(ok!(statement.read::<String>(1)), String::from("Alice"));
     assert_eq!(ok!(statement.read::<f64>(2)), 42.69);
     assert_eq!(ok!(statement.read::<Vec<u8>>(3)), vec![0x42, 0x69]);
-    assert_eq!(ok!(statement.step()), State::Done);
+    assert_eq!(ok!(statement.next()), State::Done);
 }
 
 fn setup<T: AsRef<Path>>(path: T) -> Connection {
