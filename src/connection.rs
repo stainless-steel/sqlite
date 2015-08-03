@@ -60,8 +60,7 @@ impl Connection {
         ::statement::new(self.raw, statement)
     }
 
-    /// Create a reusable iterator over the resulting rows of a prepared
-    /// statement.
+    /// Create an iterator over the resulting rows of a prepared statement.
     #[inline]
     pub fn iterate<'l, T: AsRef<str>>(&'l self, statement: T) -> Result<Iterator<'l>> {
         ::iterator::new(try!(::statement::new(self.raw, statement)))
