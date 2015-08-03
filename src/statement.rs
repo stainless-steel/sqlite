@@ -19,17 +19,17 @@ pub enum State {
     Done,
 }
 
-/// A parameter of a prepared statement.
-pub trait Parameter {
-    /// Bind the parameter at a specific location.
+/// A type suitable for binding to a parameter of a prepared statement.
+pub trait Bindable {
+    /// Bind to a particular parameter.
     ///
-    /// The leftmost location has the index 1.
+    /// The leftmost parameter has the index 1.
     fn bind(&self, &mut Statement, usize) -> Result<()>;
 }
 
-/// A value stored in a prepared statement.
-pub trait Value {
-    /// Read the value stored in a specific column.
+/// A type suitable for reading from a column of a prepared statement.
+pub trait Readable {
+    /// Read from a particular column.
     ///
     /// The leftmost column has the index 0.
     fn read(&Statement, usize) -> Result<Self>;
@@ -61,7 +61,7 @@ impl<'l> Statement<'l> {
     ///
     /// The leftmost location has the index 1.
     #[inline]
-    pub fn bind<T: Parameter>(&mut self, i: usize, parameter: T) -> Result<()> {
+    pub fn bind<T: Bindable>(&mut self, i: usize, parameter: T) -> Result<()> {
         parameter.bind(self, i)
     }
 
@@ -69,8 +69,8 @@ impl<'l> Statement<'l> {
     ///
     /// The leftmost column has the index 0.
     #[inline]
-    pub fn read<T: Value>(&self, i: usize) -> Result<T> {
-        Value::read(self, i)
+    pub fn read<T: Readable>(&self, i: usize) -> Result<T> {
+        Readable::read(self, i)
     }
 
     /// Evaluate the statement one step at a time.
@@ -100,7 +100,7 @@ impl<'l> Drop for Statement<'l> {
     }
 }
 
-impl Parameter for f64 {
+impl Bindable for f64 {
     #[inline]
     fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
@@ -112,7 +112,7 @@ impl Parameter for f64 {
     }
 }
 
-impl Parameter for i64 {
+impl Bindable for i64 {
     #[inline]
     fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
@@ -124,7 +124,7 @@ impl Parameter for i64 {
     }
 }
 
-impl<'l> Parameter for &'l str {
+impl<'l> Bindable for &'l str {
     #[inline]
     fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
@@ -136,7 +136,7 @@ impl<'l> Parameter for &'l str {
     }
 }
 
-impl<'l> Parameter for &'l [u8] {
+impl<'l> Bindable for &'l [u8] {
     #[inline]
     fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
@@ -149,21 +149,21 @@ impl<'l> Parameter for &'l [u8] {
     }
 }
 
-impl Value for f64 {
+impl Readable for f64 {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
         Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, i as c_int) as f64 })
     }
 }
 
-impl Value for i64 {
+impl Readable for i64 {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
         Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, i as c_int) as i64 })
     }
 }
 
-impl Value for String {
+impl Readable for String {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
         unsafe {
@@ -176,7 +176,7 @@ impl Value for String {
     }
 }
 
-impl Value for Vec<u8> {
+impl Readable for Vec<u8> {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
         use std::ptr::copy_nonoverlapping as copy;

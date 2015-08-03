@@ -117,9 +117,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Type {
     /// The binary type.
     Binary,
-    /// The floating-point type (64-bit).
+    /// The floating-point type.
     Float,
-    /// The integer type (64-bit, signed).
+    /// The integer type.
     Integer,
     /// The null type.
     Null,
@@ -151,7 +151,7 @@ mod connection;
 mod statement;
 
 pub use connection::Connection;
-pub use statement::{Statement, State, Parameter, Value};
+pub use statement::{Statement, State, Bindable, Readable};
 
 /// Open a connection to a new or existing database.
 #[inline]
