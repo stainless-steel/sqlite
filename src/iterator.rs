@@ -26,8 +26,13 @@ impl<'l> Iterator<'l> {
     /// Read the next row.
     pub fn next(&mut self) -> Result<Option<&[Value]>> {
         match self.state {
-            Some(State::Row) => {},
-            _ => return Ok(None),
+            Some(State::Done) => return Ok(None),
+            None => {
+                try!(self.statement.reset());
+                self.state = Some(try!(self.statement.step()));
+                return self.next();
+            },
+            _ => {},
         }
         let values = match self.values.take() {
             Some(mut values) => {
