@@ -38,10 +38,9 @@ impl Connection {
     ///
     /// The callback is triggered for each row. If the callback returns `false`,
     /// no more rows will be processed. For large queries and non-string data
-    /// types, prepared statement are highly preferable; see `iterate` and
-    /// `prepare`.
+    /// types, prepared statement are highly preferable; see `prepare`.
     #[inline]
-    pub fn process<T: AsRef<str>, F>(&self, statement: T, callback: F) -> Result<()>
+    pub fn iterate<T: AsRef<str>, F>(&self, statement: T, callback: F) -> Result<()>
         where F: FnMut(&[(&str, Option<&str>)]) -> bool
     {
         unsafe {

@@ -18,7 +18,7 @@ fn connection_error() {
 }
 
 #[test]
-fn connection_process() {
+fn connection_iterate() {
     macro_rules! pair(
         ($one:expr, $two:expr) => (($one, Some($two)));
     );
@@ -27,7 +27,7 @@ fn connection_process() {
 
     let mut done = false;
     let statement = "SELECT * FROM users";
-    ok!(connection.process(statement, |pairs| {
+    ok!(connection.iterate(statement, |pairs| {
         assert_eq!(pairs.len(), 4);
         assert_eq!(pairs[0], pair!("id", "1"));
         assert_eq!(pairs[1], pair!("name", "Alice"));

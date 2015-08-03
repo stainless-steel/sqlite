@@ -13,7 +13,7 @@
 //!     INSERT INTO users (name, age) VALUES ('Bob', 69);
 //! ").unwrap();
 //!
-//! connection.process("SELECT * FROM users WHERE age > 50", |pairs| {
+//! connection.iterate("SELECT * FROM users WHERE age > 50", |pairs| {
 //!     for &(column, value) in pairs.iter() {
 //!         println!("{} = {}", column, value.unwrap());
 //!     }
