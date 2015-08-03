@@ -1,7 +1,7 @@
 extern crate sqlite;
 extern crate temporary;
 
-use sqlite::{Connection, State, Type};
+use sqlite::{Connection, State, Type, Value};
 use std::path::Path;
 
 macro_rules! ok(
@@ -26,8 +26,8 @@ fn connection_process() {
     let connection = setup(":memory:");
 
     let mut done = false;
-    let query = "SELECT * FROM users";
-    ok!(connection.process(query, |pairs| {
+    let statement = "SELECT * FROM users";
+    ok!(connection.process(statement, |pairs| {
         assert_eq!(pairs.len(), 4);
         assert_eq!(pairs[0], pair!("id", "1"));
         assert_eq!(pairs[1], pair!("name", "Alice"));
@@ -53,8 +53,8 @@ fn connection_set_busy_handler() {
         thread::spawn(move || {
             let mut connection = ok!(sqlite::open(&path));
             ok!(connection.set_busy_handler(|_| true));
-            let query = "INSERT INTO `users` (id, name, age, photo) VALUES (?, ?, ?, ?)";
-            let mut statement = ok!(connection.prepare(query));
+            let statement = "INSERT INTO `users` (id, name, age, photo) VALUES (?, ?, ?, ?)";
+            let mut statement = ok!(connection.prepare(statement));
             ok!(statement.bind(1, 2i64));
             ok!(statement.bind(2, "Bob"));
             ok!(statement.bind(3, 69.42));
@@ -70,10 +70,24 @@ fn connection_set_busy_handler() {
 }
 
 #[test]
+fn iterator() {
+    let connection = setup(":memory:");
+    let statement = "SELECT id FROM users WHERE id = ?";
+    let mut iterator = ok!(connection.iterate(statement));
+
+    ok!(iterator.start(&[Value::Integer(1)]));
+    assert_eq!(ok!(ok!(iterator.next())), &[Value::Integer(1)]);
+    assert_eq!(ok!(iterator.next()), None);
+
+    ok!(iterator.start(&[Value::Integer(42)]));
+    assert_eq!(ok!(iterator.next()), None);
+}
+
+#[test]
 fn statement_columns() {
     let connection = setup(":memory:");
-    let query = "SELECT * FROM users";
-    let mut statement = ok!(connection.prepare(query));
+    let statement = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(statement));
 
     assert_eq!(statement.columns(), 4);
 
@@ -85,8 +99,8 @@ fn statement_columns() {
 #[test]
 fn statement_kind() {
     let connection = setup(":memory:");
-    let query = "SELECT * FROM users";
-    let mut statement = ok!(connection.prepare(query));
+    let statement = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(statement));
 
     assert_eq!(statement.kind(0), Type::Null);
     assert_eq!(statement.kind(1), Type::Null);
@@ -104,8 +118,8 @@ fn statement_kind() {
 #[test]
 fn statement_bind() {
     let connection = setup(":memory:");
-    let query = "INSERT INTO users (id, name, age, photo) VALUES (?, ?, ?, ?)";
-    let mut statement = ok!(connection.prepare(query));
+    let statement = "INSERT INTO users (id, name, age, photo) VALUES (?, ?, ?, ?)";
+    let mut statement = ok!(connection.prepare(statement));
 
     ok!(statement.bind(1, 2i64));
     ok!(statement.bind(2, "Bob"));
@@ -117,8 +131,8 @@ fn statement_bind() {
 #[test]
 fn statement_read() {
     let connection = setup(":memory:");
-    let query = "SELECT * FROM users";
-    let mut statement = ok!(connection.prepare(query));
+    let statement = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(statement));
 
     assert_eq!(ok!(statement.step()), State::Row);
     assert_eq!(ok!(statement.read::<i64>(0)), 1);

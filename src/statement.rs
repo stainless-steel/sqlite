@@ -172,6 +172,12 @@ impl Bindable for () {
     }
 }
 
+impl<'l, T: Bindable> Bindable for &'l T {
+    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
+        (*self).bind(statement, i)
+    }
+}
+
 impl Readable for Value {
     fn read(statement: &Statement, i: usize) -> Result<Self> {
         Ok(match statement.kind(i) {
@@ -230,10 +236,10 @@ impl Readable for Vec<u8> {
 }
 
 #[inline]
-pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, query: T) -> Result<Statement<'l>> {
+pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, statement: T) -> Result<Statement<'l>> {
     let mut raw0 = 0 as *mut _;
     unsafe {
-        ok!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_cstr!(query.as_ref()).as_ptr(), -1,
+        ok!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_cstr!(statement.as_ref()).as_ptr(), -1,
                                           &mut raw0, 0 as *mut _));
     }
     Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })

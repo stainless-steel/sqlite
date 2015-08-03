@@ -3,9 +3,9 @@ use libc::{c_char, c_int, c_void};
 use std::marker::PhantomData;
 use std::path::Path;
 
-use {Result, Statement};
+use {Iterator, Result, Statement};
 
-/// A connection to a database.
+/// A database connection.
 pub struct Connection {
     raw: *mut ffi::sqlite3,
     busy_callback: Option<Box<FnMut(usize) -> bool>>,
@@ -24,28 +24,29 @@ impl Connection {
         Ok(Connection { raw: raw, busy_callback: None, phantom: PhantomData })
     }
 
-    /// Execute a query without processing the resulting rows if any.
+    /// Execute a statement without processing the resulting rows if any.
     #[inline]
-    pub fn execute<T: AsRef<str>>(&self, query: T) -> Result<()> {
+    pub fn execute<T: AsRef<str>>(&self, statement: T) -> Result<()> {
         unsafe {
-            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(query.as_ref()).as_ptr(), None,
-                                            0 as *mut _, 0 as *mut _));
+            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(statement.as_ref()).as_ptr(),
+                                            None, 0 as *mut _, 0 as *mut _));
         }
         Ok(())
     }
 
-    /// Execute a query and process the resulting rows if any.
+    /// Execute a statement and process the resulting rows as plain text.
     ///
     /// The callback is triggered for each row. If the callback returns `false`,
     /// no more rows will be processed. For large queries and non-string data
-    /// types, prepared statement are highly preferable; see `prepare`.
+    /// types, prepared statement are highly preferable; see `iterate` and
+    /// `prepare`.
     #[inline]
-    pub fn process<T: AsRef<str>, F>(&self, query: T, callback: F) -> Result<()>
+    pub fn process<T: AsRef<str>, F>(&self, statement: T, callback: F) -> Result<()>
         where F: FnMut(&[(&str, Option<&str>)]) -> bool
     {
         unsafe {
             let callback = Box::new(callback);
-            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(query.as_ref()).as_ptr(),
+            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(statement.as_ref()).as_ptr(),
                                             Some(process_callback::<F>),
                                             &*callback as *const F as *mut F as *mut _,
                                             0 as *mut _));
@@ -55,8 +56,15 @@ impl Connection {
 
     /// Create a prepared statement.
     #[inline]
-    pub fn prepare<'l, T: AsRef<str>>(&'l self, query: T) -> Result<Statement<'l>> {
-        ::statement::new(self.raw, query)
+    pub fn prepare<'l, T: AsRef<str>>(&'l self, statement: T) -> Result<Statement<'l>> {
+        ::statement::new(self.raw, statement)
+    }
+
+    /// Create a reusable iterator over the resulting rows of a prepared
+    /// statement.
+    #[inline]
+    pub fn iterate<'l, T: AsRef<str>>(&'l self, statement: T) -> Result<Iterator<'l>> {
+        ::iterator::new(try!(::statement::new(self.raw, statement)))
     }
 
     /// Set a callback for handling busy events.

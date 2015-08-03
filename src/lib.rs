@@ -163,9 +163,11 @@ impl error::Error for Error {
 }
 
 mod connection;
+mod iterator;
 mod statement;
 
 pub use connection::Connection;
+pub use iterator::Iterator;
 pub use statement::{Statement, State, Bindable, Readable};
 
 /// Open a connection to a new or existing database.
