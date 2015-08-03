@@ -70,18 +70,18 @@ fn connection_set_busy_handler() {
 }
 
 #[test]
-fn iterator() {
+fn cursor() {
     let connection = setup(":memory:");
     let statement = "SELECT id, name FROM users WHERE id = ?";
-    let mut iterator = ok!(connection.prepare(statement)).into_iter().unwrap();
+    let mut cursor = ok!(connection.prepare(statement)).cursor().unwrap();
 
-    ok!(iterator.bind(&[Value::Integer(1)]));
-    assert_eq!(ok!(ok!(iterator.next())), &[Value::Integer(1),
+    ok!(cursor.bind(&[Value::Integer(1)]));
+    assert_eq!(ok!(ok!(cursor.next())), &[Value::Integer(1),
                                             Value::String("Alice".to_string())]);
-    assert_eq!(ok!(iterator.next()), None);
+    assert_eq!(ok!(cursor.next()), None);
 
-    ok!(iterator.bind(&[Value::Integer(42)]));
-    assert_eq!(ok!(iterator.next()), None);
+    ok!(cursor.bind(&[Value::Integer(42)]));
+    assert_eq!(ok!(cursor.next()), None);
 }
 
 #[test]

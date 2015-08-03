@@ -1,14 +1,14 @@
 use statement::{State, Statement, Bindable, Readable};
 use {Result, Value};
 
-/// An iterator over the resulting rows of a prepared statement.
-pub struct Iterator<'l> {
+/// An iterator over rows.
+pub struct Cursor<'l> {
     state: Option<State>,
     values: Option<Vec<Value>>,
     statement: Statement<'l>,
 }
 
-impl<'l> Iterator<'l> {
+impl<'l> Cursor<'l> {
     /// Bind values to all parameters.
     pub fn bind(&mut self, values: &[Value]) -> Result<()> {
         try!(self.statement.reset());
@@ -51,6 +51,6 @@ impl<'l> Iterator<'l> {
 }
 
 #[inline]
-pub fn new<'l>(statement: Statement<'l>) -> Result<Iterator<'l>> {
-    Ok(Iterator { state: None, values: None, statement: statement })
+pub fn new<'l>(statement: Statement<'l>) -> Result<Cursor<'l>> {
+    Ok(Cursor { state: None, values: None, statement: statement })
 }

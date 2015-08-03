@@ -60,7 +60,7 @@ while let State::Row = statement.next().unwrap() {
 }
 ```
 
-The same example using iterators:
+The same example using cursors:
 
 ```rust
 use sqlite::Value;
@@ -71,23 +71,23 @@ connection.execute("
     CREATE TABLE users (name TEXT, age INTEGER)
 ").unwrap();
 
-let mut iterator = connection.prepare("
+let mut cursor = connection.prepare("
     INSERT INTO users (name, age) VALUES (?, ?)
-").unwrap().into_iter().unwrap();
+").unwrap().cursor().unwrap();
 
-iterator.bind(&[
+cursor.bind(&[
     Value::String("Alice".to_string()), Value::Integer(42),
 ]).unwrap();
 
-iterator.bind(&[
+cursor.bind(&[
     Value::String("Bob".to_string()), Value::Integer(69),
 ]).unwrap();
 
-let mut iterator = connection.prepare("
+let mut cursor = connection.prepare("
     SELECT * FROM users WHERE age > 50
-").unwrap().into_iter().unwrap();
+").unwrap().cursor().unwrap();
 
-while let Some(row) = iterator.next().unwrap() {
+while let Some(row) = cursor.next().unwrap() {
     match (&row[0], &row[1]) {
         (&Value::String(ref name), &Value::Integer(age)) => {
             println!("name = {}", name);

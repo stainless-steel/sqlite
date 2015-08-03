@@ -56,7 +56,7 @@
 //! }
 //! ```
 //!
-//! The same example using iterators:
+//! The same example using cursors:
 //!
 //! ```
 //! use sqlite::Value;
@@ -67,23 +67,23 @@
 //!     CREATE TABLE users (name TEXT, age INTEGER)
 //! ").unwrap();
 //!
-//! let mut iterator = connection.prepare("
+//! let mut cursor = connection.prepare("
 //!     INSERT INTO users (name, age) VALUES (?, ?)
-//! ").unwrap().into_iter().unwrap();
+//! ").unwrap().cursor().unwrap();
 //!
-//! iterator.bind(&[
+//! cursor.bind(&[
 //!     Value::String("Alice".to_string()), Value::Integer(42),
 //! ]).unwrap();
 //!
-//! iterator.bind(&[
+//! cursor.bind(&[
 //!     Value::String("Bob".to_string()), Value::Integer(69),
 //! ]).unwrap();
 //!
-//! let mut iterator = connection.prepare("
+//! let mut cursor = connection.prepare("
 //!     SELECT * FROM users WHERE age > 50
-//! ").unwrap().into_iter().unwrap();
+//! ").unwrap().cursor().unwrap();
 //!
-//! while let Some(row) = iterator.next().unwrap() {
+//! while let Some(row) = cursor.next().unwrap() {
 //!     match (&row[0], &row[1]) {
 //!         (&Value::String(ref name), &Value::Integer(age)) => {
 //!             println!("name = {}", name);
@@ -214,11 +214,11 @@ impl error::Error for Error {
 }
 
 mod connection;
-mod iterator;
+mod cursor;
 mod statement;
 
 pub use connection::Connection;
-pub use iterator::Iterator;
+pub use cursor::Cursor;
 pub use statement::{Statement, State, Bindable, Readable};
 
 /// Open a connection to a new or existing database.

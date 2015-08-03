@@ -2,7 +2,7 @@ use ffi;
 use libc::{c_double, c_int};
 use std::marker::PhantomData;
 
-use {Iterator, Result, Type, Value};
+use {Cursor, Result, Type, Value};
 
 /// A prepared statement.
 pub struct Statement<'l> {
@@ -101,10 +101,10 @@ impl<'l> Statement<'l> {
         Ok(())
     }
 
-    /// Upgrade to an iterator.
+    /// Upgrade to a cursor.
     #[inline]
-    pub fn into_iter(self) -> Result<Iterator<'l>> {
-        ::iterator::new(self)
+    pub fn cursor(self) -> Result<Cursor<'l>> {
+        ::cursor::new(self)
     }
 }
 
