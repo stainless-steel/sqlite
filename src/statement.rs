@@ -199,7 +199,7 @@ impl Readable for Value {
             Type::Binary => Value::Binary(try!(Readable::read(statement, i))),
             Type::Float => Value::Float(try!(Readable::read(statement, i))),
             Type::Integer => Value::Integer(try!(Readable::read(statement, i))),
-            Type::String => Value::Binary(try!(Readable::read(statement, i))),
+            Type::String => Value::String(try!(Readable::read(statement, i))),
             Type::Null => Value::Null,
         })
     }

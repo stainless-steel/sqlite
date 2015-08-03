@@ -72,11 +72,12 @@ fn connection_set_busy_handler() {
 #[test]
 fn iterator() {
     let connection = setup(":memory:");
-    let statement = "SELECT id FROM users WHERE id = ?";
+    let statement = "SELECT id, name FROM users WHERE id = ?";
     let mut iterator = ok!(connection.prepare(statement)).into_iter().unwrap();
 
     ok!(iterator.start(&[Value::Integer(1)]));
-    assert_eq!(ok!(ok!(iterator.next())), &[Value::Integer(1)]);
+    assert_eq!(ok!(ok!(iterator.next())), &[Value::Integer(1),
+                                            Value::String("Alice".to_string())]);
     assert_eq!(ok!(iterator.next()), None);
 
     ok!(iterator.start(&[Value::Integer(42)]));
