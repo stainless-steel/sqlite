@@ -49,6 +49,12 @@ impl<'l> Cursor<'l> {
         self.values = Some(values);
         Ok(Some(self.values.as_ref().unwrap()))
     }
+
+    /// Return the number of columns.
+    #[inline]
+    pub fn columns(&self) -> usize {
+        self.statement.columns()
+    }
 }
 
 #[inline]
