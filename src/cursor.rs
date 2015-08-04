@@ -32,7 +32,21 @@ impl<'l> Cursor<'l> {
         let values = match self.values.take() {
             Some(mut values) => {
                 for (i, value) in values.iter_mut().enumerate() {
-                    *value = try!(self.statement.read(i));
+                    match value {
+                        &mut Value::Binary(ref mut value) => {
+                            *value = try!(self.statement.read(i));
+                        },
+                        &mut Value::Float(ref mut value) => {
+                            *value = try!(self.statement.read(i));
+                        },
+                        &mut Value::Integer(ref mut value) => {
+                            *value = try!(self.statement.read(i));
+                        },
+                        &mut Value::String(ref mut value) => {
+                            *value = try!(self.statement.read(i));
+                        },
+                        &mut Value::Null => {},
+                    }
                 }
                 values
             },
