@@ -174,7 +174,7 @@ pub enum Value {
     Binary(Vec<u8>),
     /// A floating-point number.
     Float(f64),
-    /// An integer.
+    /// An integer number.
     Integer(i64),
     /// A string.
     String(String),
@@ -199,6 +199,44 @@ impl error::Error for Error {
             Some(ref message) => message,
             _ => "an SQLite error",
         }
+    }
+}
+
+impl Value {
+    /// Return the binary data if the value is `Binary`.
+    #[inline]
+    pub fn as_binary(&self) -> Option<&[u8]> {
+        if let &Value::Binary(ref value) = self {
+            return Some(value);
+        }
+        None
+    }
+
+    /// Return the floating-point number if the value is `Float`.
+    #[inline]
+    pub fn as_float(&self) -> Option<f64> {
+        if let &Value::Float(value) = self {
+            return Some(value);
+        }
+        None
+    }
+
+    /// Return the integer number if the value is `Integer`.
+    #[inline]
+    pub fn as_integer(&self) -> Option<i64> {
+        if let &Value::Integer(value) = self {
+            return Some(value);
+        }
+        None
+    }
+
+    /// Return the string if the value is `String`.
+    #[inline]
+    pub fn as_string(&self) -> Option<&str> {
+        if let &Value::String(ref value) = self {
+            return Some(value);
+        }
+        None
     }
 }
 
