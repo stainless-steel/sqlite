@@ -52,6 +52,6 @@ impl<'l> Cursor<'l> {
 }
 
 #[inline]
-pub fn new<'l>(statement: Statement<'l>) -> Result<Cursor<'l>> {
-    Ok(Cursor { state: None, values: None, statement: statement })
+pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
+    Cursor { state: None, values: None, statement: statement }
 }

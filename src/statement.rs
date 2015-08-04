@@ -103,7 +103,7 @@ impl<'l> Statement<'l> {
 
     /// Upgrade to a cursor.
     #[inline]
-    pub fn cursor(self) -> Result<Cursor<'l>> {
+    pub fn cursor(self) -> Cursor<'l> {
         ::cursor::new(self)
     }
 }

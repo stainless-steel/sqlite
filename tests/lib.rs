@@ -73,7 +73,7 @@ fn connection_set_busy_handler() {
 fn cursor() {
     let connection = setup(":memory:");
     let statement = "SELECT id, name FROM users WHERE id = ?";
-    let mut cursor = ok!(connection.prepare(statement)).cursor().unwrap();
+    let mut cursor = ok!(connection.prepare(statement)).cursor();
 
     ok!(cursor.bind(&[Value::Integer(1)]));
     assert_eq!(ok!(ok!(cursor.next())), &[Value::Integer(1), Value::String("Alice".to_string())]);

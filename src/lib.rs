@@ -68,7 +68,7 @@
 //!
 //! let mut cursor = connection.prepare("
 //!     SELECT * FROM users WHERE age > ?
-//! ").unwrap().cursor().unwrap();
+//! ").unwrap().cursor();
 //!
 //! cursor.bind(&[Value::Integer(50)]).unwrap();
 //!
