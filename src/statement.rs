@@ -44,12 +44,6 @@ impl<'l> Statement<'l> {
         parameter.bind(self, i)
     }
 
-    /// Return the number of columns.
-    #[inline]
-    pub fn columns(&self) -> usize {
-        unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
-    }
-
     /// Advance to the next state.
     ///
     /// The function should be called multiple times until `State::Done` is
@@ -61,20 +55,6 @@ impl<'l> Statement<'l> {
             code => error!(self.raw.1, code),
         };
         Ok(state)
-    }
-
-    /// Return the type of a column.
-    ///
-    /// The type is revealed after the first step has been taken.
-    pub fn kind(&self, i: usize) -> Type {
-        match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
-            ffi::SQLITE_BLOB => Type::Binary,
-            ffi::SQLITE_FLOAT => Type::Float,
-            ffi::SQLITE_INTEGER => Type::Integer,
-            ffi::SQLITE_TEXT => Type::String,
-            ffi::SQLITE_NULL => Type::Null,
-            _ => unreachable!(),
-        }
     }
 
     /// Read a value from a column.
@@ -90,6 +70,26 @@ impl<'l> Statement<'l> {
     pub fn reset(&mut self) -> Result<()> {
         unsafe { ok!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
         Ok(())
+    }
+
+    /// Return the number of columns.
+    #[inline]
+    pub fn columns(&self) -> usize {
+        unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
+    }
+
+    /// Return the type of a column.
+    ///
+    /// The type is revealed after the first step has been taken.
+    pub fn kind(&self, i: usize) -> Type {
+        match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
+            ffi::SQLITE_BLOB => Type::Binary,
+            ffi::SQLITE_FLOAT => Type::Float,
+            ffi::SQLITE_INTEGER => Type::Integer,
+            ffi::SQLITE_TEXT => Type::String,
+            ffi::SQLITE_NULL => Type::Null,
+            _ => unreachable!(),
+        }
     }
 
     /// Upgrade to a cursor.
