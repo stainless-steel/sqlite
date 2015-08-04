@@ -233,6 +233,17 @@ impl Value {
         }
         None
     }
+
+    /// Return the type.
+    pub fn kind(&self) -> Type {
+        match self {
+            &Value::Binary(_) => Type::Binary,
+            &Value::Float(_) => Type::Float,
+            &Value::Integer(_) => Type::Integer,
+            &Value::String(_) => Type::String,
+            &Value::Null => Type::Null,
+        }
+    }
 }
 
 mod connection;
