@@ -70,7 +70,7 @@ fn connection_set_busy_handler() {
 }
 
 #[test]
-fn cursor() {
+fn cursor_workflow() {
     let connection = setup(":memory:");
     let statement = "SELECT id, name FROM users WHERE id = ?";
     let mut cursor = ok!(connection.prepare(statement)).cursor();
