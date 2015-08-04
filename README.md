@@ -59,13 +59,8 @@ let mut cursor = connection.prepare("
 cursor.bind(&[Value::Integer(50)]).unwrap();
 
 while let Some(row) = cursor.next().unwrap() {
-    match (&row[0], &row[1]) {
-        (&Value::String(ref name), &Value::Integer(age)) => {
-            println!("name = {}", name);
-            println!("age = {}", age);
-        },
-        _ => unreachable!(),
-    }
+    println!("name = {}", row[0].as_string().unwrap());
+    println!("age = {}", row[1].as_integer().unwrap());
 }
 ```
 
