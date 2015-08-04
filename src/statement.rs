@@ -6,7 +6,6 @@ use {Cursor, Result, Type, Value};
 
 /// A prepared statement.
 pub struct Statement<'l> {
-    state: Option<State>,
     raw: (*mut ffi::sqlite3_stmt, *mut ffi::sqlite3),
     phantom: PhantomData<(ffi::sqlite3_stmt, &'l ffi::sqlite3)>,
 }
@@ -61,14 +60,7 @@ impl<'l> Statement<'l> {
             ffi::SQLITE_DONE => State::Done,
             code => error!(self.raw.1, code),
         };
-        self.state = Some(state);
         Ok(state)
-    }
-
-    /// Return the current state.
-    #[inline]
-    pub fn state(&self) -> Option<State> {
-        self.state
     }
 
     /// Return the type of a column.
@@ -97,7 +89,6 @@ impl<'l> Statement<'l> {
     #[inline]
     pub fn reset(&mut self) -> Result<()> {
         unsafe { ok!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
-        self.state = None;
         Ok(())
     }
 
@@ -257,5 +248,5 @@ pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, statement: T) -> Result<S
         ok!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_cstr!(statement.as_ref()).as_ptr(), -1,
                                           &mut raw0, 0 as *mut _));
     }
-    Ok(Statement { state: None, raw: (raw0, raw1), phantom: PhantomData })
+    Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })
 }
