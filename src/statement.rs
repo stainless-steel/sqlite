@@ -28,7 +28,7 @@ pub trait Bindable {
 }
 
 /// A type suitable for reading from a prepared statement.
-pub trait Readable {
+pub trait Readable: Sized {
     /// Read from a column.
     ///
     /// The leftmost column has the index 0.
