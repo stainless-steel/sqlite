@@ -1,6 +1,6 @@
 [package]
 name = "sqlite"
-version = "0.19.6"
+version = "0.19.7"
 authors = ["Ivan Ukhov <ivan.ukhov@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/stainless-steel/sqlite"
@@ -10,8 +10,8 @@ description = "The package provides an interface to SQLite."
 build = "build.rs"
 
 [dependencies]
-libc = "*"
+libc = "0.2"
 sqlite3-sys = "0.6"
 
 [dev-dependencies]
-temporary = "*"
+temporary = "0.5"
