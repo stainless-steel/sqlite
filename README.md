@@ -72,7 +72,7 @@ while let Some(row) = cursor.next().unwrap() {
 
 [1]: https://www.sqlite.org
 
-[version-img]: http://stainless-steel.github.io/images/crates.svg
+[version-img]: https://img.shields.io/crates/v/sqlite.svg
 [version-url]: https://crates.io/crates/sqlite
 [status-img]: https://travis-ci.org/stainless-steel/sqlite.svg?branch=master
 [status-url]: https://travis-ci.org/stainless-steel/sqlite
