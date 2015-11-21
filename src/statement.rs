@@ -1,9 +1,11 @@
 use ffi;
-use libc::{c_double, c_int, c_void};
-use std::ffi::CString;
+use libc::{c_double, c_int};
 use std::marker::PhantomData;
 
 use {Cursor, Result, Type, Value};
+
+// https://sqlite.org/c3ref/c_static.html
+macro_rules! transient(() => (::std::mem::transmute(!0 as *const ::libc::c_void)));
 
 /// A prepared statement.
 pub struct Statement<'l> {
@@ -126,7 +128,8 @@ impl<'l> Bindable for &'l [u8] {
         unsafe {
             ok!(statement.raw.1, ffi::sqlite3_bind_blob(statement.raw.0, i as c_int,
                                                         self.as_ptr() as *const _,
-                                                        self.len() as c_int, None));
+                                                        self.len() as c_int,
+                                                        transient!()));
         }
         Ok(())
     }
@@ -162,8 +165,9 @@ impl<'l> Bindable for &'l str {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             ok!(statement.raw.1, ffi::sqlite3_bind_text(statement.raw.0, i as c_int,
-                                                        str_to_cstr!(self).into_raw(), -1,
-                                                        Some(drop_cstring)));
+                                                        self.as_ptr() as *const _,
+                                                        self.len() as c_int,
+                                                        transient!()));
         }
         Ok(())
     }
@@ -245,8 +249,4 @@ pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, statement: T) -> Result<S
                                           &mut raw0, 0 as *mut _));
     }
     Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })
-}
-
-extern "C" fn drop_cstring(pointer: *mut c_void) {
-    let _ = unsafe { CString::from_raw(pointer as *mut _) };
 }
