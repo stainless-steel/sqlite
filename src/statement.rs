@@ -1,5 +1,6 @@
 use ffi;
-use libc::{c_double, c_int};
+use libc::{c_double, c_int, c_void};
+use std::ffi::CString;
 use std::marker::PhantomData;
 
 use {Cursor, Result, Type, Value};
@@ -161,7 +162,8 @@ impl<'l> Bindable for &'l str {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             ok!(statement.raw.1, ffi::sqlite3_bind_text(statement.raw.0, i as c_int,
-                                                        str_to_cstr!(*self).as_ptr(), -1, None));
+                                                        str_to_cstr!(*self).into_raw(), -1,
+                                                        Some(drop_cstring)));
         }
         Ok(())
     }
@@ -249,4 +251,8 @@ pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, statement: T) -> Result<S
                                           &mut raw0, 0 as *mut _));
     }
     Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })
+}
+
+extern "C" fn drop_cstring(pointer: *mut c_void) {
+    let _ = unsafe { CString::from_raw(pointer as *mut _) };
 }
