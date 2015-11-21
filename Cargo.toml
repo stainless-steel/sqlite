@@ -1,7 +1,10 @@
 [package]
 name = "sqlite"
 version = "0.19.7"
-authors = ["Ivan Ukhov <ivan.ukhov@gmail.com>"]
+authors = [
+  "Ivan Ukhov <ivan.ukhov@gmail.com>",
+  "Jake Kerr <kodafox@gmail.com>",
+]
 license = "MIT"
 repository = "https://github.com/stainless-steel/sqlite"
 homepage = "https://github.com/stainless-steel/sqlite"
