@@ -4,13 +4,11 @@ extern crate temporary;
 use sqlite::{Connection, State, Type, Value};
 use std::path::Path;
 
-macro_rules! ok(
-    ($result:expr) => ($result.unwrap());
-);
+macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[test]
 fn connection_error() {
-    let connection = setup(":memory:");
+    let connection = setup_users(":memory:");
     match connection.execute(":)") {
         Err(error) => assert_eq!(error.message, Some(String::from(r#"unrecognized token: ":""#))),
         _ => unreachable!(),
@@ -23,7 +21,7 @@ fn connection_iterate() {
         ($one:expr, $two:expr) => (($one, Some($two)));
     );
 
-    let connection = setup(":memory:");
+    let connection = setup_users(":memory:");
 
     let mut done = false;
     let statement = "SELECT * FROM users";
@@ -46,7 +44,7 @@ fn connection_set_busy_handler() {
 
     let directory = ok!(Directory::new("sqlite"));
     let path = directory.path().join("database.sqlite3");
-    setup(&path);
+    setup_users(&path);
 
     let guards = (0..100).map(|_| {
         let path = path.to_path_buf();
@@ -65,13 +63,42 @@ fn connection_set_busy_handler() {
     }).collect::<Vec<_>>();
 
     for guard in guards {
-        assert!(guard.join().unwrap());
+        assert!(ok!(guard.join()));
     }
 }
 
 #[test]
+fn cursor_wildcard_with_binding() {
+    let connection = setup_english(":memory:");
+    let statement = "SELECT value FROM english WHERE value LIKE ?";
+    let mut statement = ok!(connection.prepare(statement));
+    ok!(statement.bind(1, "%type"));
+
+    let mut count = 0;
+    let mut cursor = statement.cursor();
+    while let Some(_) = ok!(cursor.next()) {
+        count += 1;
+    }
+    assert_eq!(count, 6);
+}
+
+#[test]
+fn cursor_wildcard_without_binding() {
+    let connection = setup_english(":memory:");
+    let statement = "SELECT value FROM english WHERE value LIKE '%type'";
+    let statement = ok!(connection.prepare(statement));
+
+    let mut count = 0;
+    let mut cursor = statement.cursor();
+    while let Some(_) = ok!(cursor.next()) {
+        count += 1;
+    }
+    assert_eq!(count, 6);
+}
+
+#[test]
 fn cursor_workflow() {
-    let connection = setup(":memory:");
+    let connection = setup_users(":memory:");
     let statement = "SELECT id, name FROM users WHERE id = ?";
     let mut cursor = ok!(connection.prepare(statement)).cursor();
 
@@ -89,7 +116,7 @@ fn cursor_workflow() {
 
 #[test]
 fn statement_columns() {
-    let connection = setup(":memory:");
+    let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));
 
@@ -102,7 +129,7 @@ fn statement_columns() {
 
 #[test]
 fn statement_kind() {
-    let connection = setup(":memory:");
+    let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));
 
@@ -121,7 +148,7 @@ fn statement_kind() {
 
 #[test]
 fn statement_bind() {
-    let connection = setup(":memory:");
+    let connection = setup_users(":memory:");
     let statement = "INSERT INTO users (id, name, age, photo) VALUES (?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(statement));
 
@@ -134,7 +161,7 @@ fn statement_bind() {
 
 #[test]
 fn statement_read() {
-    let connection = setup(":memory:");
+    let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));
 
@@ -147,77 +174,52 @@ fn statement_read() {
 }
 
 #[test]
-fn wildcard_prepared_statement() {
-    let connection = setup_english_table();
+fn statement_wildcard_with_binding() {
+    let connection = setup_english(":memory:");
+    let statement = "SELECT value FROM english WHERE value LIKE ?";
+    let mut statement = ok!(connection.prepare(statement));
+    ok!(statement.bind(1, "%type"));
 
-    let mut no_bind = connection.prepare(
-        "SELECT value from english where value like '%type'").unwrap();
-
-    let mut with_bind = connection.prepare(
-        "SELECT value from english where value like ?").unwrap();
-    ok!(with_bind.bind(1, "%type"));
-
-    let mut no_bind_count = 0;
-    let mut with_bind_count = 0;
-    while let State::Row = no_bind.next().unwrap() {
-        no_bind_count += 1;
+    let mut count = 0;
+    while let State::Row = ok!(statement.next()) {
+        count += 1;
     }
-    while let State::Row = with_bind.next().unwrap() {
-        with_bind_count += 1;
-    }
-    assert_eq!(no_bind_count, 6);
-    assert_eq!(with_bind_count, 6);
+    assert_eq!(count, 6);
 }
 
 #[test]
-fn wildcard_cursor() {
-    // Like wildcard_prepared_statement but upgrade the statements to
-    // cursors.
-    let connection = setup_english_table();
+fn statement_wildcard_without_binding() {
+    let connection = setup_english(":memory:");
+    let statement = "SELECT value FROM english WHERE value LIKE '%type'";
+    let mut statement = ok!(connection.prepare(statement));
 
-    let no_bind = connection.prepare(
-        "SELECT value from english where value like '%type'").unwrap();
-
-    let mut with_bind = connection.prepare(
-        "SELECT value from english where value like ?").unwrap();
-    ok!(with_bind.bind(1, "%type"));
-
-    let mut no_bind_count = 0;
-    let mut with_bind_count = 0;
-
-    let mut cur = no_bind.cursor();
-    while let Some(_) = cur.next().unwrap() {
-        no_bind_count += 1;
+    let mut count = 0;
+    while let State::Row = ok!(statement.next()) {
+        count += 1;
     }
-
-    let mut cur = with_bind.cursor();
-    while let Some(_) = cur.next().unwrap() {
-        with_bind_count += 1;
-    }
-
-    assert_eq!(no_bind_count, 6);
-    assert_eq!(with_bind_count, 6);
+    assert_eq!(count, 6);
 }
 
-fn setup<T: AsRef<Path>>(path: T) -> Connection {
+fn setup_english<T: AsRef<Path>>(path: T) -> Connection {
     let connection = ok!(sqlite::open(path));
     ok!(connection.execute("
-        CREATE TABLE users (id INTEGER, name TEXT, age REAL, photo BLOB);
-        INSERT INTO users (id, name, age, photo) VALUES (1, 'Alice', 42.69, X'4269');
+        CREATE TABLE english (value TEXT);
+        INSERT INTO english (value) VALUES ('cerotype');
+        INSERT INTO english (value) VALUES ('metatype');
+        INSERT INTO english (value) VALUES ('ozotype');
+        INSERT INTO english (value) VALUES ('phenotype');
+        INSERT INTO english (value) VALUES ('plastotype');
+        INSERT INTO english (value) VALUES ('undertype');
+        INSERT INTO english (value) VALUES ('nonsence');
     "));
     connection
 }
 
-fn setup_english_table() -> Connection {
-    let connection = ok!(sqlite::open(":memory:"));
+fn setup_users<T: AsRef<Path>>(path: T) -> Connection {
+    let connection = ok!(sqlite::open(path));
     ok!(connection.execute("
-        CREATE TABLE english (value TEXT);
-        INSERT INTO english VALUES('cerotype');
-        INSERT INTO english VALUES('metatype');
-        INSERT INTO english VALUES('ozotype');
-        INSERT INTO english VALUES('phenotype');
-        INSERT INTO english VALUES('plastotype');
-        INSERT INTO english VALUES('undertype');
+        CREATE TABLE users (id INTEGER, name TEXT, age REAL, photo BLOB);
+        INSERT INTO users (id, name, age, photo) VALUES (1, 'Alice', 42.69, X'4269');
     "));
     connection
 }
