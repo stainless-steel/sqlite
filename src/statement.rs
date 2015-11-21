@@ -41,8 +41,8 @@ impl<'l> Statement<'l> {
     ///
     /// The leftmost parameter has the index 1.
     #[inline]
-    pub fn bind<T: Bindable>(&mut self, i: usize, parameter: T) -> Result<()> {
-        parameter.bind(self, i)
+    pub fn bind<T: Bindable>(&mut self, i: usize, value: T) -> Result<()> {
+        value.bind(self, i)
     }
 
     /// Advance to the next state.
