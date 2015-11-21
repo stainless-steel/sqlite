@@ -146,11 +146,78 @@ fn statement_read() {
     assert_eq!(ok!(statement.next()), State::Done);
 }
 
+#[test]
+fn wildcard_prepared_statement() {
+    let connection = setup_english_table();
+
+    let mut no_bind = connection.prepare(
+        "SELECT value from english where value like '%type'").unwrap();
+
+    let mut with_bind = connection.prepare(
+        "SELECT value from english where value like ?").unwrap();
+    ok!(with_bind.bind(1, "%type"));
+
+    let mut no_bind_count = 0;
+    let mut with_bind_count = 0;
+    while let State::Row = no_bind.next().unwrap() {
+        no_bind_count += 1;
+    }
+    while let State::Row = with_bind.next().unwrap() {
+        with_bind_count += 1;
+    }
+    assert_eq!(no_bind_count, 6);
+    assert_eq!(with_bind_count, 6);
+}
+
+#[test]
+fn wildcard_cursor() {
+    // Like wildcard_prepared_statement but upgrade the statements to
+    // cursors.
+    let connection = setup_english_table();
+
+    let no_bind = connection.prepare(
+        "SELECT value from english where value like '%type'").unwrap();
+
+    let mut with_bind = connection.prepare(
+        "SELECT value from english where value like ?").unwrap();
+    ok!(with_bind.bind(1, "%type"));
+
+    let mut no_bind_count = 0;
+    let mut with_bind_count = 0;
+
+    let mut cur = no_bind.cursor();
+    while let Some(_) = cur.next().unwrap() {
+        no_bind_count += 1;
+    }
+
+    let mut cur = with_bind.cursor();
+    while let Some(_) = cur.next().unwrap() {
+        with_bind_count += 1;
+    }
+
+    assert_eq!(no_bind_count, 6);
+    assert_eq!(with_bind_count, 6);
+}
+
 fn setup<T: AsRef<Path>>(path: T) -> Connection {
     let connection = ok!(sqlite::open(path));
     ok!(connection.execute("
         CREATE TABLE users (id INTEGER, name TEXT, age REAL, photo BLOB);
         INSERT INTO users (id, name, age, photo) VALUES (1, 'Alice', 42.69, X'4269');
+    "));
+    connection
+}
+
+fn setup_english_table() -> Connection {
+    let connection = ok!(sqlite::open(":memory:"));
+    ok!(connection.execute("
+        CREATE TABLE english (value TEXT);
+        INSERT INTO english VALUES('cerotype');
+        INSERT INTO english VALUES('metatype');
+        INSERT INTO english VALUES('ozotype');
+        INSERT INTO english VALUES('phenotype');
+        INSERT INTO english VALUES('plastotype');
+        INSERT INTO english VALUES('undertype');
     "));
     connection
 }
