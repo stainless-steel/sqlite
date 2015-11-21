@@ -5,6 +5,16 @@ rust:
   - beta
   - nightly
 
+script:
+  - if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
+      cargo bench;
+      cargo build;
+      cargo test;
+    else
+      cargo build;
+      cargo test;
+    fi
+
 after_success:
   - curl https://stainless-steel.github.io/travis/after_success.sh | bash
 
