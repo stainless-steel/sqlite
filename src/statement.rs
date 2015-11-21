@@ -25,7 +25,7 @@ pub trait Bindable {
     /// Bind to a parameter.
     ///
     /// The leftmost parameter has the index 1.
-    fn bind(&self, &mut Statement, usize) -> Result<()>;
+    fn bind(self, &mut Statement, usize) -> Result<()>;
 }
 
 /// A type suitable for reading from a prepared statement.
@@ -107,8 +107,8 @@ impl<'l> Drop for Statement<'l> {
     }
 }
 
-impl Bindable for Value {
-    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
+impl<'l> Bindable for &'l Value {
+    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         match self {
             &Value::Binary(ref value) => (value as &[u8]).bind(statement, i),
             &Value::Float(value) => value.bind(statement, i),
@@ -121,7 +121,7 @@ impl Bindable for Value {
 
 impl<'l> Bindable for &'l [u8] {
     #[inline]
-    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
+    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             ok!(statement.raw.1, ffi::sqlite3_bind_blob(statement.raw.0, i as c_int,
@@ -134,11 +134,11 @@ impl<'l> Bindable for &'l [u8] {
 
 impl Bindable for f64 {
     #[inline]
-    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
+    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             ok!(statement.raw.1, ffi::sqlite3_bind_double(statement.raw.0, i as c_int,
-                                                          *self as c_double));
+                                                          self as c_double));
         }
         Ok(())
     }
@@ -146,11 +146,11 @@ impl Bindable for f64 {
 
 impl Bindable for i64 {
     #[inline]
-    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
+    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             ok!(statement.raw.1, ffi::sqlite3_bind_int64(statement.raw.0, i as c_int,
-                                                         *self as ffi::sqlite3_int64));
+                                                         self as ffi::sqlite3_int64));
         }
         Ok(())
     }
@@ -158,11 +158,11 @@ impl Bindable for i64 {
 
 impl<'l> Bindable for &'l str {
     #[inline]
-    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
+    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             ok!(statement.raw.1, ffi::sqlite3_bind_text(statement.raw.0, i as c_int,
-                                                        str_to_cstr!(*self).into_raw(), -1,
+                                                        str_to_cstr!(self).into_raw(), -1,
                                                         Some(drop_cstring)));
         }
         Ok(())
@@ -171,18 +171,12 @@ impl<'l> Bindable for &'l str {
 
 impl Bindable for () {
     #[inline]
-    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
+    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
             ok!(statement.raw.1, ffi::sqlite3_bind_null(statement.raw.0, i as c_int));
         }
         Ok(())
-    }
-}
-
-impl<'l, T: Bindable> Bindable for &'l T {
-    fn bind(&self, statement: &mut Statement, i: usize) -> Result<()> {
-        (*self).bind(statement, i)
     }
 }
 
