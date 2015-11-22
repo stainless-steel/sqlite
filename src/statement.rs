@@ -52,12 +52,11 @@ impl<'l> Statement<'l> {
     /// The function should be called multiple times until `State::Done` is
     /// reached in order to evaluate the statement entirely.
     pub fn next(&mut self) -> Result<State> {
-        let state = match unsafe { ffi::sqlite3_step(self.raw.0) } {
+        Ok(match unsafe { ffi::sqlite3_step(self.raw.0) } {
             ffi::SQLITE_ROW => State::Row,
             ffi::SQLITE_DONE => State::Done,
             code => error!(self.raw.1, code),
-        };
-        Ok(state)
+        })
     }
 
     /// Read a value from a column.
