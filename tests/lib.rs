@@ -99,19 +99,29 @@ fn cursor_wildcard_without_binding() {
 #[test]
 fn cursor_workflow() {
     let connection = setup_users(":memory:");
-    let statement = "SELECT id, name FROM users WHERE id = ?";
-    let mut cursor = ok!(connection.prepare(statement)).cursor();
 
-    ok!(cursor.bind(&[Value::Integer(1)]));
-    assert_eq!(ok!(ok!(cursor.next())), &[Value::Integer(1), Value::String("Alice".to_string())]);
-    assert_eq!(ok!(cursor.next()), None);
+    let select = "SELECT id, name FROM users WHERE id = ?";
+    let mut select = ok!(connection.prepare(select)).cursor();
 
-    ok!(cursor.bind(&[Value::Integer(1)]));
-    assert_eq!(ok!(ok!(cursor.next())), &[Value::Integer(1), Value::String("Alice".to_string())]);
-    assert_eq!(ok!(cursor.next()), None);
+    let insert = "INSERT INTO users (id, name) VALUES (?, ?)";
+    let mut insert = ok!(connection.prepare(insert)).cursor();
 
-    ok!(cursor.bind(&[Value::Integer(42)]));
-    assert_eq!(ok!(cursor.next()), None);
+    for _ in 0..10 {
+        ok!(select.bind(&[Value::Integer(1)]));
+        assert_eq!(ok!(ok!(select.next())), &[Value::Integer(1),
+                                              Value::String("Alice".to_string())]);
+        assert_eq!(ok!(select.next()), None);
+    }
+
+    ok!(select.bind(&[Value::Integer(42)]));
+    assert_eq!(ok!(select.next()), None);
+
+    ok!(insert.bind(&[Value::Integer(42), Value::String("Bob".to_string())]));
+    assert_eq!(ok!(insert.next()), None);
+
+    ok!(select.bind(&[Value::Integer(42)]));
+    assert_eq!(ok!(ok!(select.next())), &[Value::Integer(42), Value::String("Bob".to_string())]);
+    assert_eq!(ok!(select.next()), None);
 }
 
 #[test]
