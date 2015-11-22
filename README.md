@@ -46,7 +46,7 @@ while let State::Row = statement.next().unwrap() {
 }
 ```
 
-The same query example using a cursor, which is a wrapper over a prepared
+The same query example using a cursor, which is a wrapper around a prepared
 statement:
 
 ```rust
