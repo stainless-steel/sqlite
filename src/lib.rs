@@ -54,7 +54,7 @@
 //! }
 //! ```
 //!
-//! The same query example using a cursor, which is a wrapper around a prepared
+//! The same query using a cursor, which is a wrapper around a prepared
 //! statement:
 //!
 //! ```
