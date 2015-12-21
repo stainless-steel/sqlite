@@ -3,22 +3,25 @@
 extern crate sqlite;
 extern crate test;
 
-use sqlite::{Connection, State, Value};
+use sqlite::Value::{Float, Integer};
+use sqlite::{Connection, State};
 use test::Bencher;
+
+macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[bench]
 fn read_cursor(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
-    let mut cursor = connection.prepare("
-        SELECT * FROM data WHERE integer > ? AND real > ?
-    ").unwrap().cursor();
+    let mut cursor = ok!(connection.prepare("
+        SELECT * FROM data WHERE a > ? AND b > ?
+    ")).cursor();
 
     bencher.iter(|| {
-        cursor.bind(&[Value::Integer(42), Value::Float(69.0)]).unwrap();
-        while let Some(row) = cursor.next().unwrap() {
-            assert!(row[0].as_integer().unwrap() > 42);
-            assert!(row[1].as_float().unwrap() > 69.0);
+        ok!(cursor.bind(&[Integer(42), Float(42.0)]));
+        while let Some(row) = ok!(cursor.next()) {
+            assert!(ok!(row[0].as_integer()) > 42);
+            assert!(ok!(row[1].as_float()) > 42.0);
         }
     })
 }
@@ -27,17 +30,17 @@ fn read_cursor(bencher: &mut Bencher) {
 fn read_statement(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
-    let mut statement = connection.prepare("
-        SELECT * FROM data WHERE integer > ? AND real > ?
-    ").unwrap();
+    let mut statement = ok!(connection.prepare("
+        SELECT * FROM data WHERE a > ? AND b > ?
+    "));
 
     bencher.iter(|| {
-        statement.reset().unwrap();
-        statement.bind(1, 42).unwrap();
-        statement.bind(2, 69.0).unwrap();
-        while let State::Row = statement.next().unwrap() {
-            assert!(statement.read::<i64>(0).unwrap() > 42);
-            assert!(statement.read::<f64>(1).unwrap() > 69.0);
+        ok!(statement.reset());
+        ok!(statement.bind(1, 42));
+        ok!(statement.bind(2, 42.0));
+        while let State::Row = ok!(statement.next()) {
+            assert!(ok!(statement.read::<i64>(0)) > 42);
+            assert!(ok!(statement.read::<f64>(1)) > 42.0);
         }
     })
 }
@@ -45,45 +48,51 @@ fn read_statement(bencher: &mut Bencher) {
 #[bench]
 fn write_cursor(bencher: &mut Bencher) {
     let connection = create();
-    let mut cursor = connection.prepare("
-        INSERT INTO data (integer, real) VALUES (?, ?)
-    ").unwrap().cursor();
+    let mut cursor = ok!(connection.prepare("
+        INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)
+    ")).cursor();
 
     bencher.iter(|| {
-        cursor.bind(&[Value::Integer(42), Value::Float(69.0)]).unwrap();
-        cursor.next().unwrap();
+        ok!(cursor.bind(&[Integer(42), Float(42.0), Float(42.0), Float(42.0)]));
+        ok!(cursor.next());
     })
 }
 
 #[bench]
 fn write_statement(bencher: &mut Bencher) {
     let connection = create();
-    let mut statement = connection.prepare("
-        INSERT INTO data (integer, real) VALUES (?, ?)
-    ").unwrap();
+    let mut statement = ok!(connection.prepare("
+        INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)
+    "));
 
     bencher.iter(|| {
-        statement.reset().unwrap();
-        statement.bind(1, 42).unwrap();
-        statement.bind(2, 69.0).unwrap();
-        assert_eq!(statement.next().unwrap(), State::Done);
+        ok!(statement.reset());
+        ok!(statement.bind(1, 42));
+        ok!(statement.bind(2, 42.0));
+        ok!(statement.bind(3, 42.0));
+        ok!(statement.bind(4, 42.0));
+        assert_eq!(ok!(statement.next()), State::Done);
     })
 }
 
 fn create() -> Connection {
-    let connection = Connection::open(":memory:").unwrap();
-    connection.execute("CREATE TABLE data (integer INTEGER, real REAL)").unwrap();
+    let connection = ok!(Connection::open(":memory:"));
+    ok!(connection.execute("
+        CREATE TABLE data (a INTEGER, b REAL, c REAL, d REAL)
+    "));
     connection
 }
 
 fn populate(connection: &Connection, count: usize) {
-    let mut statement = connection.prepare("
-        INSERT INTO data (integer, real) VALUES (?, ?)
-    ").unwrap();
+    let mut statement = ok!(connection.prepare("
+        INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)
+    "));
     for i in 0..count {
-        statement.reset().unwrap();
-        statement.bind(1, i as i64).unwrap();
-        statement.bind(2, i as f64).unwrap();
-        assert_eq!(statement.next().unwrap(), State::Done);
+        ok!(statement.reset());
+        ok!(statement.bind(1, i as i64));
+        ok!(statement.bind(2, i as f64));
+        ok!(statement.bind(3, i as f64));
+        ok!(statement.bind(4, i as f64));
+        assert_eq!(ok!(statement.next()), State::Done);
     }
 }
