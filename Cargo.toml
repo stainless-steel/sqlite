@@ -11,7 +11,6 @@ repository = "https://github.com/stainless-steel/sqlite"
 homepage = "https://github.com/stainless-steel/sqlite"
 documentation = "https://stainless-steel.github.io/sqlite"
 description = "The package provides an interface to SQLite."
-build = "build.rs"
 
 [dependencies]
 libc = "0.2"

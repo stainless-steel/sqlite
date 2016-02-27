@@ -96,20 +96,11 @@ impl Connection {
 }
 
 impl Drop for Connection {
-    #[cfg(not(feature = "sqlite3-close-v2"))]
     #[inline]
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.remove_busy_handler();
         unsafe { ffi::sqlite3_close(self.raw) };
-    }
-
-    #[cfg(feature = "sqlite3-close-v2")]
-    #[inline]
-    #[allow(unused_must_use)]
-    fn drop(&mut self) {
-        self.remove_busy_handler();
-        unsafe { ffi::sqlite3_close_v2(self.raw) };
     }
 }
 
