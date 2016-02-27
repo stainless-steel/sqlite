@@ -1,16 +1,16 @@
 [package]
 name = "sqlite"
 version = "0.20.0"
+license = "Apache-2.0/MIT"
 authors = [
   "Ivan Ukhov <ivan.ukhov@gmail.com>",
   "Jake Kerr <kodafox@gmail.com>",
   "Tomoki Aonuma <uasi@uasi.jp>",
 ]
-license = "MIT"
-repository = "https://github.com/stainless-steel/sqlite"
-homepage = "https://github.com/stainless-steel/sqlite"
-documentation = "https://stainless-steel.github.io/sqlite"
 description = "The package provides an interface to SQLite."
+documentation = "https://stainless-steel.github.io/sqlite"
+homepage = "https://github.com/stainless-steel/sqlite"
+repository = "https://github.com/stainless-steel/sqlite"
 
 [dependencies]
 libc = "0.2"
