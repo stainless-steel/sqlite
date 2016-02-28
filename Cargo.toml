@@ -23,7 +23,7 @@ sqlcipher = ["sqlite3-sys/sqlcipher"]
 libc = "0.2"
 
 [dependencies.sqlite3-sys]
-sqlite3-sys = "0.7"
+version = "0.7"
 default-features = false
 
 [dev-dependencies]
