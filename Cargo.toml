@@ -12,14 +12,18 @@ documentation = "https://stainless-steel.github.io/sqlite"
 homepage = "https://github.com/stainless-steel/sqlite"
 repository = "https://github.com/stainless-steel/sqlite"
 
+[features]
+default = ["standard"]
+
+standard = ["sqlite3-sys/standard"]
+sqlcipher = ["sqlite3-sys/sqlcipher"]
+
 [dependencies]
 libc = "0.2"
-sqlite3-sys = "0.6"
+
+[dependencies.sqlite3-sys]
+sqlite3-sys = "0.7"
+default-features = false
 
 [dev-dependencies]
 temporary = "0.5"
-
-[features]
-# Link sqlite3-sys against sqlcipher, instead of sqlite3,
-# enabling support for transparent database encryption.
-sqlcipher = ["sqlite3-sys/sqlcipher"]
