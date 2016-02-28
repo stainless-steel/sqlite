@@ -11,7 +11,7 @@ The following two notices apply to every file of the project.
 ## The Apache License
 
 ```
-Copyright 2015, 1016 The sqlite Developers
+Copyright 2015, 2016 The sqlite Developers
 
 Licensed under the Apache License, Version 2.0 (the “License”); you may not use
 this file except in compliance with the License. You may obtain a copy of the
