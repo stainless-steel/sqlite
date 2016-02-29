@@ -1,5 +1,10 @@
 language: rust
 sudo: false
+
+os:
+  - linux
+  - osx
+
 rust:
   - stable
   - beta
@@ -16,11 +21,12 @@ script:
     fi
 
 after_success:
-  - curl https://stainless-steel.github.io/travis/after_success.sh | bash
+  - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
+      curl https://stainless-steel.github.io/travis/update_documentation.sh | bash;
+    fi
 
 env:
   global:
-    - RUSTDOC_VERSION=nightly
     - secure: S68cxm+lZnFrdVhhUN70ph9kjtE4Nn7qKIRVc7414PRUMz1IGjgaJ0O+kSpurqCtZc+2v5KdS6Hf1XkLwnLC0FK8nr54wdQIcbWnbD4+rL6K+n2kH/87ubAkuKYKeGrf/XH7rXpXaljXjnORMsv7KGuhU891iOVhfY1n/ZJ0TyUGU5yRgDmNEdHys6MPy/HDp6RJG6D9AXBx5hbfQM0j6Zk1jhvqBbPz1jReGpS2HLSQxpBK+8vf9oZN1slKxrVi03LGXvxDYpF4qFNLPUBMq3fM3cgVfouMgV6D6c79vmwhXz9eJNN4qZbtTwG5+CJ+tMCas2dnoPdnytc+2nw02Mc2TDrtuCA4LkEiWPFHpPCpZUrgEN16TzNE1cdiw25gWg654bOe6EZzrjiRyTV9UBLj22MvgTa58XXAbXW8BsuIz6baVB1id4sI56NfqjaFtnh6GV0eDgSAMf4VurWVUNsCMkF6RFwWBYdoWbJK8BB/hpO0XrvozVfrElxFZ6xsQ/0EnBQdmLVF+vbNgVI+dcGtesnC6rsEfGj08LjRHSCCDN6B1X/jjVRjadFKOJ6Wo7nr+Zb238pvefGzUsccR3XAEIQuPxKpROxeIq3gZvZO9YqzwzUO4FcavK2ii9ne/bqWEJEG0o/V0uX+SUhuPNtSSsPK1Mln0QUJ6My0vLA=
 
 notifications:
