@@ -27,4 +27,4 @@ version = "0.9"
 default-features = false
 
 [dev-dependencies]
-temporary = "0.5"
+temporary = "0.6"
