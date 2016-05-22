@@ -1,4 +1,4 @@
-use statement::{State, Statement, Bindable, Readable};
+use statement::{State, Statement};
 use {Result, Value};
 
 /// An iterator over rows.
