@@ -21,7 +21,7 @@ script:
     fi
 
 after_success:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       curl https://stainless-steel.github.io/travis/documentation.sh | bash;
     fi
 
