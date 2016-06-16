@@ -2,7 +2,7 @@
 //!
 //! ## Example
 //!
-//! Open a connection, create a table, and insert a couple of rows:
+//! Open a connection, create a table, and insert some rows:
 //!
 //! ```
 //! let connection = sqlite::open(":memory:").unwrap();
@@ -14,7 +14,7 @@
 //! ").unwrap();
 //! ```
 //!
-//! Select a row from the table:
+//! Select some rows and process them one by one as plain text:
 //!
 //! ```
 //! # let connection = sqlite::open(":memory:").unwrap();
@@ -31,7 +31,8 @@
 //! }).unwrap();
 //! ```
 //!
-//! The same query using a prepared statement:
+//! The same query using a prepared statement, which is much more efficient than
+//! the previous technique:
 //!
 //! ```
 //! use sqlite::State;
@@ -55,7 +56,7 @@
 //! ```
 //!
 //! The same query using a cursor, which is a wrapper around a prepared
-//! statement:
+//! statement providing the concept of row and featuring all-at-once binding:
 //!
 //! ```
 //! use sqlite::Value;

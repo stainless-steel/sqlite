@@ -6,7 +6,7 @@ The package provides an interface to [SQLite][1].
 
 ## Example
 
-Open a connection, create a table, and insert a couple of rows:
+Open a connection, create a table, and insert some rows:
 
 ```rust
 let connection = sqlite::open(":memory:").unwrap();
@@ -18,7 +18,7 @@ connection.execute("
 ").unwrap();
 ```
 
-Select a row from the table:
+Select some rows and process them one by one as plain text:
 
 ```rust
 connection.iterate("SELECT * FROM users WHERE age > 50", |pairs| {
@@ -29,7 +29,8 @@ connection.iterate("SELECT * FROM users WHERE age > 50", |pairs| {
 }).unwrap();
 ```
 
-The same query using a prepared statement:
+The same query using a prepared statement, which is much more efficient than the
+previous technique:
 
 ```rust
 use sqlite::State;
@@ -46,7 +47,8 @@ while let State::Row = statement.next().unwrap() {
 }
 ```
 
-The same query using a cursor, which is a wrapper around a prepared statement:
+The same query using a cursor, which is a wrapper around a prepared statement
+providing the concept of row and featuring all-at-once binding:
 
 ```rust
 use sqlite::Value;
