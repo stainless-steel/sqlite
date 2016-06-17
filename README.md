@@ -73,8 +73,8 @@ will be licensed according to the terms given in [LICENSE.md](LICENSE.md).
 
 [1]: https://www.sqlite.org
 
-[version-img]: https://img.shields.io/crates/v/sqlite.svg
-[version-url]: https://crates.io/crates/sqlite
+[doc]: https://stainless-steel.github.io/sqlite
 [status-img]: https://travis-ci.org/stainless-steel/sqlite.svg?branch=master
 [status-url]: https://travis-ci.org/stainless-steel/sqlite
-[doc]: https://stainless-steel.github.io/sqlite
+[version-img]: https://img.shields.io/crates/v/sqlite.svg
+[version-url]: https://crates.io/crates/sqlite
