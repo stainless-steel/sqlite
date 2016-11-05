@@ -2,7 +2,7 @@
 
 The package provides an interface to [SQLite][1].
 
-## [Documentation][doc]
+## [Documentation][documentation]
 
 ## Example
 
@@ -73,7 +73,7 @@ will be licensed according to the terms given in [LICENSE.md](LICENSE.md).
 
 [1]: https://www.sqlite.org
 
-[doc]: https://stainless-steel.github.io/sqlite
+[documentation]: https://docs.rs/sqlite
 [status-img]: https://travis-ci.org/stainless-steel/sqlite.svg?branch=master
 [status-url]: https://travis-ci.org/stainless-steel/sqlite
 [version-img]: https://img.shields.io/crates/v/sqlite.svg
