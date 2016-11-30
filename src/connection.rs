@@ -12,6 +12,8 @@ pub struct Connection {
     phantom: PhantomData<ffi::sqlite3>,
 }
 
+unsafe impl Send for Connection {}
+
 impl Connection {
     /// Open a connection to a new or existing database.
     pub fn open<T: AsRef<Path>>(path: T) -> Result<Connection> {
@@ -65,7 +67,7 @@ impl Connection {
     /// due to processing of some other request. If the callback returns `true`,
     /// the operation will be repeated.
     pub fn set_busy_handler<F>(&mut self, callback: F) -> Result<()>
-        where F: FnMut(usize) -> bool + 'static
+        where F: FnMut(usize) -> bool + Send + 'static
     {
         try!(self.remove_busy_handler());
         unsafe {
