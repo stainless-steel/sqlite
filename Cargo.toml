@@ -1,6 +1,6 @@
 [package]
 name = "sqlite"
-version = "0.23.2"
+version = "0.23.3"
 license = "Apache-2.0/MIT"
 authors = [
     "Ivan Stankovic <pokemon@fly.srk.fer.hr>",
@@ -13,6 +13,8 @@ description = "The package provides an interface to SQLite."
 documentation = "https://docs.rs/sqlite"
 homepage = "https://github.com/stainless-steel/sqlite"
 repository = "https://github.com/stainless-steel/sqlite"
+categories = ["api-bindings", "database"]
+keywords = ["database"]
 
 [features]
 default = ["linkage"]
