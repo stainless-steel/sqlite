@@ -13,6 +13,7 @@ description = "The package provides an interface to SQLite."
 documentation = "https://docs.rs/sqlite"
 homepage = "https://github.com/stainless-steel/sqlite"
 repository = "https://github.com/stainless-steel/sqlite"
+readme = "README.md"
 categories = ["api-bindings", "database"]
 keywords = ["database"]
 
