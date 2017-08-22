@@ -125,10 +125,16 @@ impl<'l> Bindable for &'l [u8] {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            ok!(statement.raw.1, ffi::sqlite3_bind_blob(statement.raw.0, i as c_int,
-                                                        self.as_ptr() as *const _,
-                                                        self.len() as c_int,
-                                                        transient!()));
+            ok!(
+                statement.raw.1,
+                ffi::sqlite3_bind_blob(
+                    statement.raw.0,
+                    i as c_int,
+                    self.as_ptr() as *const _,
+                    self.len() as c_int,
+                    transient!(),
+                )
+            );
         }
         Ok(())
     }
@@ -139,8 +145,10 @@ impl Bindable for f64 {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            ok!(statement.raw.1, ffi::sqlite3_bind_double(statement.raw.0, i as c_int,
-                                                          self as c_double));
+            ok!(
+                statement.raw.1,
+                ffi::sqlite3_bind_double(statement.raw.0, i as c_int, self as c_double)
+            );
         }
         Ok(())
     }
@@ -151,8 +159,10 @@ impl Bindable for i64 {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            ok!(statement.raw.1, ffi::sqlite3_bind_int64(statement.raw.0, i as c_int,
-                                                         self as ffi::sqlite3_int64));
+            ok!(
+                statement.raw.1,
+                ffi::sqlite3_bind_int64(statement.raw.0, i as c_int, self as ffi::sqlite3_int64)
+            );
         }
         Ok(())
     }
@@ -163,10 +173,16 @@ impl<'l> Bindable for &'l str {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            ok!(statement.raw.1, ffi::sqlite3_bind_text(statement.raw.0, i as c_int,
-                                                        self.as_ptr() as *const _,
-                                                        self.len() as c_int,
-                                                        transient!()));
+            ok!(
+                statement.raw.1,
+                ffi::sqlite3_bind_text(
+                    statement.raw.0,
+                    i as c_int,
+                    self.as_ptr() as *const _,
+                    self.len() as c_int,
+                    transient!(),
+                )
+            );
         }
         Ok(())
     }
@@ -177,7 +193,10 @@ impl Bindable for () {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            ok!(statement.raw.1, ffi::sqlite3_bind_null(statement.raw.0, i as c_int));
+            ok!(
+                statement.raw.1,
+                ffi::sqlite3_bind_null(statement.raw.0, i as c_int)
+            );
         }
         Ok(())
     }
@@ -198,14 +217,18 @@ impl Readable for Value {
 impl Readable for f64 {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, i as c_int) as f64 })
+        Ok(unsafe {
+            ffi::sqlite3_column_double(statement.raw.0, i as c_int) as f64
+        })
     }
 }
 
 impl Readable for i64 {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, i as c_int) as i64 })
+        Ok(unsafe {
+            ffi::sqlite3_column_int64(statement.raw.0, i as c_int) as i64
+        })
     }
 }
 
@@ -244,8 +267,19 @@ impl Readable for Vec<u8> {
 pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, statement: T) -> Result<Statement<'l>> {
     let mut raw0 = 0 as *mut _;
     unsafe {
-        ok!(raw1, ffi::sqlite3_prepare_v2(raw1, str_to_cstr!(statement.as_ref()).as_ptr(), -1,
-                                          &mut raw0, 0 as *mut _));
+        ok!(
+            raw1,
+            ffi::sqlite3_prepare_v2(
+                raw1,
+                str_to_cstr!(statement.as_ref()).as_ptr(),
+                -1,
+                &mut raw0,
+                0 as *mut _,
+            )
+        );
     }
-    Ok(Statement { raw: (raw0, raw1), phantom: PhantomData })
+    Ok(Statement {
+        raw: (raw0, raw1),
+        phantom: PhantomData,
+    })
 }

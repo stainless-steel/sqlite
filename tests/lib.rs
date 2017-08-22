@@ -10,7 +10,12 @@ macro_rules! ok(($result:expr) => ($result.unwrap()));
 fn connection_error() {
     let connection = setup_users(":memory:");
     match connection.execute(":)") {
-        Err(error) => assert_eq!(error.message, Some(String::from(r#"unrecognized token: ":""#))),
+        Err(error) => {
+            assert_eq!(
+                error.message,
+                Some(String::from(r#"unrecognized token: ":""#))
+            )
+        }
         _ => unreachable!(),
     }
 }
@@ -46,21 +51,23 @@ fn connection_set_busy_handler() {
     let path = directory.path().join("database.sqlite3");
     setup_users(&path);
 
-    let guards = (0..100).map(|_| {
-        let path = path.to_path_buf();
-        thread::spawn(move || {
-            let mut connection = ok!(sqlite::open(&path));
-            ok!(connection.set_busy_handler(|_| true));
-            let statement = "INSERT INTO `users` (id, name, age, photo) VALUES (?, ?, ?, ?)";
-            let mut statement = ok!(connection.prepare(statement));
-            ok!(statement.bind(1, 2i64));
-            ok!(statement.bind(2, "Bob"));
-            ok!(statement.bind(3, 69.42));
-            ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
-            assert_eq!(ok!(statement.next()), State::Done);
-            true
+    let guards = (0..100)
+        .map(|_| {
+            let path = path.to_path_buf();
+            thread::spawn(move || {
+                let mut connection = ok!(sqlite::open(&path));
+                ok!(connection.set_busy_handler(|_| true));
+                let statement = "INSERT INTO `users` (id, name, age, photo) VALUES (?, ?, ?, ?)";
+                let mut statement = ok!(connection.prepare(statement));
+                ok!(statement.bind(1, 2i64));
+                ok!(statement.bind(2, "Bob"));
+                ok!(statement.bind(3, 69.42));
+                ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
+                assert_eq!(ok!(statement.next()), State::Done);
+                true
+            })
         })
-    }).collect::<Vec<_>>();
+        .collect::<Vec<_>>();
 
     for guard in guards {
         assert!(ok!(guard.join()));
@@ -108,19 +115,29 @@ fn cursor_workflow() {
 
     for _ in 0..10 {
         ok!(select.bind(&[Value::Integer(1)]));
-        assert_eq!(ok!(ok!(select.next())), &[Value::Integer(1),
-                                              Value::String("Alice".to_string())]);
+        assert_eq!(
+            ok!(ok!(select.next())),
+            &[Value::Integer(1), Value::String("Alice".to_string())]
+        );
         assert_eq!(ok!(select.next()), None);
     }
 
     ok!(select.bind(&[Value::Integer(42)]));
     assert_eq!(ok!(select.next()), None);
 
-    ok!(insert.bind(&[Value::Integer(42), Value::String("Bob".to_string())]));
+    ok!(insert.bind(
+        &[
+            Value::Integer(42),
+            Value::String("Bob".to_string()),
+        ],
+    ));
     assert_eq!(ok!(insert.next()), None);
 
     ok!(select.bind(&[Value::Integer(42)]));
-    assert_eq!(ok!(ok!(select.next())), &[Value::Integer(42), Value::String("Bob".to_string())]);
+    assert_eq!(
+        ok!(ok!(select.next())),
+        &[Value::Integer(42), Value::String("Bob".to_string())]
+    );
     assert_eq!(ok!(select.next()), None);
 }
 
@@ -212,7 +229,8 @@ fn statement_wildcard_without_binding() {
 
 fn setup_english<T: AsRef<Path>>(path: T) -> Connection {
     let connection = ok!(sqlite::open(path));
-    ok!(connection.execute("
+    ok!(connection.execute(
+        "
         CREATE TABLE english (value TEXT);
         INSERT INTO english (value) VALUES ('cerotype');
         INSERT INTO english (value) VALUES ('metatype');
@@ -221,15 +239,18 @@ fn setup_english<T: AsRef<Path>>(path: T) -> Connection {
         INSERT INTO english (value) VALUES ('plastotype');
         INSERT INTO english (value) VALUES ('undertype');
         INSERT INTO english (value) VALUES ('nonsence');
-    "));
+        ",
+    ));
     connection
 }
 
 fn setup_users<T: AsRef<Path>>(path: T) -> Connection {
     let connection = ok!(sqlite::open(path));
-    ok!(connection.execute("
+    ok!(connection.execute(
+        "
         CREATE TABLE users (id INTEGER, name TEXT, age REAL, photo BLOB);
         INSERT INTO users (id, name, age, photo) VALUES (1, 'Alice', 42.69, X'4269');
-    "));
+        ",
+    ));
     connection
 }

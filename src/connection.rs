@@ -19,19 +19,34 @@ impl Connection {
     pub fn open<T: AsRef<Path>>(path: T) -> Result<Connection> {
         let mut raw = 0 as *mut _;
         unsafe {
-            ok!(ffi::sqlite3_open_v2(path_to_cstr!(path.as_ref()).as_ptr(), &mut raw,
-                                     ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_READWRITE,
-                                     0 as *const _));
+            ok!(ffi::sqlite3_open_v2(
+                path_to_cstr!(path.as_ref()).as_ptr(),
+                &mut raw,
+                ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_READWRITE,
+                0 as *const _,
+            ));
         }
-        Ok(Connection { raw: raw, busy_callback: None, phantom: PhantomData })
+        Ok(Connection {
+            raw: raw,
+            busy_callback: None,
+            phantom: PhantomData,
+        })
     }
 
     /// Execute a statement without processing the resulting rows if any.
     #[inline]
     pub fn execute<T: AsRef<str>>(&self, statement: T) -> Result<()> {
         unsafe {
-            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(statement.as_ref()).as_ptr(),
-                                            None, 0 as *mut _, 0 as *mut _));
+            ok!(
+                self.raw,
+                ffi::sqlite3_exec(
+                    self.raw,
+                    str_to_cstr!(statement.as_ref()).as_ptr(),
+                    None,
+                    0 as *mut _,
+                    0 as *mut _,
+                )
+            );
         }
         Ok(())
     }
@@ -43,14 +58,21 @@ impl Connection {
     /// types, prepared statement are highly preferable; see `prepare`.
     #[inline]
     pub fn iterate<T: AsRef<str>, F>(&self, statement: T, callback: F) -> Result<()>
-        where F: FnMut(&[(&str, Option<&str>)]) -> bool
+    where
+        F: FnMut(&[(&str, Option<&str>)]) -> bool,
     {
         unsafe {
             let callback = Box::new(callback);
-            ok!(self.raw, ffi::sqlite3_exec(self.raw, str_to_cstr!(statement.as_ref()).as_ptr(),
-                                            Some(process_callback::<F>),
-                                            &*callback as *const F as *mut F as *mut _,
-                                            0 as *mut _));
+            ok!(
+                self.raw,
+                ffi::sqlite3_exec(
+                    self.raw,
+                    str_to_cstr!(statement.as_ref()).as_ptr(),
+                    Some(process_callback::<F>),
+                    &*callback as *const F as *mut F as *mut _,
+                    0 as *mut _,
+                )
+            );
         }
         Ok(())
     }
@@ -67,13 +89,17 @@ impl Connection {
     /// due to processing of some other request. If the callback returns `true`,
     /// the operation will be repeated.
     pub fn set_busy_handler<F>(&mut self, callback: F) -> Result<()>
-        where F: FnMut(usize) -> bool + Send + 'static
+    where
+        F: FnMut(usize) -> bool + Send + 'static,
     {
         try!(self.remove_busy_handler());
         unsafe {
             let callback = Box::new(callback);
-            let result = ffi::sqlite3_busy_handler(self.raw, Some(busy_callback::<F>),
-                                                   &*callback as *const F as *mut F as *mut _);
+            let result = ffi::sqlite3_busy_handler(
+                self.raw,
+                Some(busy_callback::<F>),
+                &*callback as *const F as *mut F as *mut _,
+            );
             self.busy_callback = Some(callback);
             ok!(self.raw, result);
         }
@@ -84,7 +110,12 @@ impl Connection {
     /// rejected operations until a timeout expires.
     #[inline]
     pub fn set_busy_timeout(&mut self, milliseconds: usize) -> Result<()> {
-        unsafe { ok!(self.raw, ffi::sqlite3_busy_timeout(self.raw, milliseconds as c_int)) };
+        unsafe {
+            ok!(
+                self.raw,
+                ffi::sqlite3_busy_timeout(self.raw, milliseconds as c_int)
+            )
+        };
         Ok(())
     }
 
@@ -92,7 +123,12 @@ impl Connection {
     #[inline]
     pub fn remove_busy_handler(&mut self) -> Result<()> {
         self.busy_callback = None;
-        unsafe { ok!(self.raw, ffi::sqlite3_busy_handler(self.raw, None, 0 as *mut _)) };
+        unsafe {
+            ok!(
+                self.raw,
+                ffi::sqlite3_busy_handler(self.raw, None, 0 as *mut _)
+            )
+        };
         Ok(())
     }
 }
@@ -106,15 +142,27 @@ impl Drop for Connection {
     }
 }
 
-extern fn busy_callback<F>(callback: *mut c_void, attempts: c_int) -> c_int
-    where F: FnMut(usize) -> bool
+extern "C" fn busy_callback<F>(callback: *mut c_void, attempts: c_int) -> c_int
+where
+    F: FnMut(usize) -> bool,
 {
-    unsafe { if (*(callback as *mut F))(attempts as usize) { 1 } else { 0 } }
+    unsafe {
+        if (*(callback as *mut F))(attempts as usize) {
+            1
+        } else {
+            0
+        }
+    }
 }
 
-extern fn process_callback<F>(callback: *mut c_void, count: c_int, values: *mut *mut c_char,
-                              columns: *mut *mut c_char) -> c_int
-    where F: FnMut(&[(&str, Option<&str>)]) -> bool
+extern "C" fn process_callback<F>(
+    callback: *mut c_void,
+    count: c_int,
+    values: *mut *mut c_char,
+    columns: *mut *mut c_char,
+) -> c_int
+where
+    F: FnMut(&[(&str, Option<&str>)]) -> bool,
 {
     unsafe {
         let mut pairs = Vec::with_capacity(count as usize);
@@ -136,6 +184,10 @@ extern fn process_callback<F>(callback: *mut c_void, count: c_int, values: *mut 
             pairs.push((column, value));
         }
 
-        if (*(callback as *mut F))(&pairs) { 0 } else { 1 }
+        if (*(callback as *mut F))(&pairs) {
+            0
+        } else {
+            1
+        }
     }
 }

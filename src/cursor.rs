@@ -22,12 +22,12 @@ impl<'l> Cursor<'l> {
     /// Advance to the next row and read all columns.
     pub fn next(&mut self) -> Result<Option<&[Value]>> {
         match self.state {
-            Some(State::Row) => {},
+            Some(State::Row) => {}
             Some(State::Done) => return Ok(None),
             _ => {
                 self.state = Some(try!(self.statement.next()));
                 return self.next();
-            },
+            }
         }
         let values = match self.values.take() {
             Some(mut values) => {
@@ -35,21 +35,21 @@ impl<'l> Cursor<'l> {
                     match value {
                         &mut Value::Binary(ref mut value) => {
                             *value = try!(self.statement.read(i));
-                        },
+                        }
                         &mut Value::Float(ref mut value) => {
                             *value = try!(self.statement.read(i));
-                        },
+                        }
                         &mut Value::Integer(ref mut value) => {
                             *value = try!(self.statement.read(i));
-                        },
+                        }
                         &mut Value::String(ref mut value) => {
                             *value = try!(self.statement.read(i));
-                        },
-                        &mut Value::Null => {},
+                        }
+                        &mut Value::Null => {}
                     }
                 }
                 values
-            },
+            }
             _ => {
                 let count = self.statement.columns();
                 let mut values = Vec::with_capacity(count);
@@ -57,7 +57,7 @@ impl<'l> Cursor<'l> {
                     values.push(try!(self.statement.read(i)));
                 }
                 values
-            },
+            }
         };
         self.state = Some(try!(self.statement.next()));
         self.values = Some(values);
@@ -73,5 +73,9 @@ impl<'l> Cursor<'l> {
 
 #[inline]
 pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
-    Cursor { state: None, values: None, statement: statement }
+    Cursor {
+        state: None,
+        values: None,
+        statement: statement,
+    }
 }

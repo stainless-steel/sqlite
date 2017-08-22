@@ -279,6 +279,9 @@ fn last_error(raw: *mut ffi::sqlite3) -> Option<Error> {
         if message.is_null() {
             return None;
         }
-        Some(Error { code: Some(code as isize), message: Some(c_str_to_string!(message)) })
+        Some(Error {
+            code: Some(code as isize),
+            message: Some(c_str_to_string!(message)),
+        })
     }
 }
