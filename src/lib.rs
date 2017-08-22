@@ -7,28 +7,38 @@
 //! ```
 //! let connection = sqlite::open(":memory:").unwrap();
 //!
-//! connection.execute("
-//!     CREATE TABLE users (name TEXT, age INTEGER);
-//!     INSERT INTO users (name, age) VALUES ('Alice', 42);
-//!     INSERT INTO users (name, age) VALUES ('Bob', 69);
-//! ").unwrap();
+//! connection
+//!     .execute(
+//!         "
+//!         CREATE TABLE users (name TEXT, age INTEGER);
+//!         INSERT INTO users (name, age) VALUES ('Alice', 42);
+//!         INSERT INTO users (name, age) VALUES ('Bob', 69);
+//!         ",
+//!     )
+//!     .unwrap();
 //! ```
 //!
 //! Select some rows and process them one by one as plain text:
 //!
 //! ```
 //! # let connection = sqlite::open(":memory:").unwrap();
-//! # connection.execute("
-//! #     CREATE TABLE users (name TEXT, age INTEGER);
-//! #     INSERT INTO users (name, age) VALUES ('Alice', 42);
-//! #     INSERT INTO users (name, age) VALUES ('Bob', 69);
-//! # ").unwrap();
-//! connection.iterate("SELECT * FROM users WHERE age > 50", |pairs| {
-//!     for &(column, value) in pairs.iter() {
-//!         println!("{} = {}", column, value.unwrap());
-//!     }
-//!     true
-//! }).unwrap();
+//! # connection
+//! #     .execute(
+//! #         "
+//! #         CREATE TABLE users (name TEXT, age INTEGER);
+//! #         INSERT INTO users (name, age) VALUES ('Alice', 42);
+//! #         INSERT INTO users (name, age) VALUES ('Bob', 69);
+//! #         ",
+//! #     )
+//! #     .unwrap();
+//! connection
+//!     .iterate("SELECT * FROM users WHERE age > 50", |pairs| {
+//!         for &(column, value) in pairs.iter() {
+//!             println!("{} = {}", column, value.unwrap());
+//!         }
+//!         true
+//!     })
+//!     .unwrap();
 //! ```
 //!
 //! The same query using a prepared statement, which is much more efficient than
@@ -37,15 +47,23 @@
 //! ```
 //! use sqlite::State;
 //! # let connection = sqlite::open(":memory:").unwrap();
-//! # connection.execute("
-//! #     CREATE TABLE users (name TEXT, age INTEGER);
-//! #     INSERT INTO users (name, age) VALUES ('Alice', 42);
-//! #     INSERT INTO users (name, age) VALUES ('Bob', 69);
-//! # ").unwrap();
+//! # connection
+//! #     .execute(
+//! #         "
+//! #         CREATE TABLE users (name TEXT, age INTEGER);
+//! #         INSERT INTO users (name, age) VALUES ('Alice', 42);
+//! #         INSERT INTO users (name, age) VALUES ('Bob', 69);
+//! #         ",
+//! #     )
+//! #     .unwrap();
 //!
-//! let mut statement = connection.prepare("
-//!     SELECT * FROM users WHERE age > ?
-//! ").unwrap();
+//! let mut statement = connection
+//!     .prepare(
+//!         "
+//!         SELECT * FROM users WHERE age > ?
+//!         "
+//!     )
+//!     .unwrap();
 //!
 //! statement.bind(1, 50).unwrap();
 //!
@@ -61,15 +79,24 @@
 //! ```
 //! use sqlite::Value;
 //! # let connection = sqlite::open(":memory:").unwrap();
-//! # connection.execute("
-//! #     CREATE TABLE users (name TEXT, age INTEGER);
-//! #     INSERT INTO users (name, age) VALUES ('Alice', 42);
-//! #     INSERT INTO users (name, age) VALUES ('Bob', 69);
-//! # ").unwrap();
+//! # connection
+//! #     .execute(
+//! #         "
+//! #         CREATE TABLE users (name TEXT, age INTEGER);
+//! #         INSERT INTO users (name, age) VALUES ('Alice', 42);
+//! #         INSERT INTO users (name, age) VALUES ('Bob', 69);
+//! #         ",
+//! #     )
+//! #     .unwrap();
 //!
-//! let mut cursor = connection.prepare("
-//!     SELECT * FROM users WHERE age > ?
-//! ").unwrap().cursor();
+//! let mut cursor = connection
+//!     .prepare(
+//!         "
+//!         SELECT * FROM users WHERE age > ?
+//!         ",
+//!     )
+//!     .unwrap()
+//!     .cursor();
 //!
 //! cursor.bind(&[Value::Integer(50)]).unwrap();
 //!

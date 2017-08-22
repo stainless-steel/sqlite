@@ -11,33 +11,43 @@ Open a connection, create a table, and insert some rows:
 ```rust
 let connection = sqlite::open(":memory:").unwrap();
 
-connection.execute("
-    CREATE TABLE users (name TEXT, age INTEGER);
-    INSERT INTO users (name, age) VALUES ('Alice', 42);
-    INSERT INTO users (name, age) VALUES ('Bob', 69);
-").unwrap();
+connection
+    .execute(
+        "
+        CREATE TABLE users (name TEXT, age INTEGER);
+        INSERT INTO users (name, age) VALUES ('Alice', 42);
+        INSERT INTO users (name, age) VALUES ('Bob', 69);
+        ",
+    )
+    .unwrap();
 ```
 
 Select some rows and process them one by one as plain text:
 
 ```rust
-connection.iterate("SELECT * FROM users WHERE age > 50", |pairs| {
-    for &(column, value) in pairs.iter() {
-        println!("{} = {}", column, value.unwrap());
-    }
-    true
-}).unwrap();
+connection
+    .iterate("SELECT * FROM users WHERE age > 50", |pairs| {
+        for &(column, value) in pairs.iter() {
+            println!("{} = {}", column, value.unwrap());
+        }
+        true
+    })
+    .unwrap();
 ```
 
-The same query using a prepared statement, which is much more efficient than the
-previous technique:
+The same query using a prepared statement, which is much more efficient than
+the previous technique:
 
 ```rust
 use sqlite::State;
 
-let mut statement = connection.prepare("
-    SELECT * FROM users WHERE age > ?
-").unwrap();
+let mut statement = connection
+    .prepare(
+        "
+        SELECT * FROM users WHERE age > ?
+        "
+    )
+    .unwrap();
 
 statement.bind(1, 50).unwrap();
 
@@ -47,15 +57,20 @@ while let State::Row = statement.next().unwrap() {
 }
 ```
 
-The same query using a cursor, which is a wrapper around a prepared statement
-providing the concept of row and featuring all-at-once binding:
+The same query using a cursor, which is a wrapper around a prepared
+statement providing the concept of row and featuring all-at-once binding:
 
 ```rust
 use sqlite::Value;
 
-let mut cursor = connection.prepare("
-    SELECT * FROM users WHERE age > ?
-").unwrap().cursor();
+let mut cursor = connection
+    .prepare(
+        "
+        SELECT * FROM users WHERE age > ?
+        ",
+    )
+    .unwrap()
+    .cursor();
 
 cursor.bind(&[Value::Integer(50)]).unwrap();
 
