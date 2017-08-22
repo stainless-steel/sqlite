@@ -61,7 +61,7 @@
 //!     .prepare(
 //!         "
 //!         SELECT * FROM users WHERE age > ?
-//!         "
+//!         ",
 //!     )
 //!     .unwrap();
 //!

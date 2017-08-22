@@ -45,7 +45,7 @@ let mut statement = connection
     .prepare(
         "
         SELECT * FROM users WHERE age > ?
-        "
+        ",
     )
     .unwrap();
 
