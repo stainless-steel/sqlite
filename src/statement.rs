@@ -5,7 +5,9 @@ use std::marker::PhantomData;
 use {Cursor, Result, Type, Value};
 
 // https://sqlite.org/c3ref/c_static.html
-macro_rules! transient(() => (::std::mem::transmute(!0 as *const ::libc::c_void)));
+macro_rules! transient(
+    () => (::std::mem::transmute(!0 as *const ::libc::c_void));
+);
 
 /// A prepared statement.
 pub struct Statement<'l> {
