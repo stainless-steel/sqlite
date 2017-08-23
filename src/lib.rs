@@ -151,9 +151,11 @@ macro_rules! c_str_to_string(
 
 macro_rules! path_to_cstr(
     ($path:expr) => (match $path.to_str() {
-        Some(path) => match ::std::ffi::CString::new(path) {
-            Ok(string) => string,
-            _ => raise!("failed to process a path"),
+        Some(path) => {
+            match ::std::ffi::CString::new(path) {
+                Ok(string) => string,
+                _ => raise!("failed to process a path"),
+            }
         }
         _ => raise!("failed to process a path"),
     });
