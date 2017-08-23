@@ -131,6 +131,12 @@ impl Connection {
         }
         Ok(())
     }
+
+    /// Return the raw pointer.
+    #[inline]
+    pub fn as_raw(&self) -> *mut ffi::sqlite3 {
+        self.raw
+    }
 }
 
 impl Drop for Connection {

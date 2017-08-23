@@ -101,6 +101,12 @@ impl<'l> Statement<'l> {
     pub fn cursor(self) -> Cursor<'l> {
         ::cursor::new(self)
     }
+
+    /// Return the raw pointer.
+    #[inline]
+    pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
+        self.raw.0
+    }
 }
 
 impl<'l> Drop for Statement<'l> {
