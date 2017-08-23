@@ -114,8 +114,8 @@ impl Connection {
             ok!(
                 self.raw,
                 ffi::sqlite3_busy_timeout(self.raw, milliseconds as c_int)
-            )
-        };
+            );
+        }
         Ok(())
     }
 
@@ -127,8 +127,8 @@ impl Connection {
             ok!(
                 self.raw,
                 ffi::sqlite3_busy_handler(self.raw, None, 0 as *mut _)
-            )
-        };
+            );
+        }
         Ok(())
     }
 }
