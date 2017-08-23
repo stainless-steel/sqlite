@@ -40,11 +40,7 @@ the previous technique:
 use sqlite::State;
 
 let mut statement = connection
-    .prepare(
-        "
-        SELECT * FROM users WHERE age > ?
-        ",
-    )
+    .prepare("SELECT * FROM users WHERE age > ?")
     .unwrap();
 
 statement.bind(1, 50).unwrap();
@@ -62,11 +58,7 @@ statement providing the concept of row and featuring all-at-once binding:
 use sqlite::Value;
 
 let mut cursor = connection
-    .prepare(
-        "
-        SELECT * FROM users WHERE age > ?
-        ",
-    )
+    .prepare("SELECT * FROM users WHERE age > ?")
     .unwrap()
     .cursor();
 

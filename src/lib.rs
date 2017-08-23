@@ -58,11 +58,7 @@
 //! #     .unwrap();
 //!
 //! let mut statement = connection
-//!     .prepare(
-//!         "
-//!         SELECT * FROM users WHERE age > ?
-//!         ",
-//!     )
+//!     .prepare("SELECT * FROM users WHERE age > ?")
 //!     .unwrap();
 //!
 //! statement.bind(1, 50).unwrap();
@@ -90,11 +86,7 @@
 //! #     .unwrap();
 //!
 //! let mut cursor = connection
-//!     .prepare(
-//!         "
-//!         SELECT * FROM users WHERE age > ?
-//!         ",
-//!     )
+//!     .prepare("SELECT * FROM users WHERE age > ?")
 //!     .unwrap()
 //!     .cursor();
 //!
@@ -114,24 +106,35 @@ extern crate sqlite3_sys as ffi;
 use std::{error, fmt};
 
 macro_rules! raise(
-    ($message:expr) => (return Err(::Error { code: None, message: Some($message.to_string()) }));
+    ($message:expr) => (
+        return Err(::Error {
+            code: None,
+            message: Some($message.to_string()),
+        })
+    );
 );
 
 macro_rules! error(
     ($connection:expr, $code:expr) => (match ::last_error($connection) {
         Some(error) => return Err(error),
-        _ => return Err(::Error { code: Some($code as isize), message: None }),
+        _ => return Err(::Error {
+            code: Some($code as isize),
+            message: None,
+        }),
     });
 );
 
 macro_rules! ok(
     ($connection:expr, $result:expr) => (match $result {
-        ::ffi::SQLITE_OK => {},
+        ::ffi::SQLITE_OK => {}
         code => error!($connection, code),
     });
     ($result:expr) => (match $result {
-        ::ffi::SQLITE_OK => {},
-        code => return Err(::Error { code: Some(code as isize), message: None }),
+        ::ffi::SQLITE_OK => {}
+        code => return Err(::Error {
+            code: Some(code as isize),
+            message: None,
+        }),
     });
 );
 
@@ -151,7 +154,7 @@ macro_rules! path_to_cstr(
         Some(path) => match ::std::ffi::CString::new(path) {
             Ok(string) => string,
             _ => raise!("failed to process a path"),
-        },
+        }
         _ => raise!("failed to process a path"),
     });
 );

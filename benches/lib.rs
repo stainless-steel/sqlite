@@ -14,9 +14,7 @@ fn read_cursor(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
     let mut cursor = ok!(connection.prepare(
-        "
-        SELECT * FROM data WHERE a > ? AND b > ?
-        ",
+        "SELECT * FROM data WHERE a > ? AND b > ?",
     )).cursor();
 
     bencher.iter(|| {
@@ -33,9 +31,7 @@ fn read_statement(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
     let mut statement = ok!(connection.prepare(
-        "
-        SELECT * FROM data WHERE a > ? AND b > ?
-        ",
+        "SELECT * FROM data WHERE a > ? AND b > ?",
     ));
 
     bencher.iter(|| {
@@ -53,9 +49,7 @@ fn read_statement(bencher: &mut Bencher) {
 fn write_cursor(bencher: &mut Bencher) {
     let connection = create();
     let mut cursor = ok!(connection.prepare(
-        "
-        INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)
-        ",
+        "INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)",
     )).cursor();
 
     bencher.iter(|| {
@@ -70,9 +64,7 @@ fn write_cursor(bencher: &mut Bencher) {
 fn write_statement(bencher: &mut Bencher) {
     let connection = create();
     let mut statement = ok!(connection.prepare(
-        "
-        INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)
-        ",
+        "INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)",
     ));
 
     bencher.iter(|| {
@@ -88,18 +80,14 @@ fn write_statement(bencher: &mut Bencher) {
 fn create() -> Connection {
     let connection = ok!(Connection::open(":memory:"));
     ok!(connection.execute(
-        "
-        CREATE TABLE data (a INTEGER, b REAL, c REAL, d REAL)
-        ",
+        "CREATE TABLE data (a INTEGER, b REAL, c REAL, d REAL)",
     ));
     connection
 }
 
 fn populate(connection: &Connection, count: usize) {
     let mut statement = ok!(connection.prepare(
-        "
-        INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)
-        ",
+        "INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)",
     ));
     for i in 0..count {
         ok!(statement.reset());
