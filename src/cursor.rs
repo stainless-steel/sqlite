@@ -20,6 +20,12 @@ impl<'l> Cursor<'l> {
         Ok(())
     }
 
+    /// Return the number of columns.
+    #[inline]
+    pub fn columns(&self) -> usize {
+        self.statement.columns()
+    }
+
     /// Advance to the next row and read all columns.
     pub fn next(&mut self) -> Result<Option<&[Value]>> {
         match self.state {
@@ -63,12 +69,6 @@ impl<'l> Cursor<'l> {
         self.state = Some(try!(self.statement.next()));
         self.values = Some(values);
         Ok(Some(self.values.as_ref().unwrap()))
-    }
-
-    /// Return the number of columns.
-    #[inline]
-    pub fn columns(&self) -> usize {
-        self.statement.columns()
     }
 
     /// Return the raw pointer.
