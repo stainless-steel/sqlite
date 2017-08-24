@@ -1,3 +1,4 @@
+use ffi;
 use statement::{State, Statement};
 use {Result, Value};
 
@@ -68,6 +69,12 @@ impl<'l> Cursor<'l> {
     #[inline]
     pub fn columns(&self) -> usize {
         self.statement.columns()
+    }
+
+    /// Return the raw pointer.
+    #[inline]
+    pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
+        self.statement.as_raw()
     }
 }
 
