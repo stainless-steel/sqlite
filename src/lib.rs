@@ -295,7 +295,7 @@ mod statement;
 
 pub use connection::Connection;
 pub use cursor::Cursor;
-pub use statement::{Statement, State, Bindable, Readable};
+pub use statement::{Bindable, Readable, State, Statement};
 
 /// Open a connection to a new or existing database.
 #[inline]

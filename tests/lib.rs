@@ -10,12 +10,10 @@ macro_rules! ok(($result:expr) => ($result.unwrap()));
 fn connection_error() {
     let connection = setup_users(":memory:");
     match connection.execute(":)") {
-        Err(error) => {
-            assert_eq!(
-                error.message,
-                Some(String::from(r#"unrecognized token: ":""#))
-            )
-        }
+        Err(error) => assert_eq!(
+            error.message,
+            Some(String::from(r#"unrecognized token: ":""#))
+        ),
         _ => unreachable!(),
     }
 }
@@ -125,12 +123,7 @@ fn cursor_workflow() {
     ok!(select.bind(&[Value::Integer(42)]));
     assert_eq!(ok!(select.next()), None);
 
-    ok!(insert.bind(
-        &[
-            Value::Integer(42),
-            Value::String("Bob".to_string()),
-        ],
-    ));
+    ok!(insert.bind(&[Value::Integer(42), Value::String("Bob".to_string())]));
     assert_eq!(ok!(insert.next()), None);
 
     ok!(select.bind(&[Value::Integer(42)]));

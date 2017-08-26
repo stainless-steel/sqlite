@@ -13,9 +13,7 @@ macro_rules! ok(($result:expr) => ($result.unwrap()));
 fn read_cursor(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
-    let mut cursor = ok!(connection.prepare(
-        "SELECT * FROM data WHERE a > ? AND b > ?",
-    )).cursor();
+    let mut cursor = ok!(connection.prepare("SELECT * FROM data WHERE a > ? AND b > ?")).cursor();
 
     bencher.iter(|| {
         ok!(cursor.bind(&[Integer(42), Float(42.0)]));
@@ -30,9 +28,7 @@ fn read_cursor(bencher: &mut Bencher) {
 fn read_statement(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
-    let mut statement = ok!(connection.prepare(
-        "SELECT * FROM data WHERE a > ? AND b > ?",
-    ));
+    let mut statement = ok!(connection.prepare("SELECT * FROM data WHERE a > ? AND b > ?"));
 
     bencher.iter(|| {
         ok!(statement.reset());
@@ -48,14 +44,11 @@ fn read_statement(bencher: &mut Bencher) {
 #[bench]
 fn write_cursor(bencher: &mut Bencher) {
     let connection = create();
-    let mut cursor = ok!(connection.prepare(
-        "INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)",
-    )).cursor();
+    let mut cursor =
+        ok!(connection.prepare("INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)")).cursor();
 
     bencher.iter(|| {
-        ok!(cursor.bind(
-            &[Integer(42), Float(42.0), Float(42.0), Float(42.0)],
-        ));
+        ok!(cursor.bind(&[Integer(42), Float(42.0), Float(42.0), Float(42.0)]));
         ok!(cursor.next());
     })
 }
@@ -63,9 +56,8 @@ fn write_cursor(bencher: &mut Bencher) {
 #[bench]
 fn write_statement(bencher: &mut Bencher) {
     let connection = create();
-    let mut statement = ok!(connection.prepare(
-        "INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)",
-    ));
+    let mut statement =
+        ok!(connection.prepare("INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)"));
 
     bencher.iter(|| {
         ok!(statement.reset());
@@ -79,16 +71,13 @@ fn write_statement(bencher: &mut Bencher) {
 
 fn create() -> Connection {
     let connection = ok!(Connection::open(":memory:"));
-    ok!(connection.execute(
-        "CREATE TABLE data (a INTEGER, b REAL, c REAL, d REAL)",
-    ));
+    ok!(connection.execute("CREATE TABLE data (a INTEGER, b REAL, c REAL, d REAL)"));
     connection
 }
 
 fn populate(connection: &Connection, count: usize) {
-    let mut statement = ok!(connection.prepare(
-        "INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)",
-    ));
+    let mut statement =
+        ok!(connection.prepare("INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)"));
     for i in 0..count {
         ok!(statement.reset());
         ok!(statement.bind(1, i as i64));
