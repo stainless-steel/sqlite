@@ -148,6 +148,20 @@ fn statement_columns() {
 }
 
 #[test]
+fn statement_column_names() {
+    let connection = setup_users(":memory:");
+    let statement = "SELECT id, name, age, photo FROM users";
+    let statement = ok!(connection.prepare(statement));
+
+    assert_eq!(statement.columns(), 4);
+    let column_names = statement.column_names();
+    assert_eq!(column_names[0], "id");
+    assert_eq!(column_names[1], "name");
+    assert_eq!(column_names[2], "age");
+    assert_eq!(column_names[3], "photo");
+}
+
+#[test]
 fn statement_kind() {
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";

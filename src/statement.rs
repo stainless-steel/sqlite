@@ -1,6 +1,8 @@
 use ffi;
 use libc::{c_double, c_int};
 use std::marker::PhantomData;
+use std::ffi::CStr;
+use std::str;
 
 use {Cursor, Result, Type, Value};
 
@@ -53,6 +55,23 @@ impl<'l> Statement<'l> {
     #[inline]
     pub fn columns(&self) -> usize {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
+    }
+
+    fn column_name(&self, idx: c_int) -> &str {
+        let cname = unsafe { 
+            CStr::from_ptr(ffi::sqlite3_column_name(self.raw.0, idx))
+        };
+        str::from_utf8(cname.to_bytes()).unwrap()
+    }
+
+    pub fn column_names(&self) -> Vec<&str> {
+        let column_len = self.columns();
+        let mut column_names: Vec<&str> = Vec::with_capacity(column_len);
+        for i in 0..column_len{
+            let column_name = self.column_name(i as i32);
+            column_names.push(column_name); 
+        }
+        column_names
     }
 
     /// Return the type of a column.
