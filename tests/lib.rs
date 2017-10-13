@@ -154,7 +154,7 @@ fn statement_column_names() {
     let statement = ok!(connection.prepare(statement));
 
     assert_eq!(statement.columns(), 4);
-    let column_names = statement.column_names();
+    let column_names = statement.column_names().unwrap();
     assert_eq!(column_names[0], "id");
     assert_eq!(column_names[1], "name");
     assert_eq!(column_names[2], "age");

@@ -1,7 +1,7 @@
 use ffi;
 use libc::{c_double, c_int};
-use std::marker::PhantomData;
 use std::ffi::CStr;
+use std::marker::PhantomData;
 use std::str;
 
 use {Cursor, Result, Type, Value};
@@ -57,21 +57,28 @@ impl<'l> Statement<'l> {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
     }
 
-    fn column_name(&self, idx: c_int) -> &str {
-        let cname = unsafe { 
-            CStr::from_ptr(ffi::sqlite3_column_name(self.raw.0, idx))
-        };
-        str::from_utf8(cname.to_bytes()).unwrap()
+    /// Return the column name from the statement
+    ///
+    /// The leftmost column has the index 0.
+    fn column_name(&self, i: usize) -> Result<String> {
+        unsafe { 
+            let pointer = ffi::sqlite3_column_name(self.raw.0, i as c_int);
+            if pointer.is_null() {
+                raise!("can not get column name");
+            }
+            Ok(c_str_to_string!(pointer))
+        }
     }
 
-    pub fn column_names(&self) -> Vec<&str> {
-        let column_len = self.columns();
-        let mut column_names: Vec<&str> = Vec::with_capacity(column_len);
-        for i in 0..column_len{
-            let column_name = self.column_name(i as i32);
-            column_names.push(column_name); 
+    /// Return all the column names from the statement
+    pub fn column_names(&self) -> Result<Vec<String>> {
+        let count = self.columns();
+        let mut names: Vec<String> = Vec::with_capacity(count);
+        for i in 0..count {
+            let name = self.column_name(i)?;
+            names.push(name); 
         }
-        column_names
+        Ok(names)
     }
 
     /// Return the type of a column.
