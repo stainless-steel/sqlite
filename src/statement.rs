@@ -55,6 +55,21 @@ impl<'l> Statement<'l> {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
     }
 
+    /// Return the name of a column in the statement
+    #[inline]
+    pub fn column_name(&self, i: usize) -> String {
+        unsafe {
+            let ret = ffi::sqlite3_column_name(self.raw.0, i as c_int);
+            c_str_to_string!(ret)
+        }
+    }
+
+    /// Return column names in the statement
+    #[inline]
+    pub fn column_names(&self) -> Vec<String> {
+        (0..self.columns()).map(|i| self.column_name(i)).collect()
+    }
+
     /// Return the type of a column.
     ///
     /// The type is revealed after the first step has been taken.
