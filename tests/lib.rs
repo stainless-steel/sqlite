@@ -142,9 +142,11 @@ fn statement_columns() {
 
     assert_eq!(statement.columns(), 4);
 
-    let column_names = statement.column_names();
-    assert_eq!(column_names, vec!["id", "name", "age", "user_photo"]);
-    assert_eq!("user_photo", statement.column_name(3));
+    {
+        let column_names = statement.column_names();
+        assert_eq!(column_names, vec!["id", "name", "age", "user_photo"]);
+        assert_eq!("user_photo", statement.column_name(3));
+    }
 
     assert_eq!(ok!(statement.next()), State::Row);
 
