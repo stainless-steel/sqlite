@@ -55,16 +55,17 @@ impl<'l> Statement<'l> {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
     }
 
-    /// Return the name of a column in the statement
+    /// Return the name of a column.
     #[inline]
     pub fn column_name(&self, i: usize) -> &str {
+        debug_assert!(i < self.columns(), format!("column position has to be between 0 and {}", self.columns() - 1));
         unsafe {
             let ret = ffi::sqlite3_column_name(self.raw.0, i as c_int);
             c_str_to_str!(ret).unwrap()
         }
     }
 
-    /// Return column names in the statement
+    /// Return column names.
     #[inline]
     pub fn column_names(&self) -> Vec<&str> {
         (0..self.columns()).map(|i| self.column_name(i)).collect()
