@@ -135,6 +135,19 @@ fn cursor_workflow() {
 }
 
 #[test]
+fn statement_bind() {
+    let connection = setup_users(":memory:");
+    let statement = "INSERT INTO users (id, name, age, photo) VALUES (?, ?, ?, ?)";
+    let mut statement = ok!(connection.prepare(statement));
+
+    ok!(statement.bind(1, 2i64));
+    ok!(statement.bind(2, "Bob"));
+    ok!(statement.bind(3, 69.42));
+    ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
+    assert_eq!(ok!(statement.next()), State::Done);
+}
+
+#[test]
 fn statement_count() {
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
@@ -173,19 +186,6 @@ fn statement_kind() {
     assert_eq!(statement.kind(1), Type::String);
     assert_eq!(statement.kind(2), Type::Float);
     assert_eq!(statement.kind(3), Type::Binary);
-}
-
-#[test]
-fn statement_bind() {
-    let connection = setup_users(":memory:");
-    let statement = "INSERT INTO users (id, name, age, photo) VALUES (?, ?, ?, ?)";
-    let mut statement = ok!(connection.prepare(statement));
-
-    ok!(statement.bind(1, 2i64));
-    ok!(statement.bind(2, "Bob"));
-    ok!(statement.bind(3, 69.42));
-    ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
-    assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]

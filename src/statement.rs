@@ -55,6 +55,20 @@ impl<'l> Statement<'l> {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
     }
 
+    /// Return the type of a column.
+    ///
+    /// The type is revealed after the first step has been taken.
+    pub fn kind(&self, i: usize) -> Type {
+        match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
+            ffi::SQLITE_BLOB => Type::Binary,
+            ffi::SQLITE_FLOAT => Type::Float,
+            ffi::SQLITE_INTEGER => Type::Integer,
+            ffi::SQLITE_TEXT => Type::String,
+            ffi::SQLITE_NULL => Type::Null,
+            _ => unreachable!(),
+        }
+    }
+
     /// Return the name of a column.
     #[inline]
     pub fn name(&self, i: usize) -> &str {
@@ -69,20 +83,6 @@ impl<'l> Statement<'l> {
     #[inline]
     pub fn names(&self) -> Vec<&str> {
         (0..self.count()).map(|i| self.name(i)).collect()
-    }
-
-    /// Return the type of a column.
-    ///
-    /// The type is revealed after the first step has been taken.
-    pub fn kind(&self, i: usize) -> Type {
-        match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
-            ffi::SQLITE_BLOB => Type::Binary,
-            ffi::SQLITE_FLOAT => Type::Float,
-            ffi::SQLITE_INTEGER => Type::Integer,
-            ffi::SQLITE_TEXT => Type::String,
-            ffi::SQLITE_NULL => Type::Null,
-            _ => unreachable!(),
-        }
     }
 
     /// Advance to the next state.
