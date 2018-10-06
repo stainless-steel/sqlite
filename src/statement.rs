@@ -51,14 +51,14 @@ impl<'l> Statement<'l> {
 
     /// Return the number of columns.
     #[inline]
-    pub fn columns(&self) -> usize {
+    pub fn count(&self) -> usize {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
     }
 
     /// Return the name of a column.
     #[inline]
     pub fn name(&self, i: usize) -> &str {
-        debug_assert!(i < self.columns(), format!("column position has to be between 0 and {}", self.columns() - 1));
+        debug_assert!(i < self.count(), format!("column position has to be between 0 and {}", self.count() - 1));
         unsafe {
             let ret = ffi::sqlite3_column_name(self.raw.0, i as c_int);
             c_str_to_str!(ret).unwrap()
@@ -68,7 +68,7 @@ impl<'l> Statement<'l> {
     /// Return column names.
     #[inline]
     pub fn names(&self) -> Vec<&str> {
-        (0..self.columns()).map(|i| self.name(i)).collect()
+        (0..self.count()).map(|i| self.name(i)).collect()
     }
 
     /// Return the type of a column.

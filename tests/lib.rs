@@ -135,14 +135,14 @@ fn cursor_workflow() {
 }
 
 #[test]
-fn statement_columns() {
+fn statement_count() {
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));
 
     assert_eq!(ok!(statement.next()), State::Row);
 
-    assert_eq!(statement.columns(), 4);
+    assert_eq!(statement.count(), 4);
 }
 
 #[test]
@@ -150,8 +150,6 @@ fn statement_name() {
     let connection = setup_users(":memory:");
     let statement = "SELECT id, name, age, photo as user_photo FROM users";
     let statement = ok!(connection.prepare(statement));
-
-    assert_eq!(statement.columns(), 4);
 
     let names = statement.names();
     assert_eq!(names, vec!["id", "name", "age", "user_photo"]);
