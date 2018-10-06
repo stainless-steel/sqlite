@@ -55,7 +55,7 @@ fn connection_set_busy_handler() {
             thread::spawn(move || {
                 let mut connection = ok!(sqlite::open(&path));
                 ok!(connection.set_busy_handler(|_| true));
-                let statement = "INSERT INTO `users` (id, name, age, photo) VALUES (?, ?, ?, ?)";
+                let statement = "INSERT INTO users (id, name, age, photo) VALUES (?, ?, ?, ?)";
                 let mut statement = ok!(connection.prepare(statement));
                 ok!(statement.bind(1, 2i64));
                 ok!(statement.bind(2, "Bob"));
