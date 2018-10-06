@@ -140,11 +140,23 @@ fn statement_columns() {
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));
 
-    assert_eq!(statement.columns(), 4);
-
     assert_eq!(ok!(statement.next()), State::Row);
 
     assert_eq!(statement.columns(), 4);
+}
+
+#[test]
+fn statement_column_name() {
+    let connection = setup_users(":memory:");
+    let statement = "SELECT id, name, age, photo as user_photo FROM users";
+    let statement = ok!(connection.prepare(statement));
+
+    assert_eq!(statement.columns(), 4);
+
+    let column_names = statement.column_names();
+    assert_eq!(column_names, vec!["id", "name", "age", "user_photo"]);
+    assert_eq!("user_photo", statement.column_name(3));
+
 }
 
 #[test]
