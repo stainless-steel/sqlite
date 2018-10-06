@@ -59,6 +59,7 @@ impl<'l> Statement<'l> {
     ///
     /// The type is revealed after the first step has been taken.
     pub fn kind(&self, i: usize) -> Type {
+        debug_assert!(i < self.count(), "the index is out of range");
         match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
             ffi::SQLITE_BLOB => Type::Binary,
             ffi::SQLITE_FLOAT => Type::Float,
@@ -103,6 +104,7 @@ impl<'l> Statement<'l> {
     /// The leftmost column has the index 0.
     #[inline]
     pub fn read<T: Readable>(&self, i: usize) -> Result<T> {
+        debug_assert!(i < self.count(), "the index is out of range");
         Readable::read(self, i)
     }
 
