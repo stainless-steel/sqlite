@@ -72,7 +72,13 @@ impl<'l> Statement<'l> {
     /// Return the name of a column.
     #[inline]
     pub fn name(&self, i: usize) -> &str {
-        debug_assert!(i < self.count(), format!("column position has to be between 0 and {}", self.count() - 1));
+        debug_assert!(
+            i < self.count(),
+            format!(
+                "column position has to be between 0 and {}",
+                self.count() - 1
+            )
+        );
         unsafe {
             let ret = ffi::sqlite3_column_name(self.raw.0, i as c_int);
             c_str_to_str!(ret).unwrap()
@@ -241,18 +247,14 @@ impl Readable for Value {
 impl Readable for f64 {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(unsafe {
-            ffi::sqlite3_column_double(statement.raw.0, i as c_int) as f64
-        })
+        Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, i as c_int) as f64 })
     }
 }
 
 impl Readable for i64 {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(unsafe {
-            ffi::sqlite3_column_int64(statement.raw.0, i as c_int) as i64
-        })
+        Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, i as c_int) as i64 })
     }
 }
 
