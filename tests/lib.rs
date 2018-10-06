@@ -161,7 +161,7 @@ fn statement_count() {
 #[test]
 fn statement_name() {
     let connection = setup_users(":memory:");
-    let statement = "SELECT id, name, age, photo as user_photo FROM users";
+    let statement = "SELECT id, name, age, photo AS user_photo FROM users";
     let statement = ok!(connection.prepare(statement));
 
     let names = statement.names();
