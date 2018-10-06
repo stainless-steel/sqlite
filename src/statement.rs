@@ -72,16 +72,11 @@ impl<'l> Statement<'l> {
     /// Return the name of a column.
     #[inline]
     pub fn name(&self, i: usize) -> &str {
-        debug_assert!(
-            i < self.count(),
-            format!(
-                "column position has to be between 0 and {}",
-                self.count() - 1
-            )
-        );
+        debug_assert!(i < self.count(), "the index is out of range");
         unsafe {
-            let ret = ffi::sqlite3_column_name(self.raw.0, i as c_int);
-            c_str_to_str!(ret).unwrap()
+            let pointer = ffi::sqlite3_column_name(self.raw.0, i as c_int);
+            debug_assert!(!pointer.is_null());
+            c_str_to_str!(pointer).unwrap()
         }
     }
 
