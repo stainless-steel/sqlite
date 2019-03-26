@@ -303,6 +303,12 @@ pub fn open<T: AsRef<std::path::Path>>(path: T) -> Result<Connection> {
     Connection::open(path)
 }
 
+/// Open a read-only connection to an existing database.
+#[inline]
+pub fn open_readonly<T: AsRef<std::path::Path>>(path: T) -> Result<Connection> {
+    Connection::open_readonly(path)
+}
+
 /// Return the version number of SQLite.
 ///
 /// For instance, the version `3.8.11.1` corresponds to the integer `3008011`.

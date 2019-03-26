@@ -33,6 +33,24 @@ impl Connection {
         })
     }
 
+    /// Open a read-only connection to an existing database.
+    pub fn open_readonly<T: AsRef<Path>>(path: T) -> Result<Connection> {
+        let mut raw = 0 as *mut _;
+        unsafe {
+            ok!(ffi::sqlite3_open_v2(
+                path_to_cstr!(path.as_ref()).as_ptr(),
+                &mut raw,
+                ffi::SQLITE_OPEN_READONLY,
+                0 as *const _,
+            ));
+        }
+        Ok(Connection {
+            raw: raw,
+            busy_callback: None,
+            phantom: PhantomData,
+        })
+    }
+
     /// Execute a statement without processing the resulting rows if any.
     #[inline]
     pub fn execute<T: AsRef<str>>(&self, statement: T) -> Result<()> {
