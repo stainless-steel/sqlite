@@ -13,8 +13,8 @@ connection
     .execute(
         "
         CREATE TABLE users (name TEXT, age INTEGER);
-        INSERT INTO users (name, age) VALUES ('Alice', 42);
-        INSERT INTO users (name, age) VALUES ('Bob', 69);
+        INSERT INTO users VALUES ('Alice', 42);
+        INSERT INTO users VALUES ('Bob', 69);
         ",
     )
     .unwrap();

@@ -55,7 +55,7 @@ fn connection_set_busy_handler() {
             thread::spawn(move || {
                 let mut connection = ok!(sqlite::open(&path));
                 ok!(connection.set_busy_handler(|_| true));
-                let statement = "INSERT INTO users (id, name, age, photo) VALUES (?, ?, ?, ?)";
+                let statement = "INSERT INTO users VALUES (?, ?, ?, ?)";
                 let mut statement = ok!(connection.prepare(statement));
                 ok!(statement.bind(1, 2i64));
                 ok!(statement.bind(2, "Bob"));
@@ -137,7 +137,7 @@ fn cursor_workflow() {
 #[test]
 fn statement_bind() {
     let connection = setup_users(":memory:");
-    let statement = "INSERT INTO users (id, name, age, photo) VALUES (?, ?, ?, ?)";
+    let statement = "INSERT INTO users VALUES (?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(statement));
 
     ok!(statement.bind(1, 2i64));
@@ -234,13 +234,13 @@ fn setup_english<T: AsRef<Path>>(path: T) -> Connection {
     ok!(connection.execute(
         "
         CREATE TABLE english (value TEXT);
-        INSERT INTO english (value) VALUES ('cerotype');
-        INSERT INTO english (value) VALUES ('metatype');
-        INSERT INTO english (value) VALUES ('ozotype');
-        INSERT INTO english (value) VALUES ('phenotype');
-        INSERT INTO english (value) VALUES ('plastotype');
-        INSERT INTO english (value) VALUES ('undertype');
-        INSERT INTO english (value) VALUES ('nonsence');
+        INSERT INTO english VALUES ('cerotype');
+        INSERT INTO english VALUES ('metatype');
+        INSERT INTO english VALUES ('ozotype');
+        INSERT INTO english VALUES ('phenotype');
+        INSERT INTO english VALUES ('plastotype');
+        INSERT INTO english VALUES ('undertype');
+        INSERT INTO english VALUES ('nonsence');
         ",
     ));
     connection
@@ -251,7 +251,7 @@ fn setup_users<T: AsRef<Path>>(path: T) -> Connection {
     ok!(connection.execute(
         "
         CREATE TABLE users (id INTEGER, name TEXT, age REAL, photo BLOB);
-        INSERT INTO users (id, name, age, photo) VALUES (1, 'Alice', 42.69, X'4269');
+        INSERT INTO users VALUES (1, 'Alice', 42.69, X'4269');
         ",
     ));
     connection
