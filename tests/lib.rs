@@ -73,6 +73,29 @@ fn connection_set_busy_handler() {
 }
 
 #[test]
+fn cursor_read() {
+    let connection = setup_users(":memory:");
+    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)"));
+    let statement = "SELECT id, age FROM users ORDER BY 1 DESC";
+    let statement = ok!(connection.prepare(statement));
+
+    let mut count = 0;
+    let mut cursor = statement.cursor();
+    while let Some(row) = ok!(cursor.next()) {
+        let id = row[0].as_integer().unwrap();
+        if id == 1 {
+            assert_eq!(row[1].as_float().unwrap(), 42.69);
+        } else if id == 2 {
+            assert_eq!(row[1].as_float().unwrap_or(69.42), 69.42);
+        } else {
+            assert!(false);
+        }
+        count += 1;
+    }
+    assert_eq!(count, 2);
+}
+
+#[test]
 fn cursor_wildcard_with_binding() {
     let connection = setup_english(":memory:");
     let statement = "SELECT value FROM english WHERE value LIKE ?";
