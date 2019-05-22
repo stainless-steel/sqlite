@@ -36,12 +36,12 @@ impl<'l> Cursor<'l> {
                 return self.next();
             }
         }
-        let values = match self.values.take() {
+        self.values = match self.values.take() {
             Some(mut values) => {
                 for (i, value) in values.iter_mut().enumerate() {
                     *value = try!(self.statement.read(i));
                 }
-                values
+                Some(values)
             }
             _ => {
                 let count = self.statement.count();
@@ -49,11 +49,10 @@ impl<'l> Cursor<'l> {
                 for i in 0..count {
                     values.push(try!(self.statement.read(i)));
                 }
-                values
+                Some(values)
             }
         };
         self.state = Some(try!(self.statement.next()));
-        self.values = Some(values);
         Ok(Some(self.values.as_ref().unwrap()))
     }
 
