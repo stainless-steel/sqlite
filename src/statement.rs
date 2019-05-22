@@ -57,7 +57,7 @@ impl<'l> Statement<'l> {
 
     /// Return the type of a column.
     ///
-    /// The type is revealed after the first step has been taken.
+    /// The type becomes available after taking a step.
     pub fn kind(&self, i: usize) -> Type {
         debug_assert!(i < self.count(), "the index is out of range");
         match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
