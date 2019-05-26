@@ -172,7 +172,6 @@ where
 {
     unsafe {
         let mut pairs = Vec::with_capacity(count as usize);
-
         for i in 0..(count as isize) {
             let column = {
                 let pointer = *columns.offset(i);
@@ -189,7 +188,6 @@ where
             };
             pairs.push((column, value));
         }
-
         if (*(callback as *mut F))(&pairs) {
             0
         } else {
