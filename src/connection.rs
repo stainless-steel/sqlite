@@ -188,7 +188,7 @@ impl ConnectionFlags {
 
     /// Open the database for reading only.
     pub fn set_read_only(mut self) -> Self {
-        self.0 |= ffi::SQLITE_OPEN_READWRITE;
+        self.0 |= ffi::SQLITE_OPEN_READONLY;
         self
     }
 
