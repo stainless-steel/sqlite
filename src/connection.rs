@@ -8,7 +8,7 @@ use {Result, Statement};
 /// A database connection.
 pub struct Connection {
     raw: *mut ffi::sqlite3,
-    busy_callback: Option<Box<FnMut(usize) -> bool>>,
+    busy_callback: Option<Box<dyn FnMut(usize) -> bool>>,
     phantom: PhantomData<ffi::sqlite3>,
 }
 
