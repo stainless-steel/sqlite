@@ -170,6 +170,22 @@ impl ConnectionFlags {
         self
     }
 
+    /// Open the database in the serialized [threading mode][1].
+    ///
+    /// [1]: https://www.sqlite.org/threadsafe.html
+    pub fn set_full_mutex(mut self) -> Self {
+        self.0 |= ffi::SQLITE_OPEN_FULLMUTEX;
+        self
+    }
+
+    /// Opens the database in the multi-thread [threading mode][1].
+    ///
+    /// [1]: https://www.sqlite.org/threadsafe.html
+    pub fn set_no_mutex(mut self) -> Self {
+        self.0 |= ffi::SQLITE_OPEN_NOMUTEX;
+        self
+    }
+
     /// Open the database for reading only.
     pub fn set_read_only(mut self) -> Self {
         self.0 |= ffi::SQLITE_OPEN_READWRITE;
