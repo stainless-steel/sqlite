@@ -294,19 +294,23 @@ mod cursor;
 mod statement;
 
 pub use connection::Connection;
+pub use connection::ConnectionFlags;
 pub use cursor::Cursor;
 pub use statement::{Bindable, Readable, State, Statement};
 
-/// Open a connection to a new or existing database.
+/// Open a read-write connection to a new or existing database.
 #[inline]
 pub fn open<T: AsRef<std::path::Path>>(path: T) -> Result<Connection> {
     Connection::open(path)
 }
 
-/// Open a read-only connection to an existing database.
+/// Open a connection to a database with a specific set of connection flags.
 #[inline]
-pub fn open_readonly<T: AsRef<std::path::Path>>(path: T) -> Result<Connection> {
-    Connection::open_readonly(path)
+pub fn open_with_flags<T: AsRef<std::path::Path>>(
+    path: T,
+    flags: ConnectionFlags,
+) -> Result<Connection> {
+    Connection::open_with_flags(path, flags)
 }
 
 /// Return the version number of SQLite.

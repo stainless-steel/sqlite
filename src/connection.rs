@@ -12,35 +12,26 @@ pub struct Connection {
     phantom: PhantomData<ffi::sqlite3>,
 }
 
+/// A set of connection flags.
+#[derive(Clone, Copy, Debug)]
+pub struct ConnectionFlags(c_int);
+
 unsafe impl Send for Connection {}
 
 impl Connection {
-    /// Open a connection to a new or existing database.
+    /// Open a read-write connection to a new or existing database.
     pub fn open<T: AsRef<Path>>(path: T) -> Result<Connection> {
-        let mut raw = 0 as *mut _;
-        unsafe {
-            ok!(ffi::sqlite3_open_v2(
-                path_to_cstr!(path.as_ref()).as_ptr(),
-                &mut raw,
-                ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_READWRITE,
-                0 as *const _,
-            ));
-        }
-        Ok(Connection {
-            raw: raw,
-            busy_callback: None,
-            phantom: PhantomData,
-        })
+        Connection::open_with_flags(path, ConnectionFlags::new().set_create().set_read_write())
     }
 
-    /// Open a read-only connection to an existing database.
-    pub fn open_readonly<T: AsRef<Path>>(path: T) -> Result<Connection> {
+    /// Open a database connection with a specific set of connection flags.
+    pub fn open_with_flags<T: AsRef<Path>>(path: T, flags: ConnectionFlags) -> Result<Connection> {
         let mut raw = 0 as *mut _;
         unsafe {
             ok!(ffi::sqlite3_open_v2(
                 path_to_cstr!(path.as_ref()).as_ptr(),
                 &mut raw,
-                ffi::SQLITE_OPEN_READONLY,
+                flags.0,
                 0 as *const _,
             ));
         }
@@ -163,6 +154,32 @@ impl Drop for Connection {
     fn drop(&mut self) {
         self.remove_busy_handler();
         unsafe { ffi::sqlite3_close(self.raw) };
+    }
+}
+
+impl ConnectionFlags {
+    /// Create a set of connection flags.
+    #[inline]
+    pub fn new() -> Self {
+        ConnectionFlags(0)
+    }
+
+    /// Create the database if it does not already exist.
+    pub fn set_create(mut self) -> Self {
+        self.0 |= ffi::SQLITE_OPEN_CREATE;
+        self
+    }
+
+    /// Open the database for reading only.
+    pub fn set_read_only(mut self) -> Self {
+        self.0 |= ffi::SQLITE_OPEN_READWRITE;
+        self
+    }
+
+    /// Open the database for reading and writing.
+    pub fn set_read_write(mut self) -> Self {
+        self.0 |= ffi::SQLITE_OPEN_READWRITE;
+        self
     }
 }
 
