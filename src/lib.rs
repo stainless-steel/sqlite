@@ -294,7 +294,7 @@ mod cursor;
 mod statement;
 
 pub use connection::Connection;
-pub use connection::ConnectionFlags;
+pub use connection::OpenFlags;
 pub use cursor::Cursor;
 pub use statement::{Bindable, Readable, State, Statement};
 
@@ -304,12 +304,9 @@ pub fn open<T: AsRef<std::path::Path>>(path: T) -> Result<Connection> {
     Connection::open(path)
 }
 
-/// Open a connection to a database with a specific set of connection flags.
+/// Open a connection to a database with a specific set of flags.
 #[inline]
-pub fn open_with_flags<T: AsRef<std::path::Path>>(
-    path: T,
-    flags: ConnectionFlags,
-) -> Result<Connection> {
+pub fn open_with_flags<T: AsRef<std::path::Path>>(path: T, flags: OpenFlags) -> Result<Connection> {
     Connection::open_with_flags(path, flags)
 }
 

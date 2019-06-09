@@ -14,18 +14,18 @@ pub struct Connection {
 
 /// A set of connection flags.
 #[derive(Clone, Copy, Debug)]
-pub struct ConnectionFlags(c_int);
+pub struct OpenFlags(c_int);
 
 unsafe impl Send for Connection {}
 
 impl Connection {
     /// Open a read-write connection to a new or existing database.
     pub fn open<T: AsRef<Path>>(path: T) -> Result<Connection> {
-        Connection::open_with_flags(path, ConnectionFlags::new().set_create().set_read_write())
+        Connection::open_with_flags(path, OpenFlags::new().set_create().set_read_write())
     }
 
-    /// Open a database connection with a specific set of connection flags.
-    pub fn open_with_flags<T: AsRef<Path>>(path: T, flags: ConnectionFlags) -> Result<Connection> {
+    /// Open a database connection with a specific set of flags.
+    pub fn open_with_flags<T: AsRef<Path>>(path: T, flags: OpenFlags) -> Result<Connection> {
         let mut raw = 0 as *mut _;
         unsafe {
             ok!(ffi::sqlite3_open_v2(
@@ -157,11 +157,11 @@ impl Drop for Connection {
     }
 }
 
-impl ConnectionFlags {
+impl OpenFlags {
     /// Create a set of connection flags.
     #[inline]
     pub fn new() -> Self {
-        ConnectionFlags(0)
+        OpenFlags(0)
     }
 
     /// Create the database if it does not already exist.
