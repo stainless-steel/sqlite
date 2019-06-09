@@ -49,7 +49,7 @@ fn connection_open_with_flags() {
     setup_users(&path);
 
     let flags = OpenFlags::new().set_read_only();
-    let connection = ok!(sqlite::open_with_flags(path, flags));
+    let connection = ok!(Connection::open_with_flags(path, flags));
     match connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)") {
         Err(_) => {}
         _ => unreachable!(),

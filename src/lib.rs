@@ -304,12 +304,6 @@ pub fn open<T: AsRef<std::path::Path>>(path: T) -> Result<Connection> {
     Connection::open(path)
 }
 
-/// Open a connection to a database with a specific set of flags.
-#[inline]
-pub fn open_with_flags<T: AsRef<std::path::Path>>(path: T, flags: OpenFlags) -> Result<Connection> {
-    Connection::open_with_flags(path, flags)
-}
-
 /// Return the version number of SQLite.
 ///
 /// For instance, the version `3.8.11.1` corresponds to the integer `3008011`.
