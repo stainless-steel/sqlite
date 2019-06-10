@@ -12,7 +12,7 @@ pub struct Connection {
     phantom: PhantomData<ffi::sqlite3>,
 }
 
-/// A set of connection flags.
+/// Flags for opening a database connection.
 #[derive(Clone, Copy, Debug)]
 pub struct OpenFlags(c_int);
 
@@ -24,7 +24,7 @@ impl Connection {
         Connection::open_with_flags(path, OpenFlags::new().set_create().set_read_write())
     }
 
-    /// Open a database connection with a specific set of flags.
+    /// Open a database connection with specific flags.
     pub fn open_with_flags<T: AsRef<Path>>(path: T, flags: OpenFlags) -> Result<Connection> {
         let mut raw = 0 as *mut _;
         unsafe {
@@ -158,7 +158,7 @@ impl Drop for Connection {
 }
 
 impl OpenFlags {
-    /// Create a set of connection flags.
+    /// Create flags for opening a database connection.
     #[inline]
     pub fn new() -> Self {
         OpenFlags(0)
