@@ -1,7 +1,7 @@
 extern crate sqlite;
 extern crate temporary;
 
-use sqlite::{Connection, State, Type, Value};
+use sqlite::{Connection, OpenFlags, State, Type, Value};
 use std::path::Path;
 
 macro_rules! ok(($result:expr) => ($result.unwrap()));
@@ -38,6 +38,22 @@ fn connection_iterate() {
         true
     }));
     assert!(done);
+}
+
+#[test]
+fn connection_open_with_flags() {
+    use temporary::Directory;
+
+    let directory = ok!(Directory::new("sqlite"));
+    let path = directory.path().join("database.sqlite3");
+    setup_users(&path);
+
+    let flags = OpenFlags::new().set_read_only();
+    let connection = ok!(Connection::open_with_flags(path, flags));
+    match connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)") {
+        Err(_) => {}
+        _ => unreachable!(),
+    }
 }
 
 #[test]
