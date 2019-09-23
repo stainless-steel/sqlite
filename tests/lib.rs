@@ -187,6 +187,28 @@ fn statement_bind() {
 }
 
 #[test]
+fn statement_optional_bind() {
+    let connection = setup_users(":memory:");
+    let statement = "INSERT INTO users VALUES (?, ?, ?, ?)";
+    let mut statement = ok!(connection.prepare(statement));
+
+    ok!(statement.bind(1, None::<i64>));
+    ok!(statement.bind(2, None::<&str>));
+    ok!(statement.bind(3, None::<f64>));
+    ok!(statement.bind(4, None::<&[u8]>));
+    assert_eq!(ok!(statement.next()), State::Done);
+
+    let statement = "INSERT INTO users VALUES (?, ?, ?, ?)";
+    let mut statement = ok!(connection.prepare(statement));
+
+    ok!(statement.bind(1, Some(2i64)));
+    ok!(statement.bind(2, Some("Bob")));
+    ok!(statement.bind(3, Some(69.42)));
+    ok!(statement.bind(4, Some(&[0x69u8, 0x42u8][..])));
+    assert_eq!(ok!(statement.next()), State::Done);
+}
+
+#[test]
 fn statement_count() {
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";

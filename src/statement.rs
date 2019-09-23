@@ -229,6 +229,17 @@ impl Bindable for () {
     }
 }
 
+impl<T: Bindable> Bindable for Option<T> {
+    #[inline]
+    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
+        debug_assert!(i > 0, "the indexing starts from 1");
+        match self {
+            Some(inner) => inner.bind(statement, i),
+            None => ().bind(statement, i),
+        }
+    }
+}
+
 impl Readable for Value {
     fn read(statement: &Statement, i: usize) -> Result<Self> {
         Ok(match statement.kind(i) {
