@@ -13,9 +13,9 @@ impl<'l> Cursor<'l> {
     /// Bind values to all parameters.
     pub fn bind(&mut self, values: &[Value]) -> Result<()> {
         self.state = None;
-        try!(self.statement.reset());
+        self.statement.reset()?;
         for (i, value) in values.iter().enumerate() {
-            try!(self.statement.bind(i + 1, value));
+            self.statement.bind(i + 1, value)?;
         }
         Ok(())
     }
@@ -32,14 +32,14 @@ impl<'l> Cursor<'l> {
             Some(State::Row) => {}
             Some(State::Done) => return Ok(None),
             _ => {
-                self.state = Some(try!(self.statement.next()));
+                self.state = Some(self.statement.next()?);
                 return self.next();
             }
         }
         self.values = match self.values.take() {
             Some(mut values) => {
                 for (i, value) in values.iter_mut().enumerate() {
-                    *value = try!(self.statement.read(i));
+                    *value = self.statement.read(i)?;
                 }
                 Some(values)
             }
@@ -47,12 +47,12 @@ impl<'l> Cursor<'l> {
                 let count = self.statement.count();
                 let mut values = Vec::with_capacity(count);
                 for i in 0..count {
-                    values.push(try!(self.statement.read(i)));
+                    values.push(self.statement.read(i)?);
                 }
                 Some(values)
             }
         };
-        self.state = Some(try!(self.statement.next()));
+        self.state = Some(self.statement.next()?);
         Ok(Some(self.values.as_ref().unwrap()))
     }
 

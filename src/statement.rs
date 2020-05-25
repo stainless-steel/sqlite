@@ -232,10 +232,10 @@ impl Bindable for () {
 impl Readable for Value {
     fn read(statement: &Statement, i: usize) -> Result<Self> {
         Ok(match statement.kind(i) {
-            Type::Binary => Value::Binary(try!(Readable::read(statement, i))),
-            Type::Float => Value::Float(try!(Readable::read(statement, i))),
-            Type::Integer => Value::Integer(try!(Readable::read(statement, i))),
-            Type::String => Value::String(try!(Readable::read(statement, i))),
+            Type::Binary => Value::Binary(Readable::read(statement, i)?),
+            Type::Float => Value::Float(Readable::read(statement, i)?),
+            Type::Integer => Value::Integer(Readable::read(statement, i)?),
+            Type::String => Value::String(Readable::read(statement, i)?),
             Type::Null => Value::Null,
         })
     }

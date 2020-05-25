@@ -101,7 +101,7 @@ impl Connection {
     where
         F: FnMut(usize) -> bool + Send + 'static,
     {
-        try!(self.remove_busy_handler());
+        self.remove_busy_handler()?;
         unsafe {
             let callback = Box::new(callback);
             let result = ffi::sqlite3_busy_handler(
