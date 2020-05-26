@@ -28,12 +28,25 @@ impl Connection {
     pub fn open_with_flags<T: AsRef<Path>>(path: T, flags: OpenFlags) -> Result<Connection> {
         let mut raw = 0 as *mut _;
         unsafe {
-            ok!(ffi::sqlite3_open_v2(
+            let ret = ffi::sqlite3_open_v2(
                 path_to_cstr!(path.as_ref()).as_ptr(),
                 &mut raw,
                 flags.0,
-                0 as *const _,
-            ));
+                0 as *const _ );
+
+            // Explicitly close the connection on error.
+            // This is a quirk of the C API, where the database handle
+            // (raw) is unconditionally allocated.
+            match ret {
+                ffi::SQLITE_OK => {},
+                code => {
+                    ffi::sqlite3_close(raw);
+                    return Err(::Error {
+                        code: Some(code as isize),
+                        message: None
+                    });
+                },
+            }
         }
         Ok(Connection {
             raw: raw,
@@ -101,7 +114,7 @@ impl Connection {
     where
         F: FnMut(usize) -> bool + Send + 'static,
     {
-        try!(self.remove_busy_handler());
+        self.remove_busy_handler()?;
         unsafe {
             let callback = Box::new(callback);
             let result = ffi::sqlite3_busy_handler(
