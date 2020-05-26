@@ -32,20 +32,21 @@ impl Connection {
                 path_to_cstr!(path.as_ref()).as_ptr(),
                 &mut raw,
                 flags.0,
-                0 as *const _ );
+                0 as *const _,
+            );
 
             // Explicitly close the connection on error.
             // This is a quirk of the C API, where the database handle
             // (raw) is unconditionally allocated.
             match ret {
-                ffi::SQLITE_OK => {},
+                ffi::SQLITE_OK => {}
                 code => {
                     ffi::sqlite3_close(raw);
                     return Err(::Error {
                         code: Some(code as isize),
-                        message: None
+                        message: None,
                     });
-                },
+                }
             }
         }
         Ok(Connection {
