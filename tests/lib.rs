@@ -112,11 +112,10 @@ fn cursor_read() {
 }
 
 #[test]
-fn cursor_wildcard_with_binding() {
+fn cursor_wildcard() {
     let connection = setup_english(":memory:");
-    let statement = "SELECT value FROM english WHERE value LIKE ?";
-    let mut statement = ok!(connection.prepare(statement));
-    ok!(statement.bind(1, "%type"));
+    let statement = "SELECT value FROM english WHERE value LIKE '%type'";
+    let statement = ok!(connection.prepare(statement));
 
     let mut count = 0;
     let mut cursor = statement.cursor();
@@ -127,10 +126,11 @@ fn cursor_wildcard_with_binding() {
 }
 
 #[test]
-fn cursor_wildcard_without_binding() {
+fn cursor_wildcard_with_binding() {
     let connection = setup_english(":memory:");
-    let statement = "SELECT value FROM english WHERE value LIKE '%type'";
-    let statement = ok!(connection.prepare(statement));
+    let statement = "SELECT value FROM english WHERE value LIKE ?";
+    let mut statement = ok!(connection.prepare(statement));
+    ok!(statement.bind(1, "%type"));
 
     let mut count = 0;
     let mut cursor = statement.cursor();
@@ -187,7 +187,7 @@ fn statement_bind() {
 }
 
 #[test]
-fn statement_optional_bind() {
+fn statement_bind_with_optional() {
     let connection = setup_users(":memory:");
     let statement = "INSERT INTO users VALUES (?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(statement));
@@ -264,11 +264,10 @@ fn statement_read() {
 }
 
 #[test]
-fn statement_wildcard_with_binding() {
+fn statement_wildcard() {
     let connection = setup_english(":memory:");
-    let statement = "SELECT value FROM english WHERE value LIKE ?";
+    let statement = "SELECT value FROM english WHERE value LIKE '%type'";
     let mut statement = ok!(connection.prepare(statement));
-    ok!(statement.bind(1, "%type"));
 
     let mut count = 0;
     while let State::Row = ok!(statement.next()) {
@@ -278,10 +277,11 @@ fn statement_wildcard_with_binding() {
 }
 
 #[test]
-fn statement_wildcard_without_binding() {
+fn statement_wildcard_with_binding() {
     let connection = setup_english(":memory:");
-    let statement = "SELECT value FROM english WHERE value LIKE '%type'";
+    let statement = "SELECT value FROM english WHERE value LIKE ?";
     let mut statement = ok!(connection.prepare(statement));
+    ok!(statement.bind(1, "%type"));
 
     let mut count = 0;
     while let State::Row = ok!(statement.next()) {
