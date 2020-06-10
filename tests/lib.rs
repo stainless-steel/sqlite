@@ -7,6 +7,25 @@ use std::path::Path;
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[test]
+fn connection_changes() {
+    let connection = setup_users(":memory:");
+    assert_eq!(connection.changes(), 1);
+    assert_eq!(connection.total_changes(), 1);
+
+    ok!(connection.execute("UPDATE users SET name = 'Bob' WHERE id = 1"));
+    assert_eq!(connection.changes(), 1);
+    assert_eq!(connection.total_changes(), 2);
+
+    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)"));
+    assert_eq!(connection.changes(), 1);
+    assert_eq!(connection.total_changes(), 3);
+
+    ok!(connection.execute("DELETE FROM users"));
+    assert_eq!(connection.changes(), 2);
+    assert_eq!(connection.total_changes(), 5);
+}
+
+#[test]
 fn connection_error() {
     let connection = setup_users(":memory:");
     match connection.execute(":)") {
@@ -39,27 +58,6 @@ fn connection_iterate() {
         true
     }));
     assert!(done);
-}
-
-#[test]
-fn connection_changes() {
-    let connection = setup_users(":memory:");
-
-    // The insert in setup_users() counts as a change
-    assert_eq!(connection.changes(), 1);
-    assert_eq!(connection.total_changes(), 1);
-
-    ok!(connection.execute("UPDATE users SET name = 'Bob' WHERE id = 1"));
-    assert_eq!(connection.changes(), 1);
-    assert_eq!(connection.total_changes(), 2);
-
-    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)"));
-    assert_eq!(connection.changes(), 1);
-    assert_eq!(connection.total_changes(), 3);
-
-    ok!(connection.execute("DELETE FROM users"));
-    assert_eq!(connection.changes(), 2);
-    assert_eq!(connection.total_changes(), 5);
 }
 
 #[test]
