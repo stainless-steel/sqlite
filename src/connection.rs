@@ -112,18 +112,14 @@ impl Connection {
     /// recent INSERT, UPDATE, or DELETE statement.
     #[inline]
     pub fn changes(&self) -> usize {
-        unsafe {
-            ffi::sqlite3_changes(self.raw) as usize
-        }
+        unsafe { ffi::sqlite3_changes(self.raw) as usize }
     }
 
     /// Return the total number of rows inserted, updated, and deleted by all
     /// INSERT, UPDATE, and DELETE statements since the connection was opened.
     #[inline]
     pub fn total_changes(&self) -> usize {
-        unsafe {
-            ffi::sqlite3_total_changes(self.raw) as usize
-        }
+        unsafe { ffi::sqlite3_total_changes(self.raw) as usize }
     }
 
     /// Set a callback for handling busy events.
