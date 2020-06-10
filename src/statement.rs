@@ -297,6 +297,17 @@ impl Readable for Vec<u8> {
     }
 }
 
+impl<T: Readable> Readable for Option<T> {
+    #[inline]
+    fn read(statement: &Statement, i: usize) -> Result<Self> {
+        if statement.kind(i) == Type::Null {
+            Ok(None)
+        } else {
+            T::read(statement, i).map(Some)
+        }
+    }
+}
+
 #[inline]
 pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, statement: T) -> Result<Statement<'l>> {
     let mut raw0 = 0 as *mut _;

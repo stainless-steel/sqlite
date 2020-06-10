@@ -29,11 +29,12 @@ fn connection_iterate() {
     let mut done = false;
     let statement = "SELECT * FROM users";
     ok!(connection.iterate(statement, |pairs| {
-        assert_eq!(pairs.len(), 4);
+        assert_eq!(pairs.len(), 5);
         assert_eq!(pairs[0], pair!("id", "1"));
         assert_eq!(pairs[1], pair!("name", "Alice"));
         assert_eq!(pairs[2], pair!("age", "42.69"));
         assert_eq!(pairs[3], pair!("photo", "\x42\x69"));
+        assert_eq!(pairs[4], ("email", None));
         done = true;
         true
     }));
@@ -71,12 +72,13 @@ fn connection_set_busy_handler() {
             thread::spawn(move || {
                 let mut connection = ok!(sqlite::open(&path));
                 ok!(connection.set_busy_handler(|_| true));
-                let statement = "INSERT INTO users VALUES (?, ?, ?, ?)";
+                let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
                 let mut statement = ok!(connection.prepare(statement));
                 ok!(statement.bind(1, 2i64));
                 ok!(statement.bind(2, "Bob"));
                 ok!(statement.bind(3, 69.42));
                 ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
+                ok!(statement.bind(5, ()));
                 assert_eq!(ok!(statement.next()), State::Done);
                 true
             })
@@ -91,7 +93,7 @@ fn connection_set_busy_handler() {
 #[test]
 fn cursor_read() {
     let connection = setup_users(":memory:");
-    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)"));
+    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
     let statement = "SELECT id, age FROM users ORDER BY 1 DESC";
     let statement = ok!(connection.prepare(statement));
 
@@ -176,35 +178,38 @@ fn cursor_workflow() {
 #[test]
 fn statement_bind() {
     let connection = setup_users(":memory:");
-    let statement = "INSERT INTO users VALUES (?, ?, ?, ?)";
+    let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(statement));
 
     ok!(statement.bind(1, 2i64));
     ok!(statement.bind(2, "Bob"));
     ok!(statement.bind(3, 69.42));
     ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
+    ok!(statement.bind(5, ()));
     assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]
 fn statement_bind_with_optional() {
     let connection = setup_users(":memory:");
-    let statement = "INSERT INTO users VALUES (?, ?, ?, ?)";
+    let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(statement));
 
     ok!(statement.bind(1, None::<i64>));
     ok!(statement.bind(2, None::<&str>));
     ok!(statement.bind(3, None::<f64>));
     ok!(statement.bind(4, None::<&[u8]>));
+    ok!(statement.bind(5, None::<&str>));
     assert_eq!(ok!(statement.next()), State::Done);
 
-    let statement = "INSERT INTO users VALUES (?, ?, ?, ?)";
+    let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(statement));
 
     ok!(statement.bind(1, Some(2i64)));
     ok!(statement.bind(2, Some("Bob")));
     ok!(statement.bind(3, Some(69.42)));
     ok!(statement.bind(4, Some(&[0x69u8, 0x42u8][..])));
+    ok!(statement.bind(5, None::<&str>));
     assert_eq!(ok!(statement.next()), State::Done);
 }
 
@@ -216,7 +221,7 @@ fn statement_count() {
 
     assert_eq!(ok!(statement.next()), State::Row);
 
-    assert_eq!(statement.count(), 4);
+    assert_eq!(statement.count(), 5);
 }
 
 #[test]
@@ -260,6 +265,22 @@ fn statement_read() {
     assert_eq!(ok!(statement.read::<String>(1)), String::from("Alice"));
     assert_eq!(ok!(statement.read::<f64>(2)), 42.69);
     assert_eq!(ok!(statement.read::<Vec<u8>>(3)), vec![0x42, 0x69]);
+    assert_eq!(ok!(statement.read::<Value>(4)), Value::Null);
+    assert_eq!(ok!(statement.next()), State::Done);
+}
+
+#[test]
+fn statement_read_with_optional() {
+    let connection = setup_users(":memory:");
+    let statement = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(statement));
+
+    assert_eq!(ok!(statement.next()), State::Row);
+    assert_eq!(ok!(statement.read::<Option<i64>>(0)), Some(1));
+    assert_eq!(ok!(statement.read::<Option<String>>(1)), Some(String::from("Alice")));
+    assert_eq!(ok!(statement.read::<Option<f64>>(2)), Some(42.69));
+    assert_eq!(ok!(statement.read::<Option<Vec<u8>>>(3)), Some(vec![0x42, 0x69]));
+    assert_eq!(ok!(statement.read::<Option<String>>(4)), None);
     assert_eq!(ok!(statement.next()), State::Done);
 }
 
@@ -311,8 +332,8 @@ fn setup_users<T: AsRef<Path>>(path: T) -> Connection {
     let connection = ok!(sqlite::open(path));
     ok!(connection.execute(
         "
-        CREATE TABLE users (id INTEGER, name TEXT, age REAL, photo BLOB);
-        INSERT INTO users VALUES (1, 'Alice', 42.69, X'4269');
+        CREATE TABLE users (id INTEGER, name TEXT, age REAL, photo BLOB, email TEXT);
+        INSERT INTO users VALUES (1, 'Alice', 42.69, X'4269', NULL);
         ",
     ));
     connection
