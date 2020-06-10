@@ -108,6 +108,24 @@ impl Connection {
         ::statement::new(self.raw, statement)
     }
 
+    /// Return the number of rows modified, inserted or deleted by the most recently completed
+    /// INSERT, UPDATE or DELETE statement.
+    #[inline]
+    pub fn changes(&self) -> usize {
+        unsafe {
+            ffi::sqlite3_changes(self.raw) as usize
+        }
+    }
+
+    /// This function returns the total number of rows inserted, modified or deleted by all INSERT,
+    /// UPDATE or DELETE statements completed since the database connection was opened.
+    #[inline]
+    pub fn total_changes(&self) -> usize {
+        unsafe {
+            ffi::sqlite3_total_changes(self.raw) as usize
+        }
+    }
+
     /// Set a callback for handling busy events.
     ///
     /// The callback is triggered when the database cannot perform an operation
