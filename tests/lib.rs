@@ -277,9 +277,15 @@ fn statement_read_with_optional() {
 
     assert_eq!(ok!(statement.next()), State::Row);
     assert_eq!(ok!(statement.read::<Option<i64>>(0)), Some(1));
-    assert_eq!(ok!(statement.read::<Option<String>>(1)), Some(String::from("Alice")));
+    assert_eq!(
+        ok!(statement.read::<Option<String>>(1)),
+        Some(String::from("Alice"))
+    );
     assert_eq!(ok!(statement.read::<Option<f64>>(2)), Some(42.69));
-    assert_eq!(ok!(statement.read::<Option<Vec<u8>>>(3)), Some(vec![0x42, 0x69]));
+    assert_eq!(
+        ok!(statement.read::<Option<Vec<u8>>>(3)),
+        Some(vec![0x42, 0x69])
+    );
     assert_eq!(ok!(statement.read::<Option<String>>(4)), None);
     assert_eq!(ok!(statement.next()), State::Done);
 }
