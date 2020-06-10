@@ -108,8 +108,8 @@ impl Connection {
         ::statement::new(self.raw, statement)
     }
 
-    /// Return the number of rows modified, inserted or deleted by the most recently completed
-    /// INSERT, UPDATE or DELETE statement.
+    /// Return the number of rows inserted, updated, or deleted by the most
+    /// recent INSERT, UPDATE, or DELETE statement.
     #[inline]
     pub fn changes(&self) -> usize {
         unsafe {
@@ -117,8 +117,8 @@ impl Connection {
         }
     }
 
-    /// This function returns the total number of rows inserted, modified or deleted by all INSERT,
-    /// UPDATE or DELETE statements completed since the database connection was opened.
+    /// Return the total number of rows inserted, updated, and deleted by all
+    /// INSERT, UPDATE, and DELETE statements since the connection was opened.
     #[inline]
     pub fn total_changes(&self) -> usize {
         unsafe {
