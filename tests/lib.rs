@@ -12,11 +12,11 @@ fn connection_changes() {
     assert_eq!(connection.changes(), 1);
     assert_eq!(connection.total_changes(), 1);
 
-    ok!(connection.execute("UPDATE users SET name = 'Bob' WHERE id = 1"));
+    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
     assert_eq!(connection.changes(), 1);
     assert_eq!(connection.total_changes(), 2);
 
-    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)"));
+    ok!(connection.execute("UPDATE users SET name = 'Bob' WHERE id = 1"));
     assert_eq!(connection.changes(), 1);
     assert_eq!(connection.total_changes(), 3);
 
