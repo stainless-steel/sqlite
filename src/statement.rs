@@ -96,7 +96,7 @@ impl<'l> Statement<'l> {
     /// Return the type of a column.
     ///
     /// The first column has index 0. The type becomes available after taking a step.
-    pub fn kind(&self, i: usize) -> Type {
+    pub fn column_type(&self, i: usize) -> Type {
         debug_assert!(i < self.column_count(), "the index is out of range");
         match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
             ffi::SQLITE_BLOB => Type::Binary,
@@ -286,7 +286,7 @@ impl<T: Bindable> Bindable for Option<T> {
 
 impl Readable for Value {
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(match statement.kind(i) {
+        Ok(match statement.column_type(i) {
             Type::Binary => Value::Binary(Readable::read(statement, i)?),
             Type::Float => Value::Float(Readable::read(statement, i)?),
             Type::Integer => Value::Integer(Readable::read(statement, i)?),
@@ -344,7 +344,7 @@ impl Readable for Vec<u8> {
 impl<T: Readable> Readable for Option<T> {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        if statement.kind(i) == Type::Null {
+        if statement.column_type(i) == Type::Null {
             Ok(None)
         } else {
             T::read(statement, i).map(Some)
