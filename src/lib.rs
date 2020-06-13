@@ -70,7 +70,7 @@
 //! ```
 //!
 //! The same query using a cursor, which is a wrapper around a prepared
-//! statement providing the concept of row and featuring all-at-once binding:
+//! statement providing the notion of row and featuring all-at-once binding:
 //!
 //! ```
 //! use sqlite::Value;

@@ -33,8 +33,8 @@ connection
     .unwrap();
 ```
 
-The same query using a prepared statement, which is much more efficient than
-the previous technique:
+The same query using a prepared statement, which is much more efficient than the
+previous technique:
 
 ```rust
 use sqlite::State;
@@ -51,8 +51,8 @@ while let State::Row = statement.next().unwrap() {
 }
 ```
 
-The same query using a cursor, which is a wrapper around a prepared
-statement providing the concept of row and featuring all-at-once binding:
+The same query using a cursor, which is a wrapper around a prepared statement
+providing the notion of row and featuring all-at-once binding:
 
 ```rust
 use sqlite::Value;
