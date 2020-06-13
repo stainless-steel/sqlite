@@ -74,6 +74,25 @@ impl<'l> Statement<'l> {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
     }
 
+    /// Return the name of a column.
+    ///
+    /// The first column has index 0.
+    #[inline]
+    pub fn column_name(&self, i: usize) -> &str {
+        debug_assert!(i < self.column_count(), "the index is out of range");
+        unsafe {
+            let pointer = ffi::sqlite3_column_name(self.raw.0, i as c_int);
+            debug_assert!(!pointer.is_null());
+            c_str_to_str!(pointer).unwrap()
+        }
+    }
+
+    /// Return column names.
+    #[inline]
+    pub fn column_names(&self) -> Vec<&str> {
+        (0..self.column_count()).map(|i| self.column_name(i)).collect()
+    }
+
     /// Return the type of a column.
     ///
     /// The first column has index 0. The type becomes available after taking a step.
@@ -87,25 +106,6 @@ impl<'l> Statement<'l> {
             ffi::SQLITE_NULL => Type::Null,
             _ => unreachable!(),
         }
-    }
-
-    /// Return the name of a column.
-    ///
-    /// The first column has index 0.
-    #[inline]
-    pub fn name(&self, i: usize) -> &str {
-        debug_assert!(i < self.column_count(), "the index is out of range");
-        unsafe {
-            let pointer = ffi::sqlite3_column_name(self.raw.0, i as c_int);
-            debug_assert!(!pointer.is_null());
-            c_str_to_str!(pointer).unwrap()
-        }
-    }
-
-    /// Return column names.
-    #[inline]
-    pub fn names(&self) -> Vec<&str> {
-        (0..self.column_count()).map(|i| self.name(i)).collect()
     }
 
     /// Advance to the next state.

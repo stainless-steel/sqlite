@@ -298,14 +298,14 @@ fn statement_column_count() {
 }
 
 #[test]
-fn statement_name() {
+fn statement_column_name() {
     let connection = setup_users(":memory:");
     let statement = "SELECT id, name, age, photo AS user_photo FROM users";
     let statement = ok!(connection.prepare(statement));
 
-    let names = statement.names();
+    let names = statement.column_names();
     assert_eq!(names, vec!["id", "name", "age", "user_photo"]);
-    assert_eq!("user_photo", statement.name(3));
+    assert_eq!("user_photo", statement.column_name(3));
 }
 
 #[test]
