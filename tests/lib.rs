@@ -8,22 +8,22 @@ use std::path::Path;
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[test]
-fn connection_changes() {
+fn connection_change_count() {
     let connection = setup_users(":memory:");
-    assert_eq!(connection.changes(), 1);
-    assert_eq!(connection.total_changes(), 1);
+    assert_eq!(connection.change_count(), 1);
+    assert_eq!(connection.total_change_count(), 1);
 
     ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
-    assert_eq!(connection.changes(), 1);
-    assert_eq!(connection.total_changes(), 2);
+    assert_eq!(connection.change_count(), 1);
+    assert_eq!(connection.total_change_count(), 2);
 
     ok!(connection.execute("UPDATE users SET name = 'Bob' WHERE id = 1"));
-    assert_eq!(connection.changes(), 1);
-    assert_eq!(connection.total_changes(), 3);
+    assert_eq!(connection.change_count(), 1);
+    assert_eq!(connection.total_change_count(), 3);
 
     ok!(connection.execute("DELETE FROM users"));
-    assert_eq!(connection.changes(), 2);
-    assert_eq!(connection.total_changes(), 5);
+    assert_eq!(connection.change_count(), 2);
+    assert_eq!(connection.total_change_count(), 5);
 }
 
 #[test]
