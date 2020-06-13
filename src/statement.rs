@@ -70,7 +70,7 @@ impl<'l> Statement<'l> {
 
     /// Return the number of columns.
     #[inline]
-    pub fn count(&self) -> usize {
+    pub fn column_count(&self) -> usize {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
     }
 
@@ -78,7 +78,7 @@ impl<'l> Statement<'l> {
     ///
     /// The first column has index 0. The type becomes available after taking a step.
     pub fn kind(&self, i: usize) -> Type {
-        debug_assert!(i < self.count(), "the index is out of range");
+        debug_assert!(i < self.column_count(), "the index is out of range");
         match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
             ffi::SQLITE_BLOB => Type::Binary,
             ffi::SQLITE_FLOAT => Type::Float,
@@ -94,7 +94,7 @@ impl<'l> Statement<'l> {
     /// The first column has index 0.
     #[inline]
     pub fn name(&self, i: usize) -> &str {
-        debug_assert!(i < self.count(), "the index is out of range");
+        debug_assert!(i < self.column_count(), "the index is out of range");
         unsafe {
             let pointer = ffi::sqlite3_column_name(self.raw.0, i as c_int);
             debug_assert!(!pointer.is_null());
@@ -105,7 +105,7 @@ impl<'l> Statement<'l> {
     /// Return column names.
     #[inline]
     pub fn names(&self) -> Vec<&str> {
-        (0..self.count()).map(|i| self.name(i)).collect()
+        (0..self.column_count()).map(|i| self.name(i)).collect()
     }
 
     /// Advance to the next state.
@@ -148,7 +148,7 @@ impl<'l> Statement<'l> {
     /// The first column has index 0.
     #[inline]
     pub fn read<T: Readable>(&self, i: usize) -> Result<T> {
-        debug_assert!(i < self.count(), "the index is out of range");
+        debug_assert!(i < self.column_count(), "the index is out of range");
         Readable::read(self, i)
     }
 

@@ -58,8 +58,8 @@ impl<'l> Cursor<'l> {
 
     /// Return the number of columns.
     #[inline]
-    pub fn count(&self) -> usize {
-        self.statement.count()
+    pub fn column_count(&self) -> usize {
+        self.statement.column_count()
     }
 
     /// Advance to the next row and read all columns.
@@ -80,7 +80,7 @@ impl<'l> Cursor<'l> {
                 Some(values)
             }
             _ => {
-                let count = self.statement.count();
+                let count = self.statement.column_count();
                 let mut values = Vec::with_capacity(count);
                 for i in 0..count {
                     values.push(self.statement.read(i)?);

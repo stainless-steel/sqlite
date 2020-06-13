@@ -249,6 +249,7 @@ fn statement_bind_with_optional() {
 }
 
 #[test]
+<<<<<<< HEAD
 fn statement_bind_by_name() {
     let connection = setup_users(":memory:");
     let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
@@ -284,13 +285,16 @@ fn statement_bind_by_name_multiple() {
 
 #[test]
 fn statement_count() {
+=======
+fn statement_column_count() {
+>>>>>>> e6da9fd (Rename count to column_count)
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));
 
     assert_eq!(ok!(statement.next()), State::Row);
 
-    assert_eq!(statement.count(), 5);
+    assert_eq!(statement.column_count(), 5);
 }
 
 #[test]
