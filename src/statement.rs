@@ -161,7 +161,7 @@ impl<'l> Statement<'l> {
 
     /// Upgrade to a cursor.
     #[inline]
-    pub fn cursor(self) -> Cursor<'l> {
+    pub fn into_cursor(self) -> Cursor<'l> {
         ::cursor::new(self)
     }
 

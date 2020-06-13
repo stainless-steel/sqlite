@@ -133,7 +133,7 @@ fn cursor_read() {
     let statement = ok!(connection.prepare(statement));
 
     let mut count = 0;
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     while let Some(row) = ok!(cursor.next()) {
         let id = row[0].as_integer().unwrap();
         if id == 1 {
@@ -155,7 +155,7 @@ fn cursor_wildcard() {
     let statement = ok!(connection.prepare(statement));
 
     let mut count = 0;
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     while let Some(_) = ok!(cursor.next()) {
         count += 1;
     }
@@ -170,7 +170,7 @@ fn cursor_wildcard_with_binding() {
     ok!(statement.bind(1, "%type"));
 
     let mut count = 0;
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     while let Some(_) = ok!(cursor.next()) {
         count += 1;
     }
@@ -182,10 +182,10 @@ fn cursor_workflow() {
     let connection = setup_users(":memory:");
 
     let select = "SELECT id, name FROM users WHERE id = ?";
-    let mut select = ok!(connection.prepare(select)).cursor();
+    let mut select = ok!(connection.prepare(select)).into_cursor();
 
     let insert = "INSERT INTO users (id, name) VALUES (?, ?)";
-    let mut insert = ok!(connection.prepare(insert)).cursor();
+    let mut insert = ok!(connection.prepare(insert)).into_cursor();
 
     for _ in 0..10 {
         ok!(select.bind(&[Value::Integer(1)]));
