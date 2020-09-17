@@ -1,14 +1,14 @@
 extern crate fluence;
-extern crate sqlite;
+extern crate fce_sqlite_connector;
 
 use fluence::fce;
-use sqlite::State;
+use fce_sqlite_connector::State;
 
 pub fn main() {}
 
 #[fce]
 pub fn test1() {
-    let connection = sqlite::open(":memory:").unwrap();
+    let connection = fce_sqlite_connector::open(":memory:").unwrap();
 
     connection
         .execute(
@@ -32,7 +32,7 @@ pub fn test1() {
 
 #[fce]
 pub fn test2() {
-    let connection = sqlite::open(":memory:").unwrap();
+    let connection = fce_sqlite_connector::open(":memory:").unwrap();
 
     println!("connection id = {}\n", connection.as_raw());
     connection
@@ -58,9 +58,9 @@ pub fn test2() {
 }
 #[fce]
 pub fn test3() {
-    use sqlite::Value;
+    use fce_sqlite_connector::Value;
 
-    let connection = sqlite::open(":memory:").unwrap();
+    let connection = fce_sqlite_connector::open(":memory:").unwrap();
 
     connection
         .execute(

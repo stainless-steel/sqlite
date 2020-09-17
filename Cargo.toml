@@ -1,6 +1,6 @@
 [package]
-name = "sqlite"
-version = "0.25.3"
+name = "fce-sqlite-connector"
+version = "0.1.0"
 license = "Apache-2.0/MIT"
 authors = [
     "Daniel Dulaney <ddy@vitronic.com>",
@@ -23,7 +23,7 @@ categories = ["api-bindings", "database"]
 keywords = ["database"]
 
 [lib]
-name = "sqlite"
+name = "fce_sqlite_connector"
 path = "src/lib.rs"
 
 [[bin]]
