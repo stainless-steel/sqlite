@@ -1,18 +1,12 @@
-use ffi;
-use libc::{c_double, c_int};
+use sqlite3_connector as ffi;
 use std::marker::PhantomData;
 
 use {Cursor, Result, Type, Value};
 
-// https://sqlite.org/c3ref/c_static.html
-macro_rules! transient(
-    () => (::std::mem::transmute(!0 as *const ::libc::c_void));
-);
-
 /// A prepared statement.
-pub struct Statement<'l> {
-    raw: (*mut ffi::sqlite3_stmt, *mut ffi::sqlite3),
-    phantom: PhantomData<(ffi::sqlite3_stmt, &'l ffi::sqlite3)>,
+pub struct Statement {
+    raw: (ffi::Sqlite3StmtHandle, ffi::Sqlite3DbHandle),
+    phantom: PhantomData<(ffi::Sqlite3StmtHandle, ffi::Sqlite3DbHandle)>,
 }
 
 /// A state of a prepared statement.
@@ -29,7 +23,7 @@ pub trait Bindable {
     /// Bind to a parameter.
     ///
     /// The leftmost parameter has the index 1.
-    fn bind(self, &mut Statement, usize) -> Result<()>;
+    fn bind(self, _: &mut Statement, _: usize) -> Result<()>;
 }
 
 /// A type suitable for reading from a prepared statement.
@@ -40,7 +34,7 @@ pub trait Readable: Sized {
     fn read(&Statement, usize) -> Result<Self>;
 }
 
-impl<'l> Statement<'l> {
+impl Statement {
     /// Bind a value to a parameter.
     ///
     /// The leftmost parameter has the index 1.
@@ -60,7 +54,7 @@ impl<'l> Statement<'l> {
     /// The type becomes available after taking a step.
     pub fn kind(&self, i: usize) -> Type {
         debug_assert!(i < self.count(), "the index is out of range");
-        match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
+        match unsafe { ffi::sqlite3_column_type(self.raw.0, i as _) } {
             ffi::SQLITE_BLOB => Type::Binary,
             ffi::SQLITE_FLOAT => Type::Float,
             ffi::SQLITE_INTEGER => Type::Integer,
@@ -72,18 +66,14 @@ impl<'l> Statement<'l> {
 
     /// Return the name of a column.
     #[inline]
-    pub fn name(&self, i: usize) -> &str {
+    pub fn name(&self, i: usize) -> String {
         debug_assert!(i < self.count(), "the index is out of range");
-        unsafe {
-            let pointer = ffi::sqlite3_column_name(self.raw.0, i as c_int);
-            debug_assert!(!pointer.is_null());
-            c_str_to_str!(pointer).unwrap()
-        }
+        unsafe { ffi::sqlite3_column_name(self.raw.0, i as _) }
     }
 
     /// Return column names.
     #[inline]
-    pub fn names(&self) -> Vec<&str> {
+    pub fn names(&self) -> Vec<String> {
         (0..self.count()).map(|i| self.name(i)).collect()
     }
 
@@ -111,31 +101,31 @@ impl<'l> Statement<'l> {
     /// Reset the statement.
     #[inline]
     pub fn reset(&mut self) -> Result<()> {
-        unsafe { ok!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
+        unsafe { ok_raw!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
         Ok(())
     }
 
     /// Upgrade to a cursor.
     #[inline]
-    pub fn cursor(self) -> Cursor<'l> {
+    pub fn cursor(self) -> Cursor {
         ::cursor::new(self)
     }
 
     /// Return the raw pointer.
     #[inline]
-    pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
+    pub fn as_raw(&self) -> ffi::Sqlite3StmtHandle {
         self.raw.0
     }
 }
 
-impl<'l> Drop for Statement<'l> {
+impl<'l> Drop for Statement {
     #[inline]
     fn drop(&mut self) {
         unsafe { ffi::sqlite3_finalize(self.raw.0) };
     }
 }
 
-impl<'l> Bindable for &'l Value {
+impl Bindable for &Value {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         match self {
             &Value::Binary(ref value) => (value as &[u8]).bind(statement, i),
@@ -147,20 +137,14 @@ impl<'l> Bindable for &'l Value {
     }
 }
 
-impl<'l> Bindable for &'l [u8] {
+impl Bindable for &[u8] {
     #[inline]
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            ok!(
+            ok_raw!(
                 statement.raw.1,
-                ffi::sqlite3_bind_blob(
-                    statement.raw.0,
-                    i as c_int,
-                    self.as_ptr() as *const _,
-                    self.len() as c_int,
-                    transient!(),
-                )
+                ffi::sqlite3_bind_blob(statement.raw.0, i as _, self.into(), 0)
             );
         }
         Ok(())
@@ -172,9 +156,9 @@ impl Bindable for f64 {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            ok!(
+            ok_raw!(
                 statement.raw.1,
-                ffi::sqlite3_bind_double(statement.raw.0, i as c_int, self as c_double)
+                ffi::sqlite3_bind_double(statement.raw.0, i as i32, self)
             );
         }
         Ok(())
@@ -186,9 +170,9 @@ impl Bindable for i64 {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            ok!(
+            ok_raw!(
                 statement.raw.1,
-                ffi::sqlite3_bind_int64(statement.raw.0, i as c_int, self as ffi::sqlite3_int64)
+                ffi::sqlite3_bind_int64(statement.raw.0, i as i32, self as _)
             );
         }
         Ok(())
@@ -200,15 +184,9 @@ impl<'l> Bindable for &'l str {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            ok!(
+            ok_raw!(
                 statement.raw.1,
-                ffi::sqlite3_bind_text(
-                    statement.raw.0,
-                    i as c_int,
-                    self.as_ptr() as *const _,
-                    self.len() as c_int,
-                    transient!(),
-                )
+                ffi::sqlite3_bind_text(statement.raw.0, i as i32, self.into(), 0)
             );
         }
         Ok(())
@@ -220,9 +198,9 @@ impl Bindable for () {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");
         unsafe {
-            ok!(
+            ok_raw!(
                 statement.raw.1,
-                ffi::sqlite3_bind_null(statement.raw.0, i as c_int)
+                ffi::sqlite3_bind_null(statement.raw.0, i as i32)
             );
         }
         Ok(())
@@ -255,45 +233,28 @@ impl Readable for Value {
 impl Readable for f64 {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, i as c_int) as f64 })
+        Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, i as _) })
     }
 }
 
 impl Readable for i64 {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, i as c_int) as i64 })
+        Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, i as _) })
     }
 }
 
 impl Readable for String {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        unsafe {
-            let pointer = ffi::sqlite3_column_text(statement.raw.0, i as c_int);
-            if pointer.is_null() {
-                raise!("cannot read a text column");
-            }
-            Ok(c_str_to_string!(pointer))
-        }
+        unsafe { Ok(ffi::sqlite3_column_text(statement.raw.0, i as _)) }
     }
 }
 
 impl Readable for Vec<u8> {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        use std::ptr::copy_nonoverlapping as copy;
-        unsafe {
-            let pointer = ffi::sqlite3_column_blob(statement.raw.0, i as c_int);
-            if pointer.is_null() {
-                return Ok(vec![]);
-            }
-            let count = ffi::sqlite3_column_bytes(statement.raw.0, i as c_int) as usize;
-            let mut buffer = Vec::with_capacity(count);
-            buffer.set_len(count);
-            copy(pointer as *const u8, buffer.as_mut_ptr(), count);
-            Ok(buffer)
-        }
+        unsafe { Ok(ffi::sqlite3_column_blob(statement.raw.0, i as i32)) }
     }
 }
 
@@ -309,22 +270,14 @@ impl<T: Readable> Readable for Option<T> {
 }
 
 #[inline]
-pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, statement: T) -> Result<Statement<'l>> {
-    let mut raw0 = 0 as *mut _;
-    unsafe {
-        ok!(
-            raw1,
-            ffi::sqlite3_prepare_v2(
-                raw1,
-                str_to_cstr!(statement.as_ref()).as_ptr(),
-                -1,
-                &mut raw0,
-                0 as *mut _,
-            )
-        );
+pub fn new<T: AsRef<str>>(raw1: ffi::Sqlite3DbHandle, statement: T) -> Result<Statement> {
+    let result = unsafe { ffi::sqlite3_prepare_v2(raw1, statement.as_ref().into()) };
+    if result.ret_code != ffi::SQLITE_OK {
+        error!(raw1, result.ret_code)
     }
+
     Ok(Statement {
-        raw: (raw0, raw1),
+        raw: (result.stmt_handle, raw1),
         phantom: PhantomData,
     })
 }

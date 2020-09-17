@@ -22,16 +22,21 @@ readme = "README.md"
 categories = ["api-bindings", "database"]
 keywords = ["database"]
 
-[features]
-default = ["linkage"]
-linkage = ["sqlite3-sys/linkage"]
+[lib]
+name = "sqlite"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wit_generator"
+path = "src/wit_generator.rs"
+
+[[bin]]
+name = "test"
+path = "src/test.rs"
 
 [dependencies]
-libc = "0.2"
-
-[dependencies.sqlite3-sys]
-version = "0.12"
-default-features = false
+fluence = "0.2.3"
 
 [dev-dependencies]
 temporary = "0.6"
+fluence = "0.2.3"

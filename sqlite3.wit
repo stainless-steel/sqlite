@@ -1,0 +1,464 @@
+;; Types
+(@interface type (func 
+  (param $size: i32) 
+  (result i32)))   ;; 0
+(@interface type (func 
+  (param $pointer: i32 $size: i32) ))   ;; 1
+(@interface type (func  
+  (result i32)))   ;; 2
+(@interface type (func  
+  (result i32)))   ;; 3
+(@interface type (func 
+  (param $result_size: i32) ))   ;; 4
+(@interface type (func 
+  (param $result_ptr: i32) ))   ;; 5
+(@interface type (record DBExecDescriptor {
+ ret_code: s32
+ err_msg: string
+}))   ;; 6
+(@interface type (record DBPrepareDescriptor {
+ ret_code: s32
+ stmt_handle: u32
+ tail: u32
+}))   ;; 7
+(@interface type (record DBOpenDescriptor {
+ ret_code: s32
+ db_handle: u32
+}))   ;; 8
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: u32) 
+  (result string)))   ;; 9
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: u32) 
+  (result string)))   ;; 10
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: u32) 
+  (result s32)))   ;; 11
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: u32) 
+  (result s32)))   ;; 12
+(@interface type (func 
+  (param $db_handle: u32) 
+  (result s32)))   ;; 13
+(@interface type (func 
+  (param $db_handle: u32) 
+  (result s32)))   ;; 14
+(@interface type (func 
+  (param $stmt_handle: u32 $pos: s32 $value: f64) 
+  (result s32)))   ;; 15
+(@interface type (func 
+  (param $stmt_handle: u32 $pos: s32 $value: f64) 
+  (result s32)))   ;; 16
+(@interface type (func 
+  (param $filename: string $flags: s32 $vfs: string) 
+  (result 8)))   ;; 17
+(@interface type (func 
+  (param $filename: string $flags: s32 $vfs: string) 
+  (result 8)))   ;; 18
+(@interface type (func 
+  (param $db_handle: u32) 
+  (result s32)))   ;; 19
+(@interface type (func 
+  (param $db_handle: u32) 
+  (result s32)))   ;; 20
+(@interface type (func 
+  (param $stmt_handle: u32) 
+  (result s32)))   ;; 21
+(@interface type (func 
+  (param $stmt_handle: u32) 
+  (result s32)))   ;; 22
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: u32) 
+  (result s64)))   ;; 23
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: u32) 
+  (result s64)))   ;; 24
+(@interface type (func 
+  (param $db: u32) 
+  (result s32)))   ;; 25
+(@interface type (func 
+  (param $db: u32) 
+  (result s32)))   ;; 26
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: s32) 
+  (result f64)))   ;; 27
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: s32) 
+  (result f64)))   ;; 28
+(@interface type (func 
+  (param $db_handle: u32 $ms: u32) 
+  (result s32)))   ;; 29
+(@interface type (func 
+  (param $db_handle: u32 $ms: u32) 
+  (result s32)))   ;; 30
+(@interface type (func 
+  (param $db_handle: u32) 
+  (result string)))   ;; 31
+(@interface type (func 
+  (param $db_handle: u32) 
+  (result string)))   ;; 32
+(@interface type (func 
+  (param $stmt_handle: u32 $pos: s32 $value: s64) 
+  (result s32)))   ;; 33
+(@interface type (func 
+  (param $stmt_handle: u32 $pos: s32 $value: s64) 
+  (result s32)))   ;; 34
+(@interface type (func 
+  (param $stmt_handle: u32) 
+  (result s32)))   ;; 35
+(@interface type (func 
+  (param $stmt_handle: u32) 
+  (result s32)))   ;; 36
+(@interface type (func 
+  (param $db_handle: u32 $sql: string) 
+  (result 7)))   ;; 37
+(@interface type (func 
+  (param $db_handle: u32 $sql: string) 
+  (result 7)))   ;; 38
+(@interface type (func 
+  (param $stmt_handle: u32 $pos: s32) 
+  (result s32)))   ;; 39
+(@interface type (func 
+  (param $stmt_handle: u32 $pos: s32) 
+  (result s32)))   ;; 40
+(@interface type (func 
+  (param $stmt_handle: u32) 
+  (result s32)))   ;; 41
+(@interface type (func 
+  (param $stmt_handle: u32) 
+  (result s32)))   ;; 42
+(@interface type (func 
+  (param $stmt_handle: u32 $pos: s32 $blob: byte_array $xDel: s32) 
+  (result s32)))   ;; 43
+(@interface type (func 
+  (param $stmt_handle: u32 $pos: s32 $blob: byte_array $xDel: s32) 
+  (result s32)))   ;; 44
+(@interface type (func 
+  (param $db_handle: u32) 
+  (result s32)))   ;; 45
+(@interface type (func 
+  (param $db_handle: u32) 
+  (result s32)))   ;; 46
+(@interface type (func 
+  (param $stmt_handle: u32 $pos: s32 $text: string $xDel: s32) 
+  (result s32)))   ;; 47
+(@interface type (func 
+  (param $stmt_handle: u32 $pos: s32 $text: string $xDel: s32) 
+  (result s32)))   ;; 48
+(@interface type (func 
+  (param $stmt_handle: u32) 
+  (result s32)))   ;; 49
+(@interface type (func 
+  (param $stmt_handle: u32) 
+  (result s32)))   ;; 50
+(@interface type (func 
+  (param $db_handle: u32 $sql: string $callback_id: s32 $callback_arg: s32) 
+  (result 6)))   ;; 51
+(@interface type (func 
+  (param $db_handle: u32 $sql: string $callback_id: s32 $callback_arg: s32) 
+  (result 6)))   ;; 52
+(@interface type (func  
+  (result s32)))   ;; 53
+(@interface type (func  
+  (result s32)))   ;; 54
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: s32) 
+  (result byte_array)))   ;; 55
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: s32) 
+  (result byte_array)))   ;; 56
+(@interface type (func 
+  (param $stmt_handle: u32 $N: u32) 
+  (result string)))   ;; 57
+(@interface type (func 
+  (param $stmt_handle: u32 $N: u32) 
+  (result string)))   ;; 58
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: u32) 
+  (result s32)))   ;; 59
+(@interface type (func 
+  (param $stmt_handle: u32 $icol: u32) 
+  (result s32)))   ;; 60
+
+
+
+;; Adapters
+(@interface func (type 9)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_u32
+  call-core 6
+  call-core 3
+  call-core 2
+  string.lift_memory
+  call-core 3
+  call-core 2
+  call-core 1)
+(@interface func (type 11)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_u32
+  call-core 7
+  s32.from_i32)
+(@interface func (type 13)
+  arg.get 0
+  i32.from_u32
+  call-core 8
+  s32.from_i32)
+(@interface func (type 15)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_s32
+  arg.get 2
+  call-core 9
+  s32.from_i32)
+(@interface func (type 17)
+  arg.get 0
+  string.size
+  call-core 0
+  arg.get 0
+  string.lower_memory
+  arg.get 1
+  i32.from_s32
+  arg.get 2
+  string.size
+  call-core 0
+  arg.get 2
+  string.lower_memory
+  call-core 10
+  call-core 3
+  record.lift_memory 8)
+(@interface func (type 19)
+  arg.get 0
+  i32.from_u32
+  call-core 11
+  s32.from_i32)
+(@interface func (type 21)
+  arg.get 0
+  i32.from_u32
+  call-core 12
+  s32.from_i32)
+(@interface func (type 23)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_u32
+  call-core 13
+  s64.from_i64)
+(@interface func (type 25)
+  arg.get 0
+  i32.from_u32
+  call-core 14
+  s32.from_i32)
+(@interface func (type 27)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_s32
+  call-core 15)
+(@interface func (type 29)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_u32
+  call-core 16
+  s32.from_i32)
+(@interface func (type 31)
+  arg.get 0
+  i32.from_u32
+  call-core 17
+  call-core 3
+  call-core 2
+  string.lift_memory
+  call-core 3
+  call-core 2
+  call-core 1)
+(@interface func (type 33)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_s32
+  arg.get 2
+  i64.from_s64
+  call-core 18
+  s32.from_i32)
+(@interface func (type 35)
+  arg.get 0
+  i32.from_u32
+  call-core 19
+  s32.from_i32)
+(@interface func (type 37)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  string.size
+  call-core 0
+  arg.get 1
+  string.lower_memory
+  call-core 20
+  call-core 3
+  record.lift_memory 7)
+(@interface func (type 39)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_s32
+  call-core 21
+  s32.from_i32)
+(@interface func (type 41)
+  arg.get 0
+  i32.from_u32
+  call-core 22
+  s32.from_i32)
+(@interface func (type 43)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_s32
+  arg.get 2
+  byte_array.size
+  call-core 0
+  arg.get 2
+  byte_array.lower_memory
+  arg.get 3
+  i32.from_s32
+  call-core 23
+  s32.from_i32)
+(@interface func (type 45)
+  arg.get 0
+  i32.from_u32
+  call-core 24
+  s32.from_i32)
+(@interface func (type 47)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_s32
+  arg.get 2
+  string.size
+  call-core 0
+  arg.get 2
+  string.lower_memory
+  arg.get 3
+  i32.from_s32
+  call-core 25
+  s32.from_i32)
+(@interface func (type 49)
+  arg.get 0
+  i32.from_u32
+  call-core 26
+  s32.from_i32)
+(@interface func (type 51)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  string.size
+  call-core 0
+  arg.get 1
+  string.lower_memory
+  arg.get 2
+  i32.from_s32
+  arg.get 3
+  i32.from_s32
+  call-core 27
+  call-core 3
+  record.lift_memory 6)
+(@interface func (type 53)
+  call-core 28
+  s32.from_i32)
+(@interface func (type 55)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_s32
+  call-core 29
+  call-core 3
+  call-core 2
+  byte_array.lift_memory
+  call-core 3
+  call-core 2
+  call-core 1)
+(@interface func (type 57)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_u32
+  call-core 30
+  call-core 3
+  call-core 2
+  string.lift_memory
+  call-core 3
+  call-core 2
+  call-core 1)
+(@interface func (type 59)
+  arg.get 0
+  i32.from_u32
+  arg.get 1
+  i32.from_u32
+  call-core 31
+  s32.from_i32)
+
+;; Exports
+(@interface export "allocate" (func 0))
+(@interface export "deallocate" (func 1))
+(@interface export "get_result_size" (func 2))
+(@interface export "get_result_ptr" (func 3))
+(@interface export "set_result_size" (func 4))
+(@interface export "set_result_ptr" (func 5))
+(@interface export "sqlite3_column_text" (func 10))
+(@interface export "sqlite3_column_bytes" (func 12))
+(@interface export "sqlite3_close" (func 14))
+(@interface export "sqlite3_bind_double" (func 16))
+(@interface export "sqlite3_open_v2" (func 18))
+(@interface export "sqlite3_changes" (func 20))
+(@interface export "sqlite3_step" (func 22))
+(@interface export "sqlite3_column_int64" (func 24))
+(@interface export "sqlite3_errcode" (func 26))
+(@interface export "sqlite3_column_double" (func 28))
+(@interface export "sqlite3_busy_timeout" (func 30))
+(@interface export "sqlite3_errmsg" (func 32))
+(@interface export "sqlite3_bind_int64" (func 34))
+(@interface export "sqlite3_finalize" (func 36))
+(@interface export "sqlite3_prepare_v2" (func 38))
+(@interface export "sqlite3_bind_null" (func 40))
+(@interface export "sqlite3_column_count" (func 42))
+(@interface export "sqlite3_bind_blob" (func 44))
+(@interface export "sqlite3_total_changes" (func 46))
+(@interface export "sqlite3_bind_text" (func 48))
+(@interface export "sqlite3_reset" (func 50))
+(@interface export "sqlite3_exec" (func 52))
+(@interface export "sqlite3_libversion_number" (func 54))
+(@interface export "sqlite3_column_blob" (func 56))
+(@interface export "sqlite3_column_name" (func 58))
+(@interface export "sqlite3_column_type" (func 60))
+
+;; Implementations
+(@interface implement (func 10) (func 9))
+(@interface implement (func 12) (func 11))
+(@interface implement (func 14) (func 13))
+(@interface implement (func 16) (func 15))
+(@interface implement (func 18) (func 17))
+(@interface implement (func 20) (func 19))
+(@interface implement (func 22) (func 21))
+(@interface implement (func 24) (func 23))
+(@interface implement (func 26) (func 25))
+(@interface implement (func 28) (func 27))
+(@interface implement (func 30) (func 29))
+(@interface implement (func 32) (func 31))
+(@interface implement (func 34) (func 33))
+(@interface implement (func 36) (func 35))
+(@interface implement (func 38) (func 37))
+(@interface implement (func 40) (func 39))
+(@interface implement (func 42) (func 41))
+(@interface implement (func 44) (func 43))
+(@interface implement (func 46) (func 45))
+(@interface implement (func 48) (func 47))
+(@interface implement (func 50) (func 49))
+(@interface implement (func 52) (func 51))
+(@interface implement (func 54) (func 53))
+(@interface implement (func 56) (func 55))
+(@interface implement (func 58) (func 57))
+(@interface implement (func 60) (func 59))

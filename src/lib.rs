@@ -100,19 +100,11 @@
 //!
 //! [1]: https://www.sqlite.org
 
-extern crate libc;
-extern crate sqlite3_sys as ffi;
+#![allow(dead_code)]
+
+use sqlite3_connector as ffi;
 
 use std::{error, fmt};
-
-macro_rules! raise(
-    ($message:expr) => (
-        return Err(::Error {
-            code: None,
-            message: Some($message.to_string()),
-        })
-    );
-);
 
 macro_rules! error(
     ($connection:expr, $code:expr) => (
@@ -126,7 +118,25 @@ macro_rules! error(
     );
 );
 
-macro_rules! ok(
+macro_rules! ok_descr(
+    ($connection:expr, $result:expr) => (
+        match $result.ret_code {
+            ::ffi::SQLITE_OK => {}
+            code => error!($connection, code),
+        }
+    );
+    ($result:expr) => (
+        match $result.ret_code {
+            ::ffi::SQLITE_OK => {}
+            code => return Err(::Error {
+                code: Some(code as isize),
+                message: None,
+            }),
+        }
+    );
+);
+
+macro_rules! ok_raw(
     ($connection:expr, $result:expr) => (
         match $result {
             ::ffi::SQLITE_OK => {}
@@ -140,40 +150,6 @@ macro_rules! ok(
                 code: Some(code as isize),
                 message: None,
             }),
-        }
-    );
-);
-
-macro_rules! c_str_to_str(
-    ($string:expr) => (::std::str::from_utf8(::std::ffi::CStr::from_ptr($string).to_bytes()));
-);
-
-macro_rules! c_str_to_string(
-    ($string:expr) => (
-        String::from_utf8_lossy(::std::ffi::CStr::from_ptr($string as *const _).to_bytes())
-               .into_owned()
-    );
-);
-
-macro_rules! path_to_cstr(
-    ($path:expr) => (
-        match $path.to_str() {
-            Some(path) => {
-                match ::std::ffi::CString::new(path) {
-                    Ok(string) => string,
-                    _ => raise!("failed to process a path"),
-                }
-            }
-            _ => raise!("failed to process a path"),
-        }
-    );
-);
-
-macro_rules! str_to_cstr(
-    ($string:expr) => (
-        match ::std::ffi::CString::new($string) {
-            Ok(string) => string,
-            _ => raise!("failed to process a string"),
         }
     );
 );
@@ -291,6 +267,7 @@ impl Value {
 
 mod connection;
 mod cursor;
+mod sqlite3_connector;
 mod statement;
 
 pub use connection::Connection;
@@ -312,19 +289,16 @@ pub fn version() -> usize {
     unsafe { ffi::sqlite3_libversion_number() as usize }
 }
 
-fn last_error(raw: *mut ffi::sqlite3) -> Option<Error> {
+fn last_error(raw: ffi::Sqlite3DbHandle) -> Option<Error> {
     unsafe {
         let code = ffi::sqlite3_errcode(raw);
         if code == ffi::SQLITE_OK {
             return None;
         }
         let message = ffi::sqlite3_errmsg(raw);
-        if message.is_null() {
-            return None;
-        }
         Some(Error {
             code: Some(code as isize),
-            message: Some(c_str_to_string!(message)),
+            message: Some(message),
         })
     }
 }

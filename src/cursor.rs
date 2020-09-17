@@ -1,15 +1,15 @@
-use ffi;
+use sqlite3_connector as ffi;
 use statement::{State, Statement};
 use {Result, Value};
 
 /// An iterator over rows.
-pub struct Cursor<'l> {
+pub struct Cursor {
     state: Option<State>,
     values: Option<Vec<Value>>,
-    statement: Statement<'l>,
+    statement: Statement,
 }
 
-impl<'l> Cursor<'l> {
+impl Cursor {
     /// Bind values to all parameters.
     pub fn bind(&mut self, values: &[Value]) -> Result<()> {
         self.state = None;
@@ -58,16 +58,16 @@ impl<'l> Cursor<'l> {
 
     /// Return the raw pointer.
     #[inline]
-    pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
+    pub fn as_raw(&self) -> ffi::Sqlite3StmtHandle {
         self.statement.as_raw()
     }
 }
 
 #[inline]
-pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
+pub fn new(statement: Statement) -> Cursor {
     Cursor {
         state: None,
         values: None,
-        statement: statement,
+        statement,
     }
 }
