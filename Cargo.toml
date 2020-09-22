@@ -1,6 +1,6 @@
 [package]
 name = "fce-sqlite-connector"
-version = "0.1.0"
+version = "0.1.1"
 license = "Apache-2.0/MIT"
 authors = [
     "Daniel Dulaney <ddy@vitronic.com>",
@@ -35,8 +35,7 @@ name = "test"
 path = "src/test.rs"
 
 [dependencies]
-fluence = "0.2.3"
+fluence = "0.2.7"
 
 [dev-dependencies]
 temporary = "0.6"
-fluence = "0.2.3"
