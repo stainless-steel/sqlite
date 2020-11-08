@@ -35,7 +35,7 @@ name = "test"
 path = "src/test.rs"
 
 [dependencies]
-fluence = "0.2.8"
+fluence = "0.2.9"
 
 [dev-dependencies]
 temporary = "0.6"

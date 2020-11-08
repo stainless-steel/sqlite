@@ -12,19 +12,19 @@
   (param $result_size: i32) ))   ;; 4
 (@interface type (func 
   (param $result_ptr: i32) ))   ;; 5
-(@interface type (record DBExecDescriptor {
- ret_code: s32
- err_msg: string
-}))   ;; 6
-(@interface type (record DBPrepareDescriptor {
- ret_code: s32
- stmt_handle: u32
- tail: u32
-}))   ;; 7
-(@interface type (record DBOpenDescriptor {
- ret_code: s32
- db_handle: u32
-}))   ;; 8
+(@interface type (record $DBExecDescriptor (
+ field $ret_code: s32
+ field $err_msg: string
+)))   ;; 6
+(@interface type (record $DBPrepareDescriptor (
+ field $ret_code: s32
+ field $stmt_handle: u32
+ field $tail: u32
+)))   ;; 7
+(@interface type (record $DBOpenDescriptor (
+ field $ret_code: s32
+ field $db_handle: u32
+)))   ;; 8
 (@interface type (func 
   (param $stmt_handle: u32 $icol: u32) 
   (result string)))   ;; 9
@@ -51,10 +51,10 @@
   (result s32)))   ;; 16
 (@interface type (func 
   (param $filename: string $flags: s32 $vfs: string) 
-  (result 8)))   ;; 17
+  (result record 8)))   ;; 17
 (@interface type (func 
   (param $filename: string $flags: s32 $vfs: string) 
-  (result 8)))   ;; 18
+  (result record 8)))   ;; 18
 (@interface type (func 
   (param $db_handle: u32) 
   (result s32)))   ;; 19
@@ -111,27 +111,27 @@
   (result s32)))   ;; 36
 (@interface type (func 
   (param $db_handle: u32 $sql: string) 
-  (result 7)))   ;; 37
+  (result record 7)))   ;; 37
 (@interface type (func 
   (param $db_handle: u32 $sql: string) 
-  (result 7)))   ;; 38
+  (result record 7)))   ;; 38
 (@interface type (func 
-  (param $stmt_handle: u32 $pos: s32) 
+  (param $stmt_handle: u32) 
   (result s32)))   ;; 39
 (@interface type (func 
-  (param $stmt_handle: u32 $pos: s32) 
+  (param $stmt_handle: u32) 
   (result s32)))   ;; 40
 (@interface type (func 
-  (param $stmt_handle: u32) 
+  (param $stmt_handle: u32 $pos: s32) 
   (result s32)))   ;; 41
 (@interface type (func 
-  (param $stmt_handle: u32) 
+  (param $stmt_handle: u32 $pos: s32) 
   (result s32)))   ;; 42
 (@interface type (func 
-  (param $stmt_handle: u32 $pos: s32 $blob: byte_array $xDel: s32) 
+  (param $stmt_handle: u32 $pos: s32 $blob: array (u8) $xDel: s32) 
   (result s32)))   ;; 43
 (@interface type (func 
-  (param $stmt_handle: u32 $pos: s32 $blob: byte_array $xDel: s32) 
+  (param $stmt_handle: u32 $pos: s32 $blob: array (u8) $xDel: s32) 
   (result s32)))   ;; 44
 (@interface type (func 
   (param $db_handle: u32) 
@@ -153,20 +153,20 @@
   (result s32)))   ;; 50
 (@interface type (func 
   (param $db_handle: u32 $sql: string $callback_id: s32 $callback_arg: s32) 
-  (result 6)))   ;; 51
+  (result record 6)))   ;; 51
 (@interface type (func 
   (param $db_handle: u32 $sql: string $callback_id: s32 $callback_arg: s32) 
-  (result 6)))   ;; 52
+  (result record 6)))   ;; 52
 (@interface type (func  
   (result s32)))   ;; 53
 (@interface type (func  
   (result s32)))   ;; 54
 (@interface type (func 
   (param $stmt_handle: u32 $icol: s32) 
-  (result byte_array)))   ;; 55
+  (result array (u8))))   ;; 55
 (@interface type (func 
   (param $stmt_handle: u32 $icol: s32) 
-  (result byte_array)))   ;; 56
+  (result array (u8))))   ;; 56
 (@interface type (func 
   (param $stmt_handle: u32 $N: u32) 
   (result string)))   ;; 57
@@ -304,13 +304,13 @@
 (@interface func (type 39)
   arg.get 0
   i32.from_u32
-  arg.get 1
-  i32.from_s32
   call-core 21
   s32.from_i32)
 (@interface func (type 41)
   arg.get 0
   i32.from_u32
+  arg.get 1
+  i32.from_s32
   call-core 22
   s32.from_i32)
 (@interface func (type 43)
@@ -319,10 +319,7 @@
   arg.get 1
   i32.from_s32
   arg.get 2
-  byte_array.size
-  call-core 0
-  arg.get 2
-  byte_array.lower_memory
+  array.lower_memory u8
   arg.get 3
   i32.from_s32
   call-core 23
@@ -377,10 +374,7 @@
   call-core 29
   call-core 3
   call-core 2
-  byte_array.lift_memory
-  call-core 3
-  call-core 2
-  call-core 1)
+  array.lift_memory u8)
 (@interface func (type 57)
   arg.get 0
   i32.from_u32
@@ -423,8 +417,8 @@
 (@interface export "sqlite3_bind_int64" (func 34))
 (@interface export "sqlite3_finalize" (func 36))
 (@interface export "sqlite3_prepare_v2" (func 38))
-(@interface export "sqlite3_bind_null" (func 40))
-(@interface export "sqlite3_column_count" (func 42))
+(@interface export "sqlite3_column_count" (func 40))
+(@interface export "sqlite3_bind_null" (func 42))
 (@interface export "sqlite3_bind_blob" (func 44))
 (@interface export "sqlite3_total_changes" (func 46))
 (@interface export "sqlite3_bind_text" (func 48))
