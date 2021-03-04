@@ -18,6 +18,30 @@
 //!     .unwrap();
 //! ```
 //!
+//! Insert rows using a transaction:
+//!
+//! ```
+//! # let connection = sqlite::open(":memory:").unwrap();
+//! # connection
+//! #     .execute(
+//! #         "
+//! #         CREATE TABLE users (name TEXT, age INTEGER);
+//! #         ",
+//! #     )
+//! #     .unwrap();
+//! let mut insert = connection
+//!     .prepare("INSERT INTO users VALUES (?, ?)")
+//!     .unwrap();
+//! let mut txn = connection.begin().unwrap();
+//! for &(name, age) in [ ("Carol", 17), ("Dave", 77) ].iter() {
+//!     insert.bind(1, name).unwrap();
+//!     insert.bind(2, age).unwrap();
+//!     insert.next().unwrap();
+//!     insert.reset().unwrap();
+//! }
+//! txn.commit().unwrap();
+//! ```
+//!
 //! Select some rows and process them one by one as plain text:
 //!
 //! ```
@@ -292,11 +316,13 @@ impl Value {
 mod connection;
 mod cursor;
 mod statement;
+mod transaction;
 
 pub use connection::Connection;
 pub use connection::OpenFlags;
 pub use cursor::Cursor;
 pub use statement::{Bindable, Readable, State, Statement};
+pub use transaction::{Transaction, Savepoint};
 
 /// Open a read-write connection to a new or existing database.
 #[inline]

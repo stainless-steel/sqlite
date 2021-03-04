@@ -3,7 +3,7 @@ use libc::{c_char, c_int, c_void};
 use std::marker::PhantomData;
 use std::path::Path;
 
-use {Result, Statement};
+use {Result, Statement, Transaction, Savepoint};
 
 /// A database connection.
 pub struct Connection {
@@ -120,6 +120,20 @@ impl Connection {
     #[inline]
     pub fn total_changes(&self) -> usize {
         unsafe { ffi::sqlite3_total_changes(self.raw) as usize }
+    }
+
+    /// Begin a transaction, returning a scope guard which must be held for
+    /// the duration of the transaction.
+    #[inline]
+    pub fn begin<'l>(&self) -> Result<Transaction<'l>> {
+        Ok(::transaction::new(self.raw)?)
+    }
+
+    /// Begin a savepoint, returning a scope guard which must be held for
+    /// the duration of the transaction.
+    #[inline]
+    pub fn savepoint<'l, T: AsRef<str>>(&self, name: T) -> Result<Savepoint<'l>> {
+        Ok(::transaction::new_savepoint(self.raw, name.as_ref())?)
     }
 
     /// Set a callback for handling busy events.
