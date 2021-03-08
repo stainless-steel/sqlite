@@ -64,9 +64,9 @@ let mut cursor = connection
 
 cursor.bind(&[Value::Integer(50)]).unwrap();
 
-while let Some(row) = cursor.next().unwrap() {
-    println!("name = {}", row[0].as_string().unwrap());
-    println!("age = {}", row[1].as_integer().unwrap());
+while let Some(col) = cursor.next().unwrap() {
+    println!("name = {}", col[0].as_string().unwrap());
+    println!("age = {}", col[1].as_integer().unwrap());
 }
 ```
 
