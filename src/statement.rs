@@ -1,6 +1,7 @@
 use ffi;
 use libc::{c_double, c_int};
 use std::marker::PhantomData;
+use std::num::NonZeroUsize;
 
 use {Cursor, Result, Type, Value};
 
@@ -85,6 +86,25 @@ impl<'l> Statement<'l> {
     #[inline]
     pub fn names(&self) -> Vec<&str> {
         (0..self.count()).map(|i| self.name(i)).collect()
+    }
+
+    /// Return the index for a given named parameter or `None` if no such parameter exists.
+    ///
+    /// # Examples
+    /// ```
+    /// # let connection = sqlite::open(":memory:").unwrap();
+    /// # connection.execute("CREATE TABLE users (name STRING)");
+    /// let statement = connection.prepare("SELECT * FROM users WHERE name = :name").unwrap();
+    /// assert_eq!(statement.parameter_index(":name")?.unwrap().get(), 1);
+    /// assert_eq!(statement.parameter_index(":asdf")?, None);
+    /// # Ok::<(), sqlite::Error>(())
+    /// ```
+    #[inline]
+    pub fn parameter_index(&self, parameter: &str) -> Result<Option<NonZeroUsize>> {
+        let index = unsafe {
+            ffi::sqlite3_bind_parameter_index(self.raw.0, str_to_cstr!(parameter).as_ptr())
+        };
+        Ok(NonZeroUsize::new(index as usize))
     }
 
     /// Advance to the next state.

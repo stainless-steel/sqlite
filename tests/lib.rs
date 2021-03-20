@@ -233,6 +233,48 @@ fn statement_bind_with_optional() {
 }
 
 #[test]
+fn statement_bind_param() {
+    let connection = setup_users(":memory:");
+    let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
+    let mut statement = ok!(connection.prepare(statement));
+
+    ok!(statement.bind(ok!(statement.parameter_index(":id")).unwrap().into(), 2i64));
+    ok!(statement.bind(
+        ok!(statement.parameter_index(":name")).unwrap().into(),
+        "Bob"
+    ));
+    ok!(statement.bind(
+        ok!(statement.parameter_index(":age")).unwrap().into(),
+        69.42
+    ));
+    ok!(statement.bind(
+        ok!(statement.parameter_index(":photo")).unwrap().into(),
+        &[0x69u8, 0x42u8][..]
+    ));
+    ok!(statement.bind(ok!(statement.parameter_index(":email")).unwrap().into(), ()));
+    assert_eq!(ok!(statement.parameter_index(":missing")), None);
+    assert_eq!(ok!(statement.next()), State::Done);
+}
+
+#[test]
+fn statement_bind_param_multi() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT name FROM users WHERE age > :age - 5 AND age < :age + 5";
+
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind(ok!(statement.parameter_index(":age")).unwrap().get(), 40));
+    let mut cursor = statement.cursor();
+    let row = ok!(cursor.next()).unwrap();
+    assert_eq!(row[0].as_string(), Some("Alice"));
+
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind(ok!(statement.parameter_index(":age")).unwrap().get(), 45));
+    let mut cursor = statement.cursor();
+    let row = ok!(cursor.next()).unwrap();
+    assert_eq!(row[0].as_string(), Some("Alice"));
+}
+
+#[test]
 fn statement_count() {
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
