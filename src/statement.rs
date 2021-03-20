@@ -50,6 +50,24 @@ impl<'l> Statement<'l> {
         value.bind(self, i)
     }
 
+    /// Bind a value to a named parameter.
+    ///
+    /// # Examples
+    /// ```
+    /// # let connection = sqlite::open(":memory:").unwrap();
+    /// # connection.execute("CREATE TABLE users (name STRING)");
+    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
+    /// statement.bind_param(":name", "Bob")?;
+    /// # Ok::<(), sqlite::Error>(())
+    /// ```
+    pub fn bind_param<T: Bindable>(&mut self, name: &str, value: T) -> Result<()> {
+        if let Some(i) = self.parameter_index(name)? {
+            self.bind(i.get(), value)
+        } else {
+            raise!(format!("no such parameter: {}", name))
+        }
+    }
+
     /// Return the number of columns.
     #[inline]
     pub fn count(&self) -> usize {
@@ -94,7 +112,7 @@ impl<'l> Statement<'l> {
     /// ```
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (name STRING)");
-    /// let statement = connection.prepare("SELECT * FROM users WHERE name = :name").unwrap();
+    /// let statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
     /// assert_eq!(statement.parameter_index(":name")?.unwrap().get(), 1);
     /// assert_eq!(statement.parameter_index(":asdf")?, None);
     /// # Ok::<(), sqlite::Error>(())

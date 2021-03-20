@@ -2,8 +2,8 @@ extern crate sqlite;
 extern crate temporary;
 
 use sqlite::{Connection, OpenFlags, State, Type, Value};
-use std::path::Path;
 use std::collections::HashMap;
+use std::path::Path;
 
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
@@ -255,6 +255,21 @@ fn statement_bind_param() {
     let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
     let mut statement = ok!(connection.prepare(statement));
 
+    ok!(statement.bind_param(":id", 2i64));
+    ok!(statement.bind_param(":name", "Bob"));
+    ok!(statement.bind_param(":age", 69.42));
+    ok!(statement.bind_param(":photo", &[0x69u8, 0x42u8][..]));
+    ok!(statement.bind_param(":email", ()));
+    assert!(statement.bind_param(":missing", 404).is_err());
+    assert_eq!(ok!(statement.next()), State::Done);
+}
+
+#[test]
+fn statement_param_index() {
+    let connection = setup_users(":memory:");
+    let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
+    let mut statement = ok!(connection.prepare(statement));
+
     ok!(statement.bind(ok!(statement.parameter_index(":id")).unwrap().into(), 2i64));
     ok!(statement.bind(
         ok!(statement.parameter_index(":name")).unwrap().into(),
@@ -279,13 +294,15 @@ fn statement_bind_param_multi() {
     let query = "SELECT name FROM users WHERE age > :age - 5 AND age < :age + 5";
 
     let mut statement = ok!(connection.prepare(query));
-    ok!(statement.bind(ok!(statement.parameter_index(":age")).unwrap().get(), 40));
+    let index = ok!(statement.parameter_index(":age")).unwrap().get();
+
+    ok!(statement.bind(index, 40));
     let mut cursor = statement.cursor();
     let row = ok!(cursor.next()).unwrap();
     assert_eq!(row[0].as_string(), Some("Alice"));
 
     let mut statement = ok!(connection.prepare(query));
-    ok!(statement.bind(ok!(statement.parameter_index(":age")).unwrap().get(), 45));
+    ok!(statement.bind(index, 45));
     let mut cursor = statement.cursor();
     let row = ok!(cursor.next()).unwrap();
     assert_eq!(row[0].as_string(), Some("Alice"));
