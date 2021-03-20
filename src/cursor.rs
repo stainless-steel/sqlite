@@ -20,6 +20,39 @@ impl<'l> Cursor<'l> {
         Ok(())
     }
 
+    /// Bind values to all named parameters.
+    ///
+    /// Any parameters provided that are not part of the statement will be ignored.
+    ///
+    /// # Examples
+    /// ```
+    /// # use sqlite::Value;
+    /// # let connection = sqlite::open(":memory:").unwrap();
+    /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
+    /// let statement = connection.prepare("INSERT INTO users VALUES (:id, :name)")?;
+    /// let mut cursor = statement.cursor();
+    /// cursor.bind_params(vec![
+    ///     (":name", Value::String("Bob".to_owned())),
+    ///     (":id", Value::Integer(42)),
+    /// ])?;
+    /// cursor.next()?;
+    /// # Ok::<(), sqlite::Error>(())
+    /// ```
+    pub fn bind_params<S, V>(&mut self, values: V) -> Result<()>
+    where
+        S: AsRef<str>,
+        V: IntoIterator<Item = (S, Value)>,
+    {
+        self.state = None;
+        self.statement.reset()?;
+        for (param, value) in values {
+            if let Some(i) = self.statement.parameter_index(param.as_ref())? {
+                self.statement.bind(i.get(), &value)?;
+            }
+        }
+        Ok(())
+    }
+
     /// Return the number of columns.
     #[inline]
     pub fn count(&self) -> usize {

@@ -3,6 +3,7 @@ extern crate temporary;
 
 use sqlite::{Connection, OpenFlags, State, Type, Value};
 use std::path::Path;
+use std::collections::HashMap;
 
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
@@ -159,6 +160,22 @@ fn cursor_wildcard_with_binding() {
         count += 1;
     }
     assert_eq!(count, 6);
+}
+
+#[test]
+fn cursor_bind_params_map() {
+    let connection = ok!(sqlite::open(":memory:"));
+    ok!(connection.execute("CREATE TABLE users (id INTEGER, name STRING)"));
+
+    let statement = ok!(connection.prepare("INSERT INTO users VALUES (:id, :name)"));
+
+    let mut map = HashMap::new();
+    map.insert(":name".to_string(), Value::String("Bob".to_string()));
+    map.insert(":id".to_string(), Value::Integer(42));
+
+    let mut cursor = statement.cursor();
+    ok!(cursor.bind_params(map));
+    assert_eq!(ok!(cursor.next()), None);
 }
 
 #[test]
