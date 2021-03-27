@@ -41,7 +41,7 @@ pub trait Readable: Sized {
 }
 
 impl<'l> Statement<'l> {
-    /// Bind a value to a parameter.
+    /// Bind a value to a parameter by index.
     ///
     /// The leftmost parameter has the index 1.
     #[inline]
@@ -49,17 +49,18 @@ impl<'l> Statement<'l> {
         value.bind(self, i)
     }
 
-    /// Bind a value to a named parameter.
+    /// Bind a value to a parameter by name.
     ///
     /// # Examples
+    ///
     /// ```
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (name STRING)");
     /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
-    /// statement.bind_param(":name", "Bob")?;
+    /// statement.bind_by_name(":name", "Bob")?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
-    pub fn bind_param<T: Bindable>(&mut self, name: &str, value: T) -> Result<()> {
+    pub fn bind_by_name<T: Bindable>(&mut self, name: &str, value: T) -> Result<()> {
         if let Some(i) = self.parameter_index(name)? {
             self.bind(i, value)
         } else {

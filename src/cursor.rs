@@ -10,7 +10,9 @@ pub struct Cursor<'l> {
 }
 
 impl<'l> Cursor<'l> {
-    /// Bind values to all parameters.
+    /// Bind values to parameters by index.
+    ///
+    /// The index of each value is assumed to be the value’s position in the array.
     pub fn bind(&mut self, values: &[Value]) -> Result<()> {
         self.state = None;
         self.statement.reset()?;
@@ -20,33 +22,34 @@ impl<'l> Cursor<'l> {
         Ok(())
     }
 
-    /// Bind values to all named parameters.
+    /// Bind values to parameters by name.
     ///
-    /// Any parameters provided that are not part of the statement will be ignored.
+    /// Parameters that are not part of the statement will be ignored.
     ///
     /// # Examples
+    ///
     /// ```
     /// # use sqlite::Value;
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
     /// let statement = connection.prepare("INSERT INTO users VALUES (:id, :name)")?;
     /// let mut cursor = statement.cursor();
-    /// cursor.bind_params(vec![
+    /// cursor.bind_by_name(vec![
     ///     (":name", Value::String("Bob".to_owned())),
     ///     (":id", Value::Integer(42)),
     /// ])?;
     /// cursor.next()?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
-    pub fn bind_params<S, V>(&mut self, values: V) -> Result<()>
+    pub fn bind_by_name<S, V>(&mut self, values: V) -> Result<()>
     where
         S: AsRef<str>,
         V: IntoIterator<Item = (S, Value)>,
     {
         self.state = None;
         self.statement.reset()?;
-        for (param, value) in values {
-            if let Some(i) = self.statement.parameter_index(param.as_ref())? {
+        for (name, value) in values {
+            if let Some(i) = self.statement.parameter_index(name.as_ref())? {
                 self.statement.bind(i, &value)?;
             }
         }

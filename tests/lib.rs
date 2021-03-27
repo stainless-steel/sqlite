@@ -111,6 +111,21 @@ fn connection_set_busy_handler() {
 }
 
 #[test]
+fn cursor_bind_by_name() {
+    let connection = ok!(sqlite::open(":memory:"));
+    ok!(connection.execute("CREATE TABLE users (id INTEGER, name STRING)"));
+    let statement = ok!(connection.prepare("INSERT INTO users VALUES (:id, :name)"));
+
+    let mut map = HashMap::new();
+    map.insert(":name".to_string(), Value::String("Bob".to_string()));
+    map.insert(":id".to_string(), Value::Integer(42));
+
+    let mut cursor = statement.cursor();
+    ok!(cursor.bind_by_name(map));
+    assert_eq!(ok!(cursor.next()), None);
+}
+
+#[test]
 fn cursor_read() {
     let connection = setup_users(":memory:");
     ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
@@ -160,22 +175,6 @@ fn cursor_wildcard_with_binding() {
         count += 1;
     }
     assert_eq!(count, 6);
-}
-
-#[test]
-fn cursor_bind_params_map() {
-    let connection = ok!(sqlite::open(":memory:"));
-    ok!(connection.execute("CREATE TABLE users (id INTEGER, name STRING)"));
-
-    let statement = ok!(connection.prepare("INSERT INTO users VALUES (:id, :name)"));
-
-    let mut map = HashMap::new();
-    map.insert(":name".to_string(), Value::String("Bob".to_string()));
-    map.insert(":id".to_string(), Value::Integer(42));
-
-    let mut cursor = statement.cursor();
-    ok!(cursor.bind_params(map));
-    assert_eq!(ok!(cursor.next()), None);
 }
 
 #[test]
@@ -250,22 +249,41 @@ fn statement_bind_with_optional() {
 }
 
 #[test]
-fn statement_bind_param() {
+fn statement_bind_by_name() {
     let connection = setup_users(":memory:");
     let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
     let mut statement = ok!(connection.prepare(statement));
 
-    ok!(statement.bind_param(":id", 2i64));
-    ok!(statement.bind_param(":name", "Bob"));
-    ok!(statement.bind_param(":age", 69.42));
-    ok!(statement.bind_param(":photo", &[0x69u8, 0x42u8][..]));
-    ok!(statement.bind_param(":email", ()));
-    assert!(statement.bind_param(":missing", 404).is_err());
+    ok!(statement.bind_by_name(":id", 2i64));
+    ok!(statement.bind_by_name(":name", "Bob"));
+    ok!(statement.bind_by_name(":age", 69.42));
+    ok!(statement.bind_by_name(":photo", &[0x69u8, 0x42u8][..]));
+    ok!(statement.bind_by_name(":email", ()));
+    assert!(statement.bind_by_name(":missing", 404).is_err());
     assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]
-fn statement_param_index() {
+fn statement_bind_by_name_multiple() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT name FROM users WHERE age > :age - 5 AND age < :age + 5";
+    let mut statement = ok!(connection.prepare(query));
+    let index = ok!(statement.parameter_index(":age")).unwrap();
+
+    ok!(statement.bind(index, 40));
+    let mut cursor = statement.cursor();
+    let row = ok!(cursor.next()).unwrap();
+    assert_eq!(row[0].as_string(), Some("Alice"));
+
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind(index, 45));
+    let mut cursor = statement.cursor();
+    let row = ok!(cursor.next()).unwrap();
+    assert_eq!(row[0].as_string(), Some("Alice"));
+}
+
+#[test]
+fn statement_parameter_index() {
     let connection = setup_users(":memory:");
     let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
     let mut statement = ok!(connection.prepare(statement));
@@ -286,26 +304,6 @@ fn statement_param_index() {
     ok!(statement.bind(ok!(statement.parameter_index(":email")).unwrap().into(), ()));
     assert_eq!(ok!(statement.parameter_index(":missing")), None);
     assert_eq!(ok!(statement.next()), State::Done);
-}
-
-#[test]
-fn statement_bind_param_multi() {
-    let connection = setup_users(":memory:");
-    let query = "SELECT name FROM users WHERE age > :age - 5 AND age < :age + 5";
-
-    let mut statement = ok!(connection.prepare(query));
-    let index = ok!(statement.parameter_index(":age")).unwrap();
-
-    ok!(statement.bind(index, 40));
-    let mut cursor = statement.cursor();
-    let row = ok!(cursor.next()).unwrap();
-    assert_eq!(row[0].as_string(), Some("Alice"));
-
-    let mut statement = ok!(connection.prepare(query));
-    ok!(statement.bind(index, 45));
-    let mut cursor = statement.cursor();
-    let row = ok!(cursor.next()).unwrap();
-    assert_eq!(row[0].as_string(), Some("Alice"));
 }
 
 #[test]
