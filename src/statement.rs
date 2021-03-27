@@ -28,7 +28,7 @@ pub enum State {
 pub trait Bindable {
     /// Bind to a parameter.
     ///
-    /// The leftmost parameter has the index 1.
+    /// The first parameter has index 1.
     fn bind(self, &mut Statement, usize) -> Result<()>;
 }
 
@@ -36,14 +36,14 @@ pub trait Bindable {
 pub trait Readable: Sized {
     /// Read from a column.
     ///
-    /// The leftmost column has the index 0.
+    /// The first column has index 0.
     fn read(&Statement, usize) -> Result<Self>;
 }
 
 impl<'l> Statement<'l> {
     /// Bind a value to a parameter by index.
     ///
-    /// The leftmost parameter has the index 1.
+    /// The first parameter has index 1.
     #[inline]
     pub fn bind<T: Bindable>(&mut self, i: usize, value: T) -> Result<()> {
         value.bind(self, i)
@@ -76,7 +76,7 @@ impl<'l> Statement<'l> {
 
     /// Return the type of a column.
     ///
-    /// The type becomes available after taking a step.
+    /// The first column has index 0. The type becomes available after taking a step.
     pub fn kind(&self, i: usize) -> Type {
         debug_assert!(i < self.count(), "the index is out of range");
         match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
@@ -90,6 +90,8 @@ impl<'l> Statement<'l> {
     }
 
     /// Return the name of a column.
+    ///
+    /// The first column has index 0.
     #[inline]
     pub fn name(&self, i: usize) -> &str {
         debug_assert!(i < self.count(), "the index is out of range");
@@ -104,6 +106,18 @@ impl<'l> Statement<'l> {
     #[inline]
     pub fn names(&self) -> Vec<&str> {
         (0..self.count()).map(|i| self.name(i)).collect()
+    }
+
+    /// Advance to the next state.
+    ///
+    /// The function should be called multiple times until `State::Done` is
+    /// reached in order to evaluate the statement entirely.
+    pub fn next(&mut self) -> Result<State> {
+        Ok(match unsafe { ffi::sqlite3_step(self.raw.0) } {
+            ffi::SQLITE_ROW => State::Row,
+            ffi::SQLITE_DONE => State::Done,
+            code => error!(self.raw.1, code),
+        })
     }
 
     /// Return the index for a named parameter if exists.
@@ -129,21 +143,9 @@ impl<'l> Statement<'l> {
         }
     }
 
-    /// Advance to the next state.
-    ///
-    /// The function should be called multiple times until `State::Done` is
-    /// reached in order to evaluate the statement entirely.
-    pub fn next(&mut self) -> Result<State> {
-        Ok(match unsafe { ffi::sqlite3_step(self.raw.0) } {
-            ffi::SQLITE_ROW => State::Row,
-            ffi::SQLITE_DONE => State::Done,
-            code => error!(self.raw.1, code),
-        })
-    }
-
     /// Read a value from a column.
     ///
-    /// The leftmost column has the index 0.
+    /// The first column has index 0.
     #[inline]
     pub fn read<T: Readable>(&self, i: usize) -> Result<T> {
         debug_assert!(i < self.count(), "the index is out of range");

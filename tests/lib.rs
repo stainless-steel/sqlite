@@ -283,30 +283,6 @@ fn statement_bind_by_name_multiple() {
 }
 
 #[test]
-fn statement_parameter_index() {
-    let connection = setup_users(":memory:");
-    let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
-    let mut statement = ok!(connection.prepare(statement));
-
-    ok!(statement.bind(ok!(statement.parameter_index(":id")).unwrap().into(), 2i64));
-    ok!(statement.bind(
-        ok!(statement.parameter_index(":name")).unwrap().into(),
-        "Bob"
-    ));
-    ok!(statement.bind(
-        ok!(statement.parameter_index(":age")).unwrap().into(),
-        69.42
-    ));
-    ok!(statement.bind(
-        ok!(statement.parameter_index(":photo")).unwrap().into(),
-        &[0x69u8, 0x42u8][..]
-    ));
-    ok!(statement.bind(ok!(statement.parameter_index(":email")).unwrap().into(), ()));
-    assert_eq!(ok!(statement.parameter_index(":missing")), None);
-    assert_eq!(ok!(statement.next()), State::Done);
-}
-
-#[test]
 fn statement_count() {
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
@@ -345,6 +321,30 @@ fn statement_kind() {
     assert_eq!(statement.kind(1), Type::String);
     assert_eq!(statement.kind(2), Type::Float);
     assert_eq!(statement.kind(3), Type::Binary);
+}
+
+#[test]
+fn statement_parameter_index() {
+    let connection = setup_users(":memory:");
+    let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
+    let mut statement = ok!(connection.prepare(statement));
+
+    ok!(statement.bind(ok!(statement.parameter_index(":id")).unwrap().into(), 2i64));
+    ok!(statement.bind(
+        ok!(statement.parameter_index(":name")).unwrap().into(),
+        "Bob"
+    ));
+    ok!(statement.bind(
+        ok!(statement.parameter_index(":age")).unwrap().into(),
+        69.42
+    ));
+    ok!(statement.bind(
+        ok!(statement.parameter_index(":photo")).unwrap().into(),
+        &[0x69u8, 0x42u8][..]
+    ));
+    ok!(statement.bind(ok!(statement.parameter_index(":email")).unwrap().into(), ()));
+    assert_eq!(ok!(statement.parameter_index(":missing")), None);
+    assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]
