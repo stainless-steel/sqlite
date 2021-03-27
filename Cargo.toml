@@ -1,6 +1,6 @@
 [package]
 name = "sqlite"
-version = "0.25.3"
+version = "0.26.0"
 license = "Apache-2.0/MIT"
 authors = [
     "Alec Moskvin <alecm@gmx.com>",

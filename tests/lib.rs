@@ -8,22 +8,22 @@ use std::path::Path;
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[test]
-fn connection_changes() {
+fn connection_change_count() {
     let connection = setup_users(":memory:");
-    assert_eq!(connection.changes(), 1);
-    assert_eq!(connection.total_changes(), 1);
+    assert_eq!(connection.change_count(), 1);
+    assert_eq!(connection.total_change_count(), 1);
 
     ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
-    assert_eq!(connection.changes(), 1);
-    assert_eq!(connection.total_changes(), 2);
+    assert_eq!(connection.change_count(), 1);
+    assert_eq!(connection.total_change_count(), 2);
 
     ok!(connection.execute("UPDATE users SET name = 'Bob' WHERE id = 1"));
-    assert_eq!(connection.changes(), 1);
-    assert_eq!(connection.total_changes(), 3);
+    assert_eq!(connection.change_count(), 1);
+    assert_eq!(connection.total_change_count(), 3);
 
     ok!(connection.execute("DELETE FROM users"));
-    assert_eq!(connection.changes(), 2);
-    assert_eq!(connection.total_changes(), 5);
+    assert_eq!(connection.change_count(), 2);
+    assert_eq!(connection.total_change_count(), 5);
 }
 
 #[test]
@@ -120,7 +120,7 @@ fn cursor_bind_by_name() {
     map.insert(":name".to_string(), Value::String("Bob".to_string()));
     map.insert(":id".to_string(), Value::Integer(42));
 
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     ok!(cursor.bind_by_name(map));
     assert_eq!(ok!(cursor.next()), None);
 }
@@ -133,7 +133,7 @@ fn cursor_read() {
     let statement = ok!(connection.prepare(statement));
 
     let mut count = 0;
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     while let Some(row) = ok!(cursor.next()) {
         let id = row[0].as_integer().unwrap();
         if id == 1 {
@@ -155,7 +155,7 @@ fn cursor_wildcard() {
     let statement = ok!(connection.prepare(statement));
 
     let mut count = 0;
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     while let Some(_) = ok!(cursor.next()) {
         count += 1;
     }
@@ -170,7 +170,7 @@ fn cursor_wildcard_with_binding() {
     ok!(statement.bind(1, "%type"));
 
     let mut count = 0;
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     while let Some(_) = ok!(cursor.next()) {
         count += 1;
     }
@@ -182,10 +182,10 @@ fn cursor_workflow() {
     let connection = setup_users(":memory:");
 
     let select = "SELECT id, name FROM users WHERE id = ?";
-    let mut select = ok!(connection.prepare(select)).cursor();
+    let mut select = ok!(connection.prepare(select)).into_cursor();
 
     let insert = "INSERT INTO users (id, name) VALUES (?, ?)";
-    let mut insert = ok!(connection.prepare(insert)).cursor();
+    let mut insert = ok!(connection.prepare(insert)).into_cursor();
 
     for _ in 0..10 {
         ok!(select.bind(&[Value::Integer(1)]));
@@ -271,56 +271,56 @@ fn statement_bind_by_name_multiple() {
     let index = ok!(statement.parameter_index(":age")).unwrap();
 
     ok!(statement.bind(index, 40));
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     let row = ok!(cursor.next()).unwrap();
     assert_eq!(row[0].as_string(), Some("Alice"));
 
     let mut statement = ok!(connection.prepare(query));
     ok!(statement.bind(index, 45));
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     let row = ok!(cursor.next()).unwrap();
     assert_eq!(row[0].as_string(), Some("Alice"));
 }
 
 #[test]
-fn statement_count() {
+fn statement_column_count() {
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));
 
     assert_eq!(ok!(statement.next()), State::Row);
 
-    assert_eq!(statement.count(), 5);
+    assert_eq!(statement.column_count(), 5);
 }
 
 #[test]
-fn statement_name() {
+fn statement_column_name() {
     let connection = setup_users(":memory:");
     let statement = "SELECT id, name, age, photo AS user_photo FROM users";
     let statement = ok!(connection.prepare(statement));
 
-    let names = statement.names();
+    let names = statement.column_names();
     assert_eq!(names, vec!["id", "name", "age", "user_photo"]);
-    assert_eq!("user_photo", statement.name(3));
+    assert_eq!("user_photo", statement.column_name(3));
 }
 
 #[test]
-fn statement_kind() {
+fn statement_column_type() {
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));
 
-    assert_eq!(statement.kind(0), Type::Null);
-    assert_eq!(statement.kind(1), Type::Null);
-    assert_eq!(statement.kind(2), Type::Null);
-    assert_eq!(statement.kind(3), Type::Null);
+    assert_eq!(statement.column_type(0), Type::Null);
+    assert_eq!(statement.column_type(1), Type::Null);
+    assert_eq!(statement.column_type(2), Type::Null);
+    assert_eq!(statement.column_type(3), Type::Null);
 
     assert_eq!(ok!(statement.next()), State::Row);
 
-    assert_eq!(statement.kind(0), Type::Integer);
-    assert_eq!(statement.kind(1), Type::String);
-    assert_eq!(statement.kind(2), Type::Float);
-    assert_eq!(statement.kind(3), Type::Binary);
+    assert_eq!(statement.column_type(0), Type::Integer);
+    assert_eq!(statement.column_type(1), Type::String);
+    assert_eq!(statement.column_type(2), Type::Float);
+    assert_eq!(statement.column_type(3), Type::Binary);
 }
 
 #[test]

@@ -111,14 +111,14 @@ impl Connection {
     /// Return the number of rows inserted, updated, or deleted by the most
     /// recent INSERT, UPDATE, or DELETE statement.
     #[inline]
-    pub fn changes(&self) -> usize {
+    pub fn change_count(&self) -> usize {
         unsafe { ffi::sqlite3_changes(self.raw) as usize }
     }
 
     /// Return the total number of rows inserted, updated, and deleted by all
     /// INSERT, UPDATE, and DELETE statements since the connection was opened.
     #[inline]
-    pub fn total_changes(&self) -> usize {
+    pub fn total_change_count(&self) -> usize {
         unsafe { ffi::sqlite3_total_changes(self.raw) as usize }
     }
 
@@ -175,6 +175,16 @@ impl Connection {
     #[inline]
     pub fn as_raw(&self) -> *mut ffi::sqlite3 {
         self.raw
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `change_count` instead.")]
+    pub fn changes(&self) -> usize {
+        self.change_count()
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `total_change_count` instead.")]
+    pub fn total_changes(&self) -> usize {
+        self.total_change_count()
     }
 }
 

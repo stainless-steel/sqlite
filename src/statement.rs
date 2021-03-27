@@ -70,31 +70,16 @@ impl<'l> Statement<'l> {
 
     /// Return the number of columns.
     #[inline]
-    pub fn count(&self) -> usize {
+    pub fn column_count(&self) -> usize {
         unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
-    }
-
-    /// Return the type of a column.
-    ///
-    /// The first column has index 0. The type becomes available after taking a step.
-    pub fn kind(&self, i: usize) -> Type {
-        debug_assert!(i < self.count(), "the index is out of range");
-        match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
-            ffi::SQLITE_BLOB => Type::Binary,
-            ffi::SQLITE_FLOAT => Type::Float,
-            ffi::SQLITE_INTEGER => Type::Integer,
-            ffi::SQLITE_TEXT => Type::String,
-            ffi::SQLITE_NULL => Type::Null,
-            _ => unreachable!(),
-        }
     }
 
     /// Return the name of a column.
     ///
     /// The first column has index 0.
     #[inline]
-    pub fn name(&self, i: usize) -> &str {
-        debug_assert!(i < self.count(), "the index is out of range");
+    pub fn column_name(&self, i: usize) -> &str {
+        debug_assert!(i < self.column_count(), "the index is out of range");
         unsafe {
             let pointer = ffi::sqlite3_column_name(self.raw.0, i as c_int);
             debug_assert!(!pointer.is_null());
@@ -104,8 +89,23 @@ impl<'l> Statement<'l> {
 
     /// Return column names.
     #[inline]
-    pub fn names(&self) -> Vec<&str> {
-        (0..self.count()).map(|i| self.name(i)).collect()
+    pub fn column_names(&self) -> Vec<&str> {
+        (0..self.column_count()).map(|i| self.column_name(i)).collect()
+    }
+
+    /// Return the type of a column.
+    ///
+    /// The first column has index 0. The type becomes available after taking a step.
+    pub fn column_type(&self, i: usize) -> Type {
+        debug_assert!(i < self.column_count(), "the index is out of range");
+        match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
+            ffi::SQLITE_BLOB => Type::Binary,
+            ffi::SQLITE_FLOAT => Type::Float,
+            ffi::SQLITE_INTEGER => Type::Integer,
+            ffi::SQLITE_TEXT => Type::String,
+            ffi::SQLITE_NULL => Type::Null,
+            _ => unreachable!(),
+        }
     }
 
     /// Advance to the next state.
@@ -148,7 +148,7 @@ impl<'l> Statement<'l> {
     /// The first column has index 0.
     #[inline]
     pub fn read<T: Readable>(&self, i: usize) -> Result<T> {
-        debug_assert!(i < self.count(), "the index is out of range");
+        debug_assert!(i < self.column_count(), "the index is out of range");
         Readable::read(self, i)
     }
 
@@ -161,7 +161,7 @@ impl<'l> Statement<'l> {
 
     /// Upgrade to a cursor.
     #[inline]
-    pub fn cursor(self) -> Cursor<'l> {
+    pub fn into_cursor(self) -> Cursor<'l> {
         ::cursor::new(self)
     }
 
@@ -169,6 +169,31 @@ impl<'l> Statement<'l> {
     #[inline]
     pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
         self.raw.0
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `column_count` instead.")]
+    pub fn count(&self) -> usize {
+        self.column_count()
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `into_cursor` instead.")]
+    pub fn cursor(self) -> Cursor<'l> {
+        self.into_cursor()
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `column_name` instead.")]
+    pub fn name(&self, i: usize) -> &str {
+        self.column_name(i)
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `column_names` instead.")]
+    pub fn names(&self) -> Vec<&str> {
+        self.column_names()
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `column_type` instead.")]
+    pub fn kind(&self, i: usize) -> Type {
+        self.column_type(i)
     }
 }
 
@@ -286,7 +311,7 @@ impl<T: Bindable> Bindable for Option<T> {
 
 impl Readable for Value {
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(match statement.kind(i) {
+        Ok(match statement.column_type(i) {
             Type::Binary => Value::Binary(Readable::read(statement, i)?),
             Type::Float => Value::Float(Readable::read(statement, i)?),
             Type::Integer => Value::Integer(Readable::read(statement, i)?),
@@ -344,7 +369,7 @@ impl Readable for Vec<u8> {
 impl<T: Readable> Readable for Option<T> {
     #[inline]
     fn read(statement: &Statement, i: usize) -> Result<Self> {
-        if statement.kind(i) == Type::Null {
+        if statement.column_type(i) == Type::Null {
             Ok(None)
         } else {
             T::read(statement, i).map(Some)

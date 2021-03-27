@@ -33,7 +33,7 @@ impl<'l> Cursor<'l> {
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
     /// let statement = connection.prepare("INSERT INTO users VALUES (:id, :name)")?;
-    /// let mut cursor = statement.cursor();
+    /// let mut cursor = statement.into_cursor();
     /// cursor.bind_by_name(vec![
     ///     (":name", Value::String("Bob".to_owned())),
     ///     (":id", Value::Integer(42)),
@@ -58,8 +58,8 @@ impl<'l> Cursor<'l> {
 
     /// Return the number of columns.
     #[inline]
-    pub fn count(&self) -> usize {
-        self.statement.count()
+    pub fn column_count(&self) -> usize {
+        self.statement.column_count()
     }
 
     /// Advance to the next row and read all columns.
@@ -80,7 +80,7 @@ impl<'l> Cursor<'l> {
                 Some(values)
             }
             _ => {
-                let count = self.statement.count();
+                let count = self.statement.column_count();
                 let mut values = Vec::with_capacity(count);
                 for i in 0..count {
                     values.push(self.statement.read(i)?);
@@ -96,6 +96,11 @@ impl<'l> Cursor<'l> {
     #[inline]
     pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
         self.statement.as_raw()
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `column_count` instead.")]
+    pub fn count(&self) -> usize {
+        self.column_count()
     }
 }
 
