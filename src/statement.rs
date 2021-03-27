@@ -1,7 +1,6 @@
 use ffi;
 use libc::{c_double, c_int};
 use std::marker::PhantomData;
-use std::num::NonZeroUsize;
 
 use {Cursor, Result, Type, Value};
 
@@ -62,7 +61,7 @@ impl<'l> Statement<'l> {
     /// ```
     pub fn bind_param<T: Bindable>(&mut self, name: &str, value: T) -> Result<()> {
         if let Some(i) = self.parameter_index(name)? {
-            self.bind(i.get(), value)
+            self.bind(i, value)
         } else {
             raise!(format!("no such parameter: {}", name))
         }
@@ -106,23 +105,27 @@ impl<'l> Statement<'l> {
         (0..self.count()).map(|i| self.name(i)).collect()
     }
 
-    /// Return the index for a given named parameter or `None` if no such parameter exists.
+    /// Return the index for a named parameter if exists.
     ///
     /// # Examples
+    ///
     /// ```
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (name STRING)");
     /// let statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
-    /// assert_eq!(statement.parameter_index(":name")?.unwrap().get(), 1);
+    /// assert_eq!(statement.parameter_index(":name")?.unwrap(), 1);
     /// assert_eq!(statement.parameter_index(":asdf")?, None);
     /// # Ok::<(), sqlite::Error>(())
     /// ```
     #[inline]
-    pub fn parameter_index(&self, parameter: &str) -> Result<Option<NonZeroUsize>> {
+    pub fn parameter_index(&self, parameter: &str) -> Result<Option<usize>> {
         let index = unsafe {
             ffi::sqlite3_bind_parameter_index(self.raw.0, str_to_cstr!(parameter).as_ptr())
         };
-        Ok(NonZeroUsize::new(index as usize))
+        match index {
+            0 => Ok(None),
+            _ => Ok(Some(index as usize)),
+        }
     }
 
     /// Advance to the next state.

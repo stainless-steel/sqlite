@@ -47,7 +47,7 @@ impl<'l> Cursor<'l> {
         self.statement.reset()?;
         for (param, value) in values {
             if let Some(i) = self.statement.parameter_index(param.as_ref())? {
-                self.statement.bind(i.get(), &value)?;
+                self.statement.bind(i, &value)?;
             }
         }
         Ok(())

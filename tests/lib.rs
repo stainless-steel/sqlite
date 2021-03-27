@@ -294,7 +294,7 @@ fn statement_bind_param_multi() {
     let query = "SELECT name FROM users WHERE age > :age - 5 AND age < :age + 5";
 
     let mut statement = ok!(connection.prepare(query));
-    let index = ok!(statement.parameter_index(":age")).unwrap().get();
+    let index = ok!(statement.parameter_index(":age")).unwrap();
 
     ok!(statement.bind(index, 40));
     let mut cursor = statement.cursor();
