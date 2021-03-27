@@ -2,6 +2,7 @@ extern crate sqlite;
 extern crate temporary;
 
 use sqlite::{Connection, OpenFlags, State, Type, Value};
+use std::collections::HashMap;
 use std::path::Path;
 
 macro_rules! ok(($result:expr) => ($result.unwrap()));
@@ -107,6 +108,21 @@ fn connection_set_busy_handler() {
     for guard in guards {
         assert!(ok!(guard.join()));
     }
+}
+
+#[test]
+fn cursor_bind_by_name() {
+    let connection = ok!(sqlite::open(":memory:"));
+    ok!(connection.execute("CREATE TABLE users (id INTEGER, name STRING)"));
+    let statement = ok!(connection.prepare("INSERT INTO users VALUES (:id, :name)"));
+
+    let mut map = HashMap::new();
+    map.insert(":name".to_string(), Value::String("Bob".to_string()));
+    map.insert(":id".to_string(), Value::Integer(42));
+
+    let mut cursor = statement.cursor();
+    ok!(cursor.bind_by_name(map));
+    assert_eq!(ok!(cursor.next()), None);
 }
 
 #[test]
@@ -233,6 +249,40 @@ fn statement_bind_with_optional() {
 }
 
 #[test]
+fn statement_bind_by_name() {
+    let connection = setup_users(":memory:");
+    let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
+    let mut statement = ok!(connection.prepare(statement));
+
+    ok!(statement.bind_by_name(":id", 2i64));
+    ok!(statement.bind_by_name(":name", "Bob"));
+    ok!(statement.bind_by_name(":age", 69.42));
+    ok!(statement.bind_by_name(":photo", &[0x69u8, 0x42u8][..]));
+    ok!(statement.bind_by_name(":email", ()));
+    assert!(statement.bind_by_name(":missing", 404).is_err());
+    assert_eq!(ok!(statement.next()), State::Done);
+}
+
+#[test]
+fn statement_bind_by_name_multiple() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT name FROM users WHERE age > :age - 5 AND age < :age + 5";
+    let mut statement = ok!(connection.prepare(query));
+    let index = ok!(statement.parameter_index(":age")).unwrap();
+
+    ok!(statement.bind(index, 40));
+    let mut cursor = statement.cursor();
+    let row = ok!(cursor.next()).unwrap();
+    assert_eq!(row[0].as_string(), Some("Alice"));
+
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind(index, 45));
+    let mut cursor = statement.cursor();
+    let row = ok!(cursor.next()).unwrap();
+    assert_eq!(row[0].as_string(), Some("Alice"));
+}
+
+#[test]
 fn statement_count() {
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
@@ -271,6 +321,30 @@ fn statement_kind() {
     assert_eq!(statement.kind(1), Type::String);
     assert_eq!(statement.kind(2), Type::Float);
     assert_eq!(statement.kind(3), Type::Binary);
+}
+
+#[test]
+fn statement_parameter_index() {
+    let connection = setup_users(":memory:");
+    let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
+    let mut statement = ok!(connection.prepare(statement));
+
+    ok!(statement.bind(ok!(statement.parameter_index(":id")).unwrap().into(), 2i64));
+    ok!(statement.bind(
+        ok!(statement.parameter_index(":name")).unwrap().into(),
+        "Bob",
+    ));
+    ok!(statement.bind(
+        ok!(statement.parameter_index(":age")).unwrap().into(),
+        69.42,
+    ));
+    ok!(statement.bind(
+        ok!(statement.parameter_index(":photo")).unwrap().into(),
+        &[0x69u8, 0x42u8][..],
+    ));
+    ok!(statement.bind(ok!(statement.parameter_index(":email")).unwrap().into(), ()));
+    assert_eq!(ok!(statement.parameter_index(":missing")), None);
+    assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]

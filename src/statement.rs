@@ -28,7 +28,7 @@ pub enum State {
 pub trait Bindable {
     /// Bind to a parameter.
     ///
-    /// The leftmost parameter has the index 1.
+    /// The first parameter has index 1.
     fn bind(self, &mut Statement, usize) -> Result<()>;
 }
 
@@ -36,17 +36,36 @@ pub trait Bindable {
 pub trait Readable: Sized {
     /// Read from a column.
     ///
-    /// The leftmost column has the index 0.
+    /// The first column has index 0.
     fn read(&Statement, usize) -> Result<Self>;
 }
 
 impl<'l> Statement<'l> {
-    /// Bind a value to a parameter.
+    /// Bind a value to a parameter by index.
     ///
-    /// The leftmost parameter has the index 1.
+    /// The first parameter has index 1.
     #[inline]
     pub fn bind<T: Bindable>(&mut self, i: usize, value: T) -> Result<()> {
         value.bind(self, i)
+    }
+
+    /// Bind a value to a parameter by name.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # let connection = sqlite::open(":memory:").unwrap();
+    /// # connection.execute("CREATE TABLE users (name STRING)");
+    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
+    /// statement.bind_by_name(":name", "Bob")?;
+    /// # Ok::<(), sqlite::Error>(())
+    /// ```
+    pub fn bind_by_name<T: Bindable>(&mut self, name: &str, value: T) -> Result<()> {
+        if let Some(i) = self.parameter_index(name)? {
+            self.bind(i, value)
+        } else {
+            raise!(format!("no such parameter: {}", name))
+        }
     }
 
     /// Return the number of columns.
@@ -57,7 +76,7 @@ impl<'l> Statement<'l> {
 
     /// Return the type of a column.
     ///
-    /// The type becomes available after taking a step.
+    /// The first column has index 0. The type becomes available after taking a step.
     pub fn kind(&self, i: usize) -> Type {
         debug_assert!(i < self.count(), "the index is out of range");
         match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
@@ -71,6 +90,8 @@ impl<'l> Statement<'l> {
     }
 
     /// Return the name of a column.
+    ///
+    /// The first column has index 0.
     #[inline]
     pub fn name(&self, i: usize) -> &str {
         debug_assert!(i < self.count(), "the index is out of range");
@@ -99,9 +120,32 @@ impl<'l> Statement<'l> {
         })
     }
 
+    /// Return the index for a named parameter if exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # let connection = sqlite::open(":memory:").unwrap();
+    /// # connection.execute("CREATE TABLE users (name STRING)");
+    /// let statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
+    /// assert_eq!(statement.parameter_index(":name")?.unwrap(), 1);
+    /// assert_eq!(statement.parameter_index(":asdf")?, None);
+    /// # Ok::<(), sqlite::Error>(())
+    /// ```
+    #[inline]
+    pub fn parameter_index(&self, parameter: &str) -> Result<Option<usize>> {
+        let index = unsafe {
+            ffi::sqlite3_bind_parameter_index(self.raw.0, str_to_cstr!(parameter).as_ptr())
+        };
+        match index {
+            0 => Ok(None),
+            _ => Ok(Some(index as usize)),
+        }
+    }
+
     /// Read a value from a column.
     ///
-    /// The leftmost column has the index 0.
+    /// The first column has index 0.
     #[inline]
     pub fn read<T: Readable>(&self, i: usize) -> Result<T> {
         debug_assert!(i < self.count(), "the index is out of range");

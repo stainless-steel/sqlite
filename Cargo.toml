@@ -3,6 +3,7 @@ name = "sqlite"
 version = "0.25.3"
 license = "Apache-2.0/MIT"
 authors = [
+    "Alec Moskvin <alecm@gmx.com>",
     "Daniel Dulaney <ddy@vitronic.com>",
     "Ivan Stankovic <pokemon@fly.srk.fer.hr>",
     "Ivan Ukhov <ivan.ukhov@gmail.com>",
