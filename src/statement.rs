@@ -90,7 +90,9 @@ impl<'l> Statement<'l> {
     /// Return column names.
     #[inline]
     pub fn column_names(&self) -> Vec<&str> {
-        (0..self.column_count()).map(|i| self.column_name(i)).collect()
+        (0..self.column_count())
+            .map(|i| self.column_name(i))
+            .collect()
     }
 
     /// Return the type of a column.

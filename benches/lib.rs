@@ -13,7 +13,8 @@ macro_rules! ok(($result:expr) => ($result.unwrap()));
 fn read_cursor(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
-    let mut cursor = ok!(connection.prepare("SELECT * FROM data WHERE a > ? AND b > ?")).cursor();
+    let mut cursor =
+        ok!(connection.prepare("SELECT * FROM data WHERE a > ? AND b > ?")).into_cursor();
 
     bencher.iter(|| {
         ok!(cursor.bind(&[Integer(42), Float(42.0)]));
@@ -45,7 +46,7 @@ fn read_statement(bencher: &mut Bencher) {
 fn write_cursor(bencher: &mut Bencher) {
     let connection = create();
     let mut cursor =
-        ok!(connection.prepare("INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)")).cursor();
+        ok!(connection.prepare("INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)")).into_cursor();
 
     bencher.iter(|| {
         ok!(cursor.bind(&[Integer(42), Float(42.0), Float(42.0), Float(42.0)]));
