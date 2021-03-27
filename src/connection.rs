@@ -176,6 +176,16 @@ impl Connection {
     pub fn as_raw(&self) -> *mut ffi::sqlite3 {
         self.raw
     }
+
+    #[deprecated(since = "0.26.0", note = "Please use `change_count` instead.")]
+    pub fn changes(&self) -> usize {
+        self.change_count()
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `total_change_count` instead.")]
+    pub fn total_changes(&self) -> usize {
+        self.total_change_count()
+    }
 }
 
 impl Drop for Connection {

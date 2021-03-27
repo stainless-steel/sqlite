@@ -170,6 +170,31 @@ impl<'l> Statement<'l> {
     pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
         self.raw.0
     }
+
+    #[deprecated(since = "0.26.0", note = "Please use `column_count` instead.")]
+    pub fn count(&self) -> usize {
+        self.column_count()
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `into_cursor` instead.")]
+    pub fn cursor(self) -> Cursor<'l> {
+        self.into_cursor()
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `column_name` instead.")]
+    pub fn name(&self, i: usize) -> &str {
+        self.column_name(i)
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `column_names` instead.")]
+    pub fn names(&self) -> Vec<&str> {
+        self.column_names()
+    }
+
+    #[deprecated(since = "0.26.0", note = "Please use `column_type` instead.")]
+    pub fn kind(&self, i: usize) -> Type {
+        self.column_type(i)
+    }
 }
 
 impl<'l> Drop for Statement<'l> {
