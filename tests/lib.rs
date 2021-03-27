@@ -120,7 +120,7 @@ fn cursor_bind_by_name() {
     map.insert(":name".to_string(), Value::String("Bob".to_string()));
     map.insert(":id".to_string(), Value::Integer(42));
 
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     ok!(cursor.bind_by_name(map));
     assert_eq!(ok!(cursor.next()), None);
 }
@@ -249,7 +249,6 @@ fn statement_bind_with_optional() {
 }
 
 #[test]
-<<<<<<< HEAD
 fn statement_bind_by_name() {
     let connection = setup_users(":memory:");
     let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
@@ -272,22 +271,19 @@ fn statement_bind_by_name_multiple() {
     let index = ok!(statement.parameter_index(":age")).unwrap();
 
     ok!(statement.bind(index, 40));
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     let row = ok!(cursor.next()).unwrap();
     assert_eq!(row[0].as_string(), Some("Alice"));
 
     let mut statement = ok!(connection.prepare(query));
     ok!(statement.bind(index, 45));
-    let mut cursor = statement.cursor();
+    let mut cursor = statement.into_cursor();
     let row = ok!(cursor.next()).unwrap();
     assert_eq!(row[0].as_string(), Some("Alice"));
 }
 
 #[test]
-fn statement_count() {
-=======
 fn statement_column_count() {
->>>>>>> e6da9fd (Rename count to column_count)
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));

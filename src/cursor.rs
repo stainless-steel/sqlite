@@ -33,7 +33,7 @@ impl<'l> Cursor<'l> {
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
     /// let statement = connection.prepare("INSERT INTO users VALUES (:id, :name)")?;
-    /// let mut cursor = statement.cursor();
+    /// let mut cursor = statement.into_cursor();
     /// cursor.bind_by_name(vec![
     ///     (":name", Value::String("Bob".to_owned())),
     ///     (":id", Value::Integer(42)),
