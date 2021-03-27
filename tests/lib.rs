@@ -332,15 +332,15 @@ fn statement_parameter_index() {
     ok!(statement.bind(ok!(statement.parameter_index(":id")).unwrap().into(), 2i64));
     ok!(statement.bind(
         ok!(statement.parameter_index(":name")).unwrap().into(),
-        "Bob"
+        "Bob",
     ));
     ok!(statement.bind(
         ok!(statement.parameter_index(":age")).unwrap().into(),
-        69.42
+        69.42,
     ));
     ok!(statement.bind(
         ok!(statement.parameter_index(":photo")).unwrap().into(),
-        &[0x69u8, 0x42u8][..]
+        &[0x69u8, 0x42u8][..],
     ));
     ok!(statement.bind(ok!(statement.parameter_index(":email")).unwrap().into(), ()));
     assert_eq!(ok!(statement.parameter_index(":missing")), None);
