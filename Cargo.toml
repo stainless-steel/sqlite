@@ -35,7 +35,7 @@ name = "test"
 path = "src/test.rs"
 
 [dependencies]
-fluence = "0.5.0"
+fluence = { git = "https://github.com/fluencelabs/rust-sdk" }
 
 [dev-dependencies]
 temporary = "0.6"
