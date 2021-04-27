@@ -1,4 +1,4 @@
-(@interface it_version "0.19.0"
+(@interface it_version "0.20.0")
 
 ;; Types
 (@interface type (func 
@@ -231,6 +231,7 @@
 (@interface func (type 19)
   arg.get 0
   string.size
+  i32.push 1
   call-core 0
   arg.get 0
   string.lower_memory
@@ -238,6 +239,7 @@
   i32.from_s32
   arg.get 2
   string.size
+  i32.push 1
   call-core 0
   arg.get 2
   string.lower_memory
@@ -307,6 +309,7 @@
   i32.from_u32
   arg.get 1
   string.size
+  i32.push 1
   call-core 0
   arg.get 1
   string.lower_memory
@@ -349,6 +352,7 @@
   i32.from_s32
   arg.get 2
   string.size
+  i32.push 1
   call-core 0
   arg.get 2
   string.lower_memory
@@ -366,6 +370,7 @@
   i32.from_u32
   arg.get 1
   string.size
+  i32.push 1
   call-core 0
   arg.get 1
   string.lower_memory
@@ -388,7 +393,7 @@
   call-core 29
   call-core 3
   call-core 2
-  array.lift_memory u8
+  byte_array.lift_memory
   call-core 1)
 (@interface func (type 59)
   arg.get 0
