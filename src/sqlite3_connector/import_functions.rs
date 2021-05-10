@@ -1,18 +1,18 @@
 extern crate fluence;
 
-use self::fluence::fce;
+use self::fluence::marine;
 
 pub(crate) type Sqlite3DbHandle = u32;
 pub(crate) type Sqlite3StmtHandle = u32;
 
-#[fce]
+#[marine]
 #[derive(Clone, Debug)]
 pub struct DBOpenDescriptor {
     pub ret_code: i32,
     pub db_handle: u32,
 }
 
-#[fce]
+#[marine]
 #[derive(Clone, Debug)]
 pub struct DBPrepareDescriptor {
     pub ret_code: i32,
@@ -20,14 +20,14 @@ pub struct DBPrepareDescriptor {
     pub tail: u32,
 }
 
-#[fce]
+#[marine]
 #[derive(Clone, Debug)]
 pub struct DBExecDescriptor {
     pub ret_code: i32,
     pub err_msg: String,
 }
 
-#[fce]
+#[marine]
 #[link(wasm_import_module = "sqlite3")]
 extern "C" {
     /*

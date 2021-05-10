@@ -1,14 +1,14 @@
 extern crate fluence;
-extern crate fce_sqlite_connector;
+extern crate marine_sqlite_connector;
 
-use fluence::fce;
-use fce_sqlite_connector::State;
+use fluence::marine;
+use marine_sqlite_connector::State;
 
 pub fn main() {}
 
-#[fce]
+#[marine]
 pub fn test1() {
-    let connection = fce_sqlite_connector::open(":memory:").unwrap();
+    let connection = marine_sqlite_connector::open(":memory:").unwrap();
 
     connection
         .execute(
@@ -30,9 +30,9 @@ pub fn test1() {
         .unwrap();
 }
 
-#[fce]
+#[marine]
 pub fn test2() {
-    let connection = fce_sqlite_connector::open(":memory:").unwrap();
+    let connection = marine_sqlite_connector::open(":memory:").unwrap();
 
     println!("connection id = {}\n", connection.as_raw());
     connection
@@ -56,11 +56,11 @@ pub fn test2() {
         println!("age = {}", statement.read::<i64>(1).unwrap());
     }
 }
-#[fce]
+#[marine]
 pub fn test3() {
-    use fce_sqlite_connector::Value;
+    use marine_sqlite_connector::Value;
 
-    let connection = fce_sqlite_connector::open(":memory:").unwrap();
+    let connection = marine_sqlite_connector::open(":memory:").unwrap();
 
     connection
         .execute(
