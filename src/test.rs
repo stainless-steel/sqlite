@@ -1,7 +1,7 @@
-extern crate fluence;
+extern crate marine_rs_sdk;
 extern crate marine_sqlite_connector;
 
-use fluence::marine;
+use marine_rs_sdk::marine;
 use marine_sqlite_connector::State;
 
 pub fn main() {}

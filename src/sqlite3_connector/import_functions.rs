@@ -1,6 +1,6 @@
-extern crate fluence;
+extern crate marine_rs_sdk;
 
-use self::fluence::marine;
+use self::marine_rs_sdk::marine;
 
 pub(crate) type Sqlite3DbHandle = u32;
 pub(crate) type Sqlite3StmtHandle = u32;

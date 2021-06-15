@@ -1,9 +1,9 @@
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 
-extern crate fluence;
+extern crate marine_rs_sdk;
 
-use fluence::marine;
+use marine_rs_sdk::marine;
 
 pub fn main() {}
 
