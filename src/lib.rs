@@ -273,8 +273,8 @@ mod statement;
 pub use connection::Connection;
 pub use connection::OpenFlags;
 pub use cursor::Cursor;
-pub use statement::{Bindable, Readable, State, Statement};
 pub use sqlite3_connector::*;
+pub use statement::{Bindable, Readable, State, Statement};
 
 /// Open a read-write connection to a new or existing database.
 #[inline]

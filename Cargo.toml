@@ -1,6 +1,6 @@
 [package]
-name = "fce-sqlite-connector"
-version = "0.3.0"
+name = "marine-sqlite-connector"
+version = "0.5.0"
 license = "Apache-2.0/MIT"
 authors = [
     "Daniel Dulaney <ddy@vitronic.com>",
@@ -23,19 +23,19 @@ categories = ["api-bindings", "database"]
 keywords = ["database"]
 
 [lib]
-name = "fce_sqlite_connector"
+name = "marine_sqlite_connector"
 path = "src/lib.rs"
 
 [[bin]]
-name = "wit_generator"
-path = "src/wit_generator.rs"
+name = "it_generator"
+path = "src/it_generator.rs"
 
 [[bin]]
 name = "test"
 path = "src/test.rs"
 
 [dependencies]
-fluence = "0.6.1"
+marine-rs-sdk = "0.6.10"
 
 [dev-dependencies]
 temporary = "0.6"
