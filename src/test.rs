@@ -94,16 +94,52 @@ pub fn test4() {
     connection
         .execute(
             "
-            CREATE TABLE users (name TEXT, age BLOB NOT NULL);
+            CREATE TABLE test (number INTEGER, blob BLOB NOT NULL);
         ",
         )
         .unwrap();
 
     let mut cursor = connection
-        .prepare("INSERT OR REPLACE INTO users VALUES (?, ?)").unwrap();
+        .prepare("INSERT OR REPLACE INTO test VALUES (?, ?)").unwrap();
 
     cursor.bind(1, &Value::Integer(50)).unwrap();
     cursor.bind(2, &Value::Binary(vec![1, 2, 3])).unwrap();
 
     cursor.next().unwrap();
+}
+
+#[marine]
+pub fn test5() {
+    use marine_sqlite_connector::Value;
+
+    let connection = marine_sqlite_connector::open(":memory:").unwrap();
+
+    connection
+        .execute(
+            "
+            CREATE TABLE test (number INTEGER, blob BLOB);
+        ",
+        )
+        .unwrap();
+
+    let mut cursor = connection
+        .prepare("INSERT OR REPLACE INTO test VALUES (?, ?)").unwrap();
+
+    cursor.bind(1, &Value::Integer(50)).unwrap();
+    cursor.bind(2, &Value::Binary(vec![1, 2, 3])).unwrap();
+
+    cursor.next().unwrap();
+
+    let mut cursor = connection
+        .prepare("SELECT blob FROM test WHERE number = ?")
+        .unwrap()
+        .cursor();
+
+    cursor.bind(&[Value::Integer(50)]).unwrap();
+
+    while let Some(row) = cursor.next().unwrap() {
+        if vec![1,2 ,3] != row[0].as_binary().unwrap().to_vec() {
+            println!("expected: {:?}, actual: {:?}", vec![1,2 ,3], row[0].as_binary().unwrap());
+        }
+    }
 }
