@@ -1,7 +1,7 @@
-use sqlite3_connector as ffi;
+use crate::sqlite3_connector as ffi;
 use std::marker::PhantomData;
 
-use {Cursor, Result, Type, Value};
+use crate::{Cursor, Result, Type, Value};
 
 /// A prepared statement.
 pub struct Statement {
@@ -31,7 +31,7 @@ pub trait Readable: Sized {
     /// Read from a column.
     ///
     /// The leftmost column has the index 0.
-    fn read(&Statement, usize) -> Result<Self>;
+    fn read(_: &Statement, _: usize) -> Result<Self>;
 }
 
 impl Statement {
@@ -108,7 +108,7 @@ impl Statement {
     /// Upgrade to a cursor.
     #[inline]
     pub fn cursor(self) -> Cursor {
-        ::cursor::new(self)
+        crate::cursor::new(self)
     }
 
     /// Return the raw pointer.

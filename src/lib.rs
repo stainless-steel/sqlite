@@ -108,9 +108,9 @@ use std::{error, fmt};
 
 macro_rules! error(
     ($connection:expr, $code:expr) => (
-        match ::last_error($connection) {
+        match crate::last_error($connection) {
             Some(error) => return Err(error),
-            _ => return Err(::Error {
+            _ => return Err(crate::Error {
                 code: Some($code as isize),
                 message: None,
             }),
@@ -121,7 +121,7 @@ macro_rules! error(
 macro_rules! ok_descr(
     ($connection:expr, $result:expr) => (
         match $result.ret_code {
-            ::ffi::SQLITE_OK => {}
+            crate::ffi::SQLITE_OK => {}
             code => error!($connection, code),
         }
     );
@@ -139,7 +139,7 @@ macro_rules! ok_descr(
 macro_rules! ok_raw(
     ($connection:expr, $result:expr) => (
         match $result {
-            ::ffi::SQLITE_OK => {}
+            crate::ffi::SQLITE_OK => {}
             code => error!($connection, code),
         }
     );
