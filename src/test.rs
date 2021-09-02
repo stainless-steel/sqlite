@@ -84,3 +84,26 @@ pub fn test3() {
         println!("age = {}", row[1].as_integer().unwrap());
     }
 }
+
+#[marine]
+pub fn test4() {
+    use marine_sqlite_connector::Value;
+
+    let connection = marine_sqlite_connector::open(":memory:").unwrap();
+
+    connection
+        .execute(
+            "
+            CREATE TABLE users (name TEXT, age BLOB NOT NULL);
+        ",
+        )
+        .unwrap();
+
+    let mut cursor = connection
+        .prepare("INSERT OR REPLACE INTO users VALUES (?, ?)").unwrap();
+
+    cursor.bind(1, &Value::Integer(50)).unwrap();
+    cursor.bind(2, &Value::Binary(vec![1, 2, 3])).unwrap();
+
+    cursor.next().unwrap();
+}
