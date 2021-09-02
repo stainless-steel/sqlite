@@ -39,3 +39,4 @@ marine-rs-sdk = "0.6.10"
 
 [dev-dependencies]
 temporary = "0.6"
+marine-rs-sdk-test = "0.2.0"
