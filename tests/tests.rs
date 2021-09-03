@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-extern crate marine_rs_sdk_test;
-
 mod tests {
     use marine_rs_sdk_test::marine_test;
 
