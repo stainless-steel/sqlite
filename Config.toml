@@ -1,0 +1,19 @@
+modules_dir = "artifacts/"
+
+[[module]]
+    name = "sqlite3"
+    mem_pages_count = 100
+    logger_enabled = false
+
+    [module.wasi]
+    preopened_files = ["/tmp"]
+    mapped_dirs = { "tmp" = "/tmp" }
+
+[[module]]
+    name = "test"
+    mem_pages_count = 1
+    logger_enabled = false
+
+    [module.wasi]
+    preopened_files = ["/tmp"]
+    mapped_dirs = { "tmp" = "/tmp" }

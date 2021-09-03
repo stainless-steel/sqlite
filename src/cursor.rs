@@ -1,6 +1,6 @@
-use sqlite3_connector as ffi;
-use statement::{State, Statement};
-use {Result, Value};
+use crate::sqlite3_connector as ffi;
+use crate::statement::{State, Statement};
+use crate::{Result, Value};
 
 /// An iterator over rows.
 pub struct Cursor {
