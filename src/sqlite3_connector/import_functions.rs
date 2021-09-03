@@ -36,7 +36,7 @@ extern "C" {
        const char *zVfs        /* Name of VFS module to use */
       );
     */
-    pub fn sqlite3_open_v2(filename: String, flags: i32, vfs: String) -> DBOpenDescriptor;
+    pub fn sqlite3_open_v2(filename: &str, flags: i32, vfs: &str) -> DBOpenDescriptor;
 
     // SQLITE_API int sqlite3_close(sqlite3*);
     pub fn sqlite3_close(db_handle: u32) -> i32;
@@ -50,7 +50,7 @@ extern "C" {
        const char **pzTail     /* OUT: Pointer to unused portion of zSql */
      );
     */
-    pub fn sqlite3_prepare_v2(db_handle: u32, sql: String) -> DBPrepareDescriptor;
+    pub fn sqlite3_prepare_v2(db_handle: u32, sql: &str) -> DBPrepareDescriptor;
 
     /*
      SQLITE_API int sqlite3_exec(
@@ -63,7 +63,7 @@ extern "C" {
     */
     pub fn sqlite3_exec(
         db_handle: u32,
-        sql: String,
+        sql: &str,
         callback_id: i32,
         callback_arg: i32,
     ) -> DBExecDescriptor;
@@ -99,7 +99,7 @@ extern "C" {
     pub fn sqlite3_reset(stmt_handle: u32) -> i32;
 
     // SQLITE_API int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
-    pub fn sqlite3_bind_blob(stmt_handle: u32, pos: i32, blob: Vec<u8>, xDel: i32) -> i32;
+    pub fn sqlite3_bind_blob(stmt_handle: u32, pos: i32, blob: &Vec<u8>, xDel: i32) -> i32;
 
     // SQLITE_API int sqlite3_bind_double(sqlite3_stmt*, int, double);
     pub fn sqlite3_bind_double(stmt_handle: u32, pos: i32, value: f64) -> i32;
@@ -111,7 +111,7 @@ extern "C" {
     pub fn sqlite3_bind_null(stmt_handle: u32, pos: i32) -> i32;
 
     // SQLITE_API int sqlite3_bind_text(sqlite3_stmt*,int,const char*,int,void(*)(void*));
-    pub fn sqlite3_bind_text(stmt_handle: u32, pos: i32, text: String, xDel: i32) -> i32;
+    pub fn sqlite3_bind_text(stmt_handle: u32, pos: i32, text: &str, xDel: i32) -> i32;
 
     // SQLITE_API int sqlite3_column_count(sqlite3_stmt *pStmt)
     pub fn sqlite3_column_count(stmt_handle: u32) -> i32;
