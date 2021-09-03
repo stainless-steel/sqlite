@@ -24,6 +24,8 @@ jobs:
           rustup component add clippy --toolchain nightly-2021-05-21
           rustup target add wasm32-wasi
 
+          cargo install marine
+
           cargo fmt --all -- --check --color always
           cargo check -v --all-features
 
