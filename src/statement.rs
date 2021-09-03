@@ -128,16 +128,16 @@ impl<'l> Drop for Statement {
 impl Bindable for &Value {
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         match self {
-            &Value::Binary(ref value) => (value as &[u8]).bind(statement, i),
+            Value::Binary(value) => value.bind(statement, i),
             &Value::Float(value) => value.bind(statement, i),
             &Value::Integer(value) => value.bind(statement, i),
-            &Value::String(ref value) => (value as &str).bind(statement, i),
-            &Value::Null => ().bind(statement, i),
+            Value::String(value) => value.as_str().bind(statement, i),
+            Value::Null => ().bind(statement, i),
         }
     }
 }
 
-impl Bindable for &[u8] {
+impl Bindable for &Vec<u8> {
     #[inline]
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         debug_assert!(i > 0, "the indexing starts from 1");

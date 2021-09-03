@@ -28,7 +28,7 @@ impl Connection {
         unsafe {
             let path = path.as_ref();
             let path = path.to_string_lossy().into_owned();
-            let result = ffi::sqlite3_open_v2(path, flags.0, String::new());
+            let result = ffi::sqlite3_open_v2(&path, flags.0, &String::new());
 
             match result.ret_code {
                 ffi::SQLITE_OK => {}
