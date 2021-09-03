@@ -393,7 +393,7 @@
   call-core 29
   call-core 3
   call-core 2
-  byte_array.lift_memory
+  string.lift_memory
   call-core 1)
 (@interface func (type 59)
   arg.get 0

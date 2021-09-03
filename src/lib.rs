@@ -4,7 +4,7 @@
 //!
 //! Open a connection, create a table, and insert some rows:
 //!
-//! ```
+//! ```ignore
 //! let connection = sqlite::open(":memory:").unwrap();
 //!
 //! connection
@@ -20,7 +20,7 @@
 //!
 //! Select some rows and process them one by one as plain text:
 //!
-//! ```
+//! ```ignore
 //! # let connection = sqlite::open(":memory:").unwrap();
 //! # connection
 //! #     .execute(
@@ -44,7 +44,7 @@
 //! The same query using a prepared statement, which is much more efficient than
 //! the previous technique:
 //!
-//! ```
+//! ```ignore
 //! use sqlite::State;
 //! # let connection = sqlite::open(":memory:").unwrap();
 //! # connection
@@ -72,7 +72,7 @@
 //! The same query using a cursor, which is a wrapper around a prepared
 //! statement providing the concept of row and featuring all-at-once binding:
 //!
-//! ```
+//! ```ignore
 //! use sqlite::Value;
 //! # let connection = sqlite::open(":memory:").unwrap();
 //! # connection

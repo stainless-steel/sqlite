@@ -4,7 +4,7 @@ orbs:
   docker: circleci/docker@1.5.0
 
 jobs:
-  Build and test Rust service:
+  sqlite_connector_rust_tests:
     docker:
       - image: circleci/rust:latest
     resource_class: xlarge
@@ -12,24 +12,31 @@ jobs:
       RUST_BACKTRACE: full
     steps:
       - checkout
-      - run: |
-          sudo bash .github/download_marine.sh
       - restore_cache:
           keys:
-            - connector-test00-{{ checksum "Cargo.lock" }}
+            - sqlite-connector01-{{ checksum "Cargo.lock" }}
       - run: |
+          rustup toolchain install nightly-2021-05-21
+          rustup default nightly-2021-05-21
+          rustup override set nightly-2021-05-21
+
+          rustup component add rustfmt --toolchain nightly-2021-05-21
+          rustup component add clippy --toolchain nightly-2021-05-21
           rustup target add wasm32-wasi
-      - run: ./build.sh
-      - run: |
-          cargo test --no-fail-fast --release --all-features
+
+          cargo fmt --all -- --check --color always
+          cargo check -v --all-features
+
+          ./build.sh
+          cargo test --release -v --all-features
       - save_cache:
           paths:
             - ~/.cargo
             - ~/.rustup
-          key: connector-test00-{{ checksum "Cargo.lock" }}
+          key: sqlite-connector01-{{ checksum "Cargo.lock" }}
 
 workflows:
-  version: 2
-  CircleCI:
+  version: 2.1
+  marine:
     jobs:
-      - Build and test Rust service
+      - sqlite_connector_rust_tests
