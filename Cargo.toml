@@ -21,6 +21,7 @@ repository = "https://github.com/stainless-steel/sqlite"
 readme = "README.md"
 categories = ["api-bindings", "database"]
 keywords = ["database"]
+edition = "2018"
 
 [lib]
 name = "marine_sqlite_connector"
@@ -39,3 +40,4 @@ marine-rs-sdk = "0.6.10"
 
 [dev-dependencies]
 temporary = "0.6"
+marine-rs-sdk-test = "0.2.0"

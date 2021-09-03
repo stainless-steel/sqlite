@@ -1,6 +1,4 @@
-extern crate marine_rs_sdk;
-
-use self::marine_rs_sdk::marine;
+use marine_rs_sdk::marine;
 
 pub(crate) type Sqlite3DbHandle = u32;
 pub(crate) type Sqlite3StmtHandle = u32;

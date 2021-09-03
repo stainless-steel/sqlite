@@ -1,5 +1,7 @@
 .idea/*
 
+/artifacts
+.repl_history
 *.sqlite3
 Cargo.lock
 target
