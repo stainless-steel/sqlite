@@ -1,7 +1,7 @@
 use crate::sqlite3_connector as ffi;
-use std::marker::PhantomData;
-
 use crate::{Cursor, Result, Type, Value};
+
+use std::marker::PhantomData;
 
 /// A prepared statement.
 pub struct Statement {

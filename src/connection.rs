@@ -1,9 +1,8 @@
 use crate::sqlite3_connector as ffi;
+use crate::{Result, Statement};
 
 use std::marker::PhantomData;
 use std::path::Path;
-
-use crate::{Result, Statement};
 
 /// A database connection.
 pub struct Connection {

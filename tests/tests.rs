@@ -29,12 +29,10 @@ mod tests {
         test.test2()
     }
 
-
     #[marine_test(config_path = "../Config.toml", modules_dir = "../artifacts/")]
     fn test3(test: marine_test_env::test::ModuleInterface) {
         test.test3()
     }
-
 
     #[marine_test(config_path = "../Config.toml", modules_dir = "../artifacts/")]
     fn test4(test: marine_test_env::test::ModuleInterface) {

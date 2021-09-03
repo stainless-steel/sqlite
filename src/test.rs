@@ -1,6 +1,3 @@
-extern crate marine_rs_sdk;
-extern crate marine_sqlite_connector;
-
 use marine_rs_sdk::marine;
 use marine_sqlite_connector::State;
 
@@ -100,7 +97,8 @@ pub fn test4() {
         .unwrap();
 
     let mut cursor = connection
-        .prepare("INSERT OR REPLACE INTO test VALUES (?, ?)").unwrap();
+        .prepare("INSERT OR REPLACE INTO test VALUES (?, ?)")
+        .unwrap();
 
     cursor.bind(1, &Value::Integer(50)).unwrap();
     cursor.bind(2, &Value::Binary(vec![1, 2, 3])).unwrap();
@@ -123,7 +121,8 @@ pub fn test5() {
         .unwrap();
 
     let mut cursor = connection
-        .prepare("INSERT OR REPLACE INTO test VALUES (?, ?)").unwrap();
+        .prepare("INSERT OR REPLACE INTO test VALUES (?, ?)")
+        .unwrap();
 
     cursor.bind(1, &Value::Integer(50)).unwrap();
     cursor.bind(2, &Value::Binary(vec![1, 2, 3])).unwrap();
@@ -138,8 +137,12 @@ pub fn test5() {
     cursor.bind(&[Value::Integer(50)]).unwrap();
 
     while let Some(row) = cursor.next().unwrap() {
-        if vec![1,2 ,3] != row[0].as_binary().unwrap().to_vec() {
-            println!("expected: {:?}, actual: {:?}", vec![1,2 ,3], row[0].as_binary().unwrap());
+        if vec![1, 2, 3] != row[0].as_binary().unwrap().to_vec() {
+            println!(
+                "expected: {:?}, actual: {:?}",
+                vec![1, 2, 3],
+                row[0].as_binary().unwrap()
+            );
         }
     }
 }
