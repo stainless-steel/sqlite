@@ -222,6 +222,26 @@ fn statement_bind() {
     ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
     ok!(statement.bind(5, ()));
     assert_eq!(ok!(statement.next()), State::Done);
+
+    let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
+    let mut statement = ok!(connection.prepare(statement));
+
+    ok!(statement.bind(1, 2i64));
+    ok!(statement.bind(2, "Bill".to_string()));
+    ok!(statement.bind(3, 69.42));
+    ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
+    ok!(statement.bind(5, ()));
+    assert_eq!(ok!(statement.next()), State::Done);
+
+    let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
+    let mut statement = ok!(connection.prepare(statement));
+
+    ok!(statement.bind(1, 2i64));
+    ok!(statement.bind(2, &"Biff".to_string()));
+    ok!(statement.bind(3, 69.42));
+    ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
+    ok!(statement.bind(5, ()));
+    assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]

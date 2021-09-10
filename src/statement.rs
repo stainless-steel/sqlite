@@ -266,6 +266,20 @@ impl Bindable for i64 {
     }
 }
 
+impl Bindable for String {
+    #[inline]
+    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
+        Bindable::bind(self.as_str(), statement, i)
+    }
+}
+
+impl<'l> Bindable for &'l String {
+    #[inline]
+    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
+        Bindable::bind(self.as_str(), statement, i)
+    }
+}
+
 impl<'l> Bindable for &'l str {
     #[inline]
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
