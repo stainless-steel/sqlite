@@ -101,6 +101,7 @@
 //! [1]: https://www.sqlite.org
 
 #![allow(dead_code)]
+#![allow(unused_unsafe)]
 
 use sqlite3_connector as ffi;
 

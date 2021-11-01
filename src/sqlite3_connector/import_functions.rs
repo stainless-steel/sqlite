@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use marine_rs_sdk::marine;
 
 pub(crate) type Sqlite3DbHandle = u32;
