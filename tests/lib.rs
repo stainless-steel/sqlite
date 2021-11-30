@@ -111,6 +111,26 @@ fn connection_set_busy_handler() {
 }
 
 #[test]
+fn connection_select() {
+    let connection = setup_users(":memory:");
+
+    let statement = "SELECT * FROM users";
+    let mut select = connection.select(statement);
+    let row = select.next().unwrap().unwrap();
+    assert_eq!(row.get::<i64, _>("id"), 1_i64);
+    assert_eq!(row.get::<Value, _>(0), Value::Integer(1));
+    assert_eq!(row.get::<String, _>("name"), "Alice");
+    assert_eq!(row.get::<Value, _>(1), Value::String("Alice".to_string()));
+    assert!((row.get::<f64, _>("age") - 42.69).abs() < f64::EPSILON);
+    assert!((row.get::<Value, _>(2).as_float().unwrap() - 42.69).abs() < f64::EPSILON);
+    assert_eq!(row.get::<Vec<u8>, _>("photo"), [0x42, 0x69]);
+    assert_eq!(row.get::<Value, _>(3), Value::Binary([0x42, 0x69].to_vec()));
+    assert_eq!(row.get::<Option<String>, _>("email"), None);
+    assert_eq!(row.get::<Value, _>(4), Value::Null);
+    assert!(select.next().is_none());
+}
+
+#[test]
 fn cursor_bind_by_name() {
     let connection = ok!(sqlite::open(":memory:"));
     ok!(connection.execute("CREATE TABLE users (id INTEGER, name STRING)"));
