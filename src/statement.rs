@@ -343,9 +343,14 @@ impl Readable for String {
         unsafe {
             let pointer = ffi::sqlite3_column_text(statement.raw.0, i as c_int);
             if pointer.is_null() {
-                raise!("cannot read a text column");
+                if ffi::sqlite3_errcode(statement.raw.1) != ffi::SQLITE_OK {
+                    raise!("cannot read a text column");
+                }
+                Ok("".to_string())
             }
-            Ok(c_str_to_string!(pointer))
+            else {
+                Ok(c_str_to_string!(pointer))
+            }
         }
     }
 }
