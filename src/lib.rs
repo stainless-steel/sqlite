@@ -291,12 +291,10 @@ impl Value {
 
 mod connection;
 mod cursor;
-mod row;
 mod statement;
 
 pub use connection::{Connection, OpenFlags};
-pub use cursor::Cursor;
-pub use row::{ColumnIndex, Row, ValueInto};
+pub use cursor::{ColumnIndex, Cursor, Row, ValueInto};
 pub use statement::{Bindable, Readable, State, Statement};
 
 /// Open a read-write connection to a new or existing database.
