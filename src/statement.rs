@@ -29,7 +29,7 @@ pub trait Bindable {
     /// Bind to a parameter.
     ///
     /// The first parameter has index 1.
-    fn bind(self, &mut Statement, usize) -> Result<()>;
+    fn bind(self, _: &mut Statement, _: usize) -> Result<()>;
 }
 
 /// A type suitable for reading from a prepared statement.
@@ -37,7 +37,7 @@ pub trait Readable: Sized {
     /// Read from a column.
     ///
     /// The first column has index 0.
-    fn read(&Statement, usize) -> Result<Self>;
+    fn read(_: &Statement, _: usize) -> Result<Self>;
 }
 
 impl<'l> Statement<'l> {

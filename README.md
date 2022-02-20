@@ -78,8 +78,8 @@ will be licensed according to the terms given in [LICENSE.md](LICENSE.md).
 
 [1]: https://www.sqlite.org
 
-[build-img]: https://travis-ci.org/stainless-steel/sqlite.svg?branch=master
-[build-url]: https://travis-ci.org/stainless-steel/sqlite
+[build-img]: https://github.com/stainless-steel/sqlite/workflows/build/badge.svg
+[build-url]: https://github.com/stainless-steel/sqlite/actions/workflows/build.yml
 [documentation-img]: https://docs.rs/sqlite/badge.svg
 [documentation-url]: https://docs.rs/sqlite
 [package-img]: https://img.shields.io/crates/v/sqlite.svg

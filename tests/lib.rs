@@ -169,6 +169,19 @@ fn cursor_read() {
 }
 
 #[test]
+fn cursor_read_with_nullable() {
+    let connection = setup_users(":memory:");
+    let statement = "SELECT id, name, email FROM users";
+    let statement = ok!(connection.prepare(statement));
+
+    let mut cursor = statement.into_cursor();
+    let row = ok!(cursor.next()).unwrap();
+    assert_eq!(row[0].as_integer().unwrap(), 1);
+    assert_eq!(row[1].as_string().unwrap(), "Alice");
+    assert_eq!(row[2].as_string(), None);
+}
+
+#[test]
 fn cursor_wildcard() {
     let connection = setup_english(":memory:");
     let statement = "SELECT value FROM english WHERE value LIKE '%type'";
@@ -245,7 +258,7 @@ fn statement_bind() {
 }
 
 #[test]
-fn statement_bind_with_optional() {
+fn statement_bind_with_nullable() {
     let connection = setup_users(":memory:");
     let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(statement));
@@ -383,7 +396,7 @@ fn statement_read() {
 }
 
 #[test]
-fn statement_read_with_optional() {
+fn statement_read_with_nullable() {
     let connection = setup_users(":memory:");
     let statement = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(statement));
