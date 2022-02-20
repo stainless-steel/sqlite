@@ -9,7 +9,7 @@ pub struct Cursor<'l> {
     state: Option<State>,
     values: Option<Vec<Value>>,
     statement: Statement<'l>,
-    columns_map: Option<HashMap<String, usize>>,
+    columns: Option<HashMap<String, usize>>,
 }
 
 impl<'l> Cursor<'l> {
@@ -111,15 +111,15 @@ impl<'l> Iterator for Cursor<'l> {
     type Item = Result<Row>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let columns_map = match self.columns_map.clone() {
-            Some(columns_map) => columns_map,
+        let columns = match self.columns.clone() {
+            Some(columns) => columns,
             None => {
-                self.columns_map = Some(
+                self.columns = Some(
                     (0..self.statement.column_count())
                         .map(|i| (self.statement.column_name(i).to_string(), i))
                         .collect(),
                 );
-                self.columns_map.clone().unwrap()
+                self.columns.clone().unwrap()
             }
         };
 
@@ -127,7 +127,7 @@ impl<'l> Iterator for Cursor<'l> {
             .map(|option| {
                 option.map(|values| Row {
                     values: values.to_vec(),
-                    columns_map,
+                    columns,
                 })
             })
             .transpose()
@@ -140,7 +140,7 @@ pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
         state: None,
         values: None,
         statement: statement,
-        columns_map: None,
+        columns: None,
     }
 }
 
@@ -148,7 +148,7 @@ pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
 #[derive(Debug)]
 pub struct Row {
     values: Vec<Value>,
-    columns_map: HashMap<String, usize>,
+    columns: HashMap<String, usize>,
 }
 
 impl Row {
@@ -177,7 +177,7 @@ pub trait ColumnIndex: std::fmt::Debug {
 
 impl ColumnIndex for &str {
     fn get_value<'a>(&self, row: &'a Row) -> &'a Value {
-        &row.values[row.columns_map[*self]]
+        &row.values[row.columns[*self]]
     }
 }
 
