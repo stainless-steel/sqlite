@@ -1,11 +1,10 @@
 use ffi;
 use statement::{State, Statement};
-use {Result, Value};
+use {Result, Row, Value};
 
 /// An iterator over rows.
 pub struct Cursor<'l> {
     state: Option<State>,
-    values: Option<Vec<Value>>,
     statement: Statement<'l>,
 }
 
@@ -38,7 +37,7 @@ impl<'l> Cursor<'l> {
     ///     (":name", Value::String("Bob".to_owned())),
     ///     (":id", Value::Integer(42)),
     /// ])?;
-    /// cursor.next()?;
+    /// cursor.next().transpose()?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
     pub fn bind_by_name<S, V>(&mut self, values: V) -> Result<()>
@@ -62,34 +61,18 @@ impl<'l> Cursor<'l> {
         self.statement.column_count()
     }
 
-    /// Advance to the next row and read all columns.
-    pub fn next(&mut self) -> Result<Option<&[Value]>> {
+    fn try_next(&mut self) -> Result<Option<Row>> {
         match self.state {
             Some(State::Row) => {}
             Some(State::Done) => return Ok(None),
             _ => {
                 self.state = Some(self.statement.next()?);
-                return self.next();
+                return self.try_next();
             }
         }
-        self.values = match self.values.take() {
-            Some(mut values) => {
-                for (i, value) in values.iter_mut().enumerate() {
-                    *value = self.statement.read(i)?;
-                }
-                Some(values)
-            }
-            _ => {
-                let count = self.statement.column_count();
-                let mut values = Vec::with_capacity(count);
-                for i in 0..count {
-                    values.push(self.statement.read(i)?);
-                }
-                Some(values)
-            }
-        };
+        let row = Row::read(&self.statement)?;
         self.state = Some(self.statement.next()?);
-        Ok(Some(self.values.as_ref().unwrap()))
+        Ok(Some(row))
     }
 
     /// Return the raw pointer.
@@ -104,11 +87,18 @@ impl<'l> Cursor<'l> {
     }
 }
 
+impl<'l> Iterator for Cursor<'l> {
+    type Item = Result<Row>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.try_next().transpose()
+    }
+}
+
 #[inline]
 pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
     Cursor {
         state: None,
-        values: None,
         statement: statement,
     }
 }

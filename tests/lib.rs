@@ -111,26 +111,6 @@ fn connection_set_busy_handler() {
 }
 
 #[test]
-fn connection_select() {
-    let connection = setup_users(":memory:");
-
-    let statement = "SELECT * FROM users";
-    let mut select = connection.select(statement);
-    let row = select.next().unwrap().unwrap();
-    assert_eq!(row.get::<i64, _>("id"), 1_i64);
-    assert_eq!(row.get::<Value, _>(0), Value::Integer(1));
-    assert_eq!(row.get::<String, _>("name"), "Alice");
-    assert_eq!(row.get::<Value, _>(1), Value::String("Alice".to_string()));
-    assert!((row.get::<f64, _>("age") - 42.69).abs() < f64::EPSILON);
-    assert!((row.get::<Value, _>(2).as_float().unwrap() - 42.69).abs() < f64::EPSILON);
-    assert_eq!(row.get::<Vec<u8>, _>("photo"), [0x42, 0x69]);
-    assert_eq!(row.get::<Value, _>(3), Value::Binary([0x42, 0x69].to_vec()));
-    assert_eq!(row.get::<Option<String>, _>("email"), None);
-    assert_eq!(row.get::<Value, _>(4), Value::Null);
-    assert!(select.next().is_none());
-}
-
-#[test]
 fn cursor_bind_by_name() {
     let connection = ok!(sqlite::open(":memory:"));
     ok!(connection.execute("CREATE TABLE users (id INTEGER, name STRING)"));
@@ -142,7 +122,7 @@ fn cursor_bind_by_name() {
 
     let mut cursor = statement.into_cursor();
     ok!(cursor.bind_by_name(map));
-    assert_eq!(ok!(cursor.next()), None);
+    assert!(cursor.next().is_none());
 }
 
 #[test]
@@ -154,12 +134,12 @@ fn cursor_read() {
 
     let mut count = 0;
     let mut cursor = statement.into_cursor();
-    while let Some(row) = ok!(cursor.next()) {
-        let id = row[0].as_integer().unwrap();
+    while let Some(Ok(row)) = cursor.next() {
+        let id = row.get::<i64, _>(0);
         if id == 1 {
-            assert_eq!(row[1].as_float().unwrap(), 42.69);
+            assert_eq!(row.get::<f64, _>(1), 42.69);
         } else if id == 2 {
-            assert_eq!(row[1].as_float().unwrap_or(69.42), 69.42);
+            assert_eq!(row.get::<Option<f64>, _>(1).unwrap_or(69.42), 69.42);
         } else {
             assert!(false);
         }
@@ -176,9 +156,12 @@ fn cursor_read_with_nullable() {
 
     let mut cursor = statement.into_cursor();
     let row = ok!(cursor.next()).unwrap();
-    assert_eq!(row[0].as_integer().unwrap(), 1);
-    assert_eq!(row[1].as_string().unwrap(), "Alice");
-    assert_eq!(row[2].as_string(), None);
+    assert_eq!(row.get::<i64, _>(0), 1);
+    assert_eq!(row.get::<Value, _>(0), Value::Integer(1));
+    assert_eq!(row.get::<String, _>(1), "Alice");
+    assert_eq!(row.get::<Value, _>(1), Value::String("Alice".into()));
+    assert_eq!(row.get::<Option<String>, _>(2), None);
+    assert_eq!(row.get::<Value, _>(2), Value::Null);
 }
 
 #[test]
@@ -189,7 +172,7 @@ fn cursor_wildcard() {
 
     let mut count = 0;
     let mut cursor = statement.into_cursor();
-    while let Some(_) = ok!(cursor.next()) {
+    while let Some(Ok(_)) = cursor.next() {
         count += 1;
     }
     assert_eq!(count, 6);
@@ -204,7 +187,7 @@ fn cursor_wildcard_with_binding() {
 
     let mut count = 0;
     let mut cursor = statement.into_cursor();
-    while let Some(_) = ok!(cursor.next()) {
+    while let Some(Ok(_)) = cursor.next() {
         count += 1;
     }
     assert_eq!(count, 6);
@@ -222,25 +205,23 @@ fn cursor_workflow() {
 
     for _ in 0..10 {
         ok!(select.bind(&[Value::Integer(1)]));
-        assert_eq!(
-            ok!(ok!(select.next())),
-            &[Value::Integer(1), Value::String("Alice".to_string())]
-        );
-        assert_eq!(ok!(select.next()), None);
+        let row = ok!(ok!(select.next()));
+        assert_eq!(row.get::<i64, _>(0), 1);
+        assert_eq!(row.get::<String, _>(1), "Alice");
+        assert!(select.next().is_none());
     }
 
     ok!(select.bind(&[Value::Integer(42)]));
-    assert_eq!(ok!(select.next()), None);
+    assert!(select.next().is_none());
 
     ok!(insert.bind(&[Value::Integer(42), Value::String("Bob".to_string())]));
-    assert_eq!(ok!(insert.next()), None);
+    assert!(insert.next().is_none());
 
     ok!(select.bind(&[Value::Integer(42)]));
-    assert_eq!(
-        ok!(ok!(select.next())),
-        &[Value::Integer(42), Value::String("Bob".to_string())]
-    );
-    assert_eq!(ok!(select.next()), None);
+    let row = ok!(ok!(select.next()));
+    assert_eq!(row.get::<i64, _>(0), 42);
+    assert_eq!(row.get::<String, _>(1), "Bob");
+    assert!(select.next().is_none());
 }
 
 #[test]
@@ -306,13 +287,13 @@ fn statement_bind_by_name_multiple() {
     ok!(statement.bind(index, 40));
     let mut cursor = statement.into_cursor();
     let row = ok!(cursor.next()).unwrap();
-    assert_eq!(row[0].as_string(), Some("Alice"));
+    assert_eq!(row.get::<String, _>(0), "Alice");
 
     let mut statement = ok!(connection.prepare(query));
     ok!(statement.bind(index, 45));
     let mut cursor = statement.into_cursor();
     let row = ok!(cursor.next()).unwrap();
-    assert_eq!(row[0].as_string(), Some("Alice"));
+    assert_eq!(row.get::<String, _>(0), "Alice");
 }
 
 #[test]

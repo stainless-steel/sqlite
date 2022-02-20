@@ -92,9 +92,9 @@
 //!
 //! cursor.bind(&[Value::Integer(50)]).unwrap();
 //!
-//! while let Some(row) = cursor.next().unwrap() {
-//!     println!("name = {}", row[0].as_string().unwrap());
-//!     println!("age = {}", row[1].as_integer().unwrap());
+//! while let Some(Ok(row)) = cursor.next() {
+//!     println!("name = {}", row.get::<String, _>(0));
+//!     println!("age = {}", row.get::<i64, _>(1));
 //! }
 //! ```
 //!
@@ -291,11 +291,12 @@ impl Value {
 
 mod connection;
 mod cursor;
+mod row;
 mod statement;
 
-pub use connection::Connection;
-pub use connection::OpenFlags;
+pub use connection::{Connection, OpenFlags, ValueInto};
 pub use cursor::Cursor;
+pub use row::{ColumnIndex, Row};
 pub use statement::{Bindable, Readable, State, Statement};
 
 /// Open a read-write connection to a new or existing database.

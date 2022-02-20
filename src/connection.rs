@@ -1,10 +1,9 @@
 use ffi;
 use libc::{c_char, c_int, c_void};
-use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::path::Path;
 
-use {Cursor, Error, Result, Statement, Value};
+use {Result, Statement, Value};
 
 /// A database connection.
 pub struct Connection {
@@ -187,10 +186,6 @@ impl Connection {
     pub fn total_changes(&self) -> usize {
         self.total_change_count()
     }
-
-    pub fn select(&self, query: impl AsRef<str>) -> Select {
-        Select::query(self, query)
-    }
 }
 
 impl Drop for Connection {
@@ -292,92 +287,8 @@ where
     }
 }
 
-pub struct Select<'a> {
-    cursor: Option<Cursor<'a>>,
-    error: Option<Error>,
-    columns_map: HashMap<String, usize>,
-}
-
-impl<'a> Select<'a> {
-    pub fn query(conn: &'a Connection, query: impl AsRef<str>) -> Self {
-        match conn.prepare(query) {
-            Ok(statement) => Self {
-                error: None,
-                columns_map: Self::create_columns_map(&statement),
-                cursor: Some(statement.into_cursor()),
-            },
-            Err(err) => Self {
-                cursor: None,
-                error: Some(err),
-                columns_map: Default::default(),
-            },
-        }
-    }
-
-    fn create_columns_map(statement: &Statement) -> HashMap<String, usize> {
-        (0..statement.column_count())
-            .map(|i| (statement.column_name(i).to_string(), i))
-            .collect()
-    }
-}
-
-impl<'a> From<Statement<'a>> for Select<'a> {
-    fn from(statement: Statement<'a>) -> Self {
-        Self {
-            error: None,
-            columns_map: Self::create_columns_map(&statement),
-            cursor: Some(statement.into_cursor()),
-        }
-    }
-}
-
-impl<'a> Iterator for Select<'a> {
-    type Item = Result<Row>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let columns_map = self.columns_map.clone();
-        match (self.cursor.as_mut(), self.error.take()) {
-            (_, Some(err)) => Some(Err(err)),
-            (Some(cursor), _) => match cursor.next() {
-                Err(err) => Some(Err(err)),
-                Ok(maybe_row) => Ok(maybe_row.map(|row| Row {
-                    row: row.to_vec(),
-                    columns_map,
-                }))
-                .transpose(),
-            },
-            (None, None) => None,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Row {
-    row: Vec<Value>,
-    columns_map: HashMap<String, usize>,
-}
-
 pub trait ValueInto: Sized {
     fn try_convert_value_into(value: &Value) -> Option<Self>;
-}
-
-pub trait ColumnIndex: std::fmt::Debug {
-    fn get_value<'a>(&self, row: &'a Row) -> &'a Value;
-}
-
-impl Row {
-    #[track_caller]
-    pub fn get<T: ValueInto, C: ColumnIndex>(&self, column: C) -> T {
-        self.try_get(column).unwrap()
-    }
-
-    #[track_caller]
-    pub fn try_get<T: ValueInto, C: ColumnIndex>(&self, column: C) -> Result<T> {
-        T::try_convert_value_into(column.get_value(self)).ok_or_else(|| Error {
-            code: None,
-            message: Some(format!("column {:?} could not be read", column)),
-        })
-    }
 }
 
 impl ValueInto for Value {
@@ -416,17 +327,5 @@ impl<T: ValueInto> ValueInto for Option<T> {
             Value::Null => Some(None),
             _ => T::try_convert_value_into(value).map(Some),
         }
-    }
-}
-
-impl ColumnIndex for &str {
-    fn get_value<'a>(&self, row: &'a Row) -> &'a Value {
-        &row.row[row.columns_map[*self]]
-    }
-}
-
-impl ColumnIndex for usize {
-    fn get_value<'a>(&self, row: &'a Row) -> &'a Value {
-        &row.row[*self]
     }
 }
