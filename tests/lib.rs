@@ -162,6 +162,7 @@ fn cursor_read_with_nullable() {
     assert_eq!(row.get::<Value, _>(1), Value::String("Alice".into()));
     assert_eq!(row.get::<Option<String>, _>(2), None);
     assert_eq!(row.get::<Value, _>(2), Value::Null);
+    assert_eq!(ok!(row.try_get::<Option<String>, _>(2)), None);
 }
 
 #[test]
