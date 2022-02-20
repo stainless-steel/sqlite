@@ -93,12 +93,13 @@ fn connection_set_busy_handler() {
                 let mut connection = ok!(sqlite::open(&path));
                 ok!(connection.set_busy_handler(|_| true));
                 let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
-                let mut statement = ok!(connection.prepare(statement));
-                ok!(statement.bind(1, 2i64));
-                ok!(statement.bind(2, "Bob"));
-                ok!(statement.bind(3, 69.42));
-                ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
-                ok!(statement.bind(5, ()));
+                let mut statement = ok!(connection
+                    .prepare(statement)
+                    .and_then(|statement| statement.bind(1, 2i64))
+                    .and_then(|statement| statement.bind(2, "Bob"))
+                    .and_then(|statement| statement.bind(3, 69.42))
+                    .and_then(|statement| statement.bind(4, &[0x69u8, 0x42u8][..]))
+                    .and_then(|statement| statement.bind(5, ())));
                 assert_eq!(ok!(statement.next()), State::Done);
                 true
             })
@@ -120,8 +121,7 @@ fn cursor_bind_by_name() {
     map.insert(":name".to_string(), Value::String("Bob".to_string()));
     map.insert(":id".to_string(), Value::Integer(42));
 
-    let mut cursor = statement.into_cursor();
-    ok!(cursor.bind_by_name(map));
+    let mut cursor = ok!(statement.into_cursor().bind_by_name(map));
     assert!(cursor.next().is_none());
 }
 
@@ -196,8 +196,9 @@ fn cursor_wildcard() {
 fn cursor_wildcard_with_binding() {
     let connection = setup_english(":memory:");
     let statement = "SELECT value FROM english WHERE value LIKE ?";
-    let mut statement = ok!(connection.prepare(statement));
-    ok!(statement.bind(1, "%type"));
+    let statement = ok!(connection
+        .prepare(statement)
+        .and_then(|statement| statement.bind(1, "%type")));
 
     let mut count = 0;
     let mut cursor = statement.into_cursor();
@@ -215,23 +216,23 @@ fn cursor_workflow() {
     let mut select = ok!(connection.prepare(select)).into_cursor();
 
     let insert = "INSERT INTO users (id, name) VALUES (?, ?)";
-    let mut insert = ok!(connection.prepare(insert)).into_cursor();
+    let insert = ok!(connection.prepare(insert)).into_cursor();
 
     for _ in 0..10 {
-        ok!(select.bind(&[Value::Integer(1)]));
+        select = ok!(select.bind(&[Value::Integer(1)]));
         let row = ok!(ok!(select.next()));
         assert_eq!(row.get::<i64, _>(0), 1);
         assert_eq!(row.get::<String, _>(1), "Alice");
         assert!(select.next().is_none());
     }
 
-    ok!(select.bind(&[Value::Integer(42)]));
+    let mut select = ok!(select.bind(&[Value::Integer(42)]));
     assert!(select.next().is_none());
 
-    ok!(insert.bind(&[Value::Integer(42), Value::String("Bob".to_string())]));
+    let mut insert = ok!(insert.bind(&[Value::Integer(42), Value::String("Bob".to_string())]));
     assert!(insert.next().is_none());
 
-    ok!(select.bind(&[Value::Integer(42)]));
+    let mut select = ok!(select.bind(&[Value::Integer(42)]));
     let row = ok!(ok!(select.next()));
     assert_eq!(row.get::<i64, _>(0), 42);
     assert_eq!(row.get::<String, _>(1), "Bob");
@@ -242,13 +243,13 @@ fn cursor_workflow() {
 fn statement_bind() {
     let connection = setup_users(":memory:");
     let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
-    let mut statement = ok!(connection.prepare(statement));
-
-    ok!(statement.bind(1, 2i64));
-    ok!(statement.bind(2, "Bob"));
-    ok!(statement.bind(3, 69.42));
-    ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
-    ok!(statement.bind(5, ()));
+    let mut statement = ok!(connection
+        .prepare(statement)
+        .and_then(|statement| statement.bind(1, 2i64))
+        .and_then(|statement| statement.bind(2, "Bob"))
+        .and_then(|statement| statement.bind(3, 69.42))
+        .and_then(|statement| statement.bind(4, &[0x69u8, 0x42u8][..]))
+        .and_then(|statement| statement.bind(5, ())));
     assert_eq!(ok!(statement.next()), State::Done);
 }
 
@@ -256,23 +257,23 @@ fn statement_bind() {
 fn statement_bind_with_nullable() {
     let connection = setup_users(":memory:");
     let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
-    let mut statement = ok!(connection.prepare(statement));
-
-    ok!(statement.bind(1, None::<i64>));
-    ok!(statement.bind(2, None::<&str>));
-    ok!(statement.bind(3, None::<f64>));
-    ok!(statement.bind(4, None::<&[u8]>));
-    ok!(statement.bind(5, None::<&str>));
+    let mut statement = ok!(connection
+        .prepare(statement)
+        .and_then(|statement| statement.bind(1, None::<i64>))
+        .and_then(|statement| statement.bind(2, None::<&str>))
+        .and_then(|statement| statement.bind(3, None::<f64>))
+        .and_then(|statement| statement.bind(4, None::<&[u8]>))
+        .and_then(|statement| statement.bind(5, None::<&str>)));
     assert_eq!(ok!(statement.next()), State::Done);
 
     let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
-    let mut statement = ok!(connection.prepare(statement));
-
-    ok!(statement.bind(1, Some(2i64)));
-    ok!(statement.bind(2, Some("Bob")));
-    ok!(statement.bind(3, Some(69.42)));
-    ok!(statement.bind(4, Some(&[0x69u8, 0x42u8][..])));
-    ok!(statement.bind(5, None::<&str>));
+    let mut statement = ok!(connection
+        .prepare(statement)
+        .and_then(|statement| statement.bind(1, Some(2i64)))
+        .and_then(|statement| statement.bind(2, Some("Bob")))
+        .and_then(|statement| statement.bind(3, Some(69.42)))
+        .and_then(|statement| statement.bind(4, Some(&[0x69u8, 0x42u8][..])))
+        .and_then(|statement| statement.bind(5, None::<&str>)));
     assert_eq!(ok!(statement.next()), State::Done);
 }
 
@@ -280,31 +281,32 @@ fn statement_bind_with_nullable() {
 fn statement_bind_by_name() {
     let connection = setup_users(":memory:");
     let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
-    let mut statement = ok!(connection.prepare(statement));
+    let statement = ok!(connection
+        .prepare(statement)
+        .and_then(|statement| statement.bind_by_name(":id", 2i64))
+        .and_then(|statement| statement.bind_by_name(":name", "Bob"))
+        .and_then(|statement| statement.bind_by_name(":age", 69.42))
+        .and_then(|statement| statement.bind_by_name(":photo", &[0x69u8, 0x42u8][..]))
+        .and_then(|statement| statement.bind_by_name(":email", ())));
 
-    ok!(statement.bind_by_name(":id", 2i64));
-    ok!(statement.bind_by_name(":name", "Bob"));
-    ok!(statement.bind_by_name(":age", 69.42));
-    ok!(statement.bind_by_name(":photo", &[0x69u8, 0x42u8][..]));
-    ok!(statement.bind_by_name(":email", ()));
     assert!(statement.bind_by_name(":missing", 404).is_err());
-    assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]
 fn statement_bind_by_name_multiple() {
     let connection = setup_users(":memory:");
     let query = "SELECT name FROM users WHERE age > :age - 5 AND age < :age + 5";
-    let mut statement = ok!(connection.prepare(query));
-    let index = ok!(statement.parameter_index(":age")).unwrap();
+    let statement = ok!(connection
+        .prepare(query)
+        .and_then(|statement| statement.bind_by_name(":age", 40)));
 
-    ok!(statement.bind(index, 40));
     let mut cursor = statement.into_cursor();
     let row = ok!(cursor.next()).unwrap();
     assert_eq!(row.get::<String, _>(0), "Alice");
 
-    let mut statement = ok!(connection.prepare(query));
-    ok!(statement.bind(index, 45));
+    let statement = ok!(connection
+        .prepare(query)
+        .and_then(|statement| statement.bind_by_name(":age", 45)));
     let mut cursor = statement.into_cursor();
     let row = ok!(cursor.next()).unwrap();
     assert_eq!(row.get::<String, _>(0), "Alice");
@@ -355,22 +357,13 @@ fn statement_column_type() {
 fn statement_parameter_index() {
     let connection = setup_users(":memory:");
     let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
-    let mut statement = ok!(connection.prepare(statement));
-
-    ok!(statement.bind(ok!(statement.parameter_index(":id")).unwrap().into(), 2i64));
-    ok!(statement.bind(
-        ok!(statement.parameter_index(":name")).unwrap().into(),
-        "Bob",
-    ));
-    ok!(statement.bind(
-        ok!(statement.parameter_index(":age")).unwrap().into(),
-        69.42,
-    ));
-    ok!(statement.bind(
-        ok!(statement.parameter_index(":photo")).unwrap().into(),
-        &[0x69u8, 0x42u8][..],
-    ));
-    ok!(statement.bind(ok!(statement.parameter_index(":email")).unwrap().into(), ()));
+    let mut statement = ok!(connection
+        .prepare(statement)
+        .and_then(|statement| statement.bind_by_name(":id", 2i64))
+        .and_then(|statement| statement.bind_by_name(":name", "Bob"))
+        .and_then(|statement| statement.bind_by_name(":age", 69.42))
+        .and_then(|statement| statement.bind_by_name(":photo", &[0x69u8, 0x42u8][..]))
+        .and_then(|statement| statement.bind_by_name(":email", ())));
     assert_eq!(ok!(statement.parameter_index(":missing")), None);
     assert_eq!(ok!(statement.next()), State::Done);
 }
@@ -428,8 +421,9 @@ fn statement_wildcard() {
 fn statement_wildcard_with_binding() {
     let connection = setup_english(":memory:");
     let statement = "SELECT value FROM english WHERE value LIKE ?";
-    let mut statement = ok!(connection.prepare(statement));
-    ok!(statement.bind(1, "%type"));
+    let mut statement = ok!(connection
+        .prepare(statement)
+        .and_then(|statement| statement.bind(1, "%type")));
 
     let mut count = 0;
     while let State::Row = ok!(statement.next()) {

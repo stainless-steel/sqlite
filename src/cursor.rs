@@ -16,13 +16,13 @@ impl<'l> Cursor<'l> {
     /// Bind values to parameters by index.
     ///
     /// The index of each value is assumed to be the value’s position in the array.
-    pub fn bind(&mut self, values: &[Value]) -> Result<()> {
+    pub fn bind(mut self, values: &[Value]) -> Result<Self> {
         self.state = None;
         self.statement.reset()?;
         for (i, value) in values.iter().enumerate() {
-            self.statement.bind(i + 1, value)?;
+            self.statement = self.statement.bind(i + 1, value)?;
         }
-        Ok(())
+        Ok(self)
     }
 
     /// Bind values to parameters by name.
@@ -36,15 +36,16 @@ impl<'l> Cursor<'l> {
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
     /// let statement = connection.prepare("INSERT INTO users VALUES (:id, :name)")?;
-    /// let mut cursor = statement.into_cursor();
-    /// cursor.bind_by_name(vec![
-    ///     (":name", Value::String("Bob".to_owned())),
-    ///     (":id", Value::Integer(42)),
-    /// ])?;
-    /// cursor.next().transpose()?;
+    /// let mut cursor = statement
+    ///     .into_cursor()
+    ///     .bind_by_name(vec![
+    ///         (":name", Value::String("Bob".to_owned())),
+    ///         (":id", Value::Integer(42)),
+    ///     ])?;
+    /// cursor.try_next()?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
-    pub fn bind_by_name<S, V>(&mut self, values: V) -> Result<()>
+    pub fn bind_by_name<S, V>(mut self, values: V) -> Result<Self>
     where
         S: AsRef<str>,
         V: IntoIterator<Item = (S, Value)>,
@@ -53,10 +54,10 @@ impl<'l> Cursor<'l> {
         self.statement.reset()?;
         for (name, value) in values {
             if let Some(i) = self.statement.parameter_index(name.as_ref())? {
-                self.statement.bind(i, &value)?;
+                self.statement = self.statement.bind(i, &value)?;
             }
         }
-        Ok(())
+        Ok(self)
     }
 
     /// Return the number of columns.
