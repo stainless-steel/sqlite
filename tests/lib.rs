@@ -166,6 +166,19 @@ fn cursor_read_with_nullable() {
 }
 
 #[test]
+fn cursor_try_read_with_nullable() {
+    let connection = setup_users(":memory:");
+    let statement = "SELECT id, name, email FROM users";
+    let statement = ok!(connection.prepare(statement));
+
+    let mut cursor = statement.into_cursor();
+    let row = ok!(cursor.try_next()).unwrap();
+    assert_eq!(row[0].as_integer().unwrap(), 1);
+    assert_eq!(row[1].as_string().unwrap(), "Alice");
+    assert_eq!(row[2].as_string(), None);
+}
+
+#[test]
 fn cursor_wildcard() {
     let connection = setup_english(":memory:");
     let statement = "SELECT value FROM english WHERE value LIKE '%type'";
