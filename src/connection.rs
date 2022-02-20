@@ -3,7 +3,7 @@ use libc::{c_char, c_int, c_void};
 use std::marker::PhantomData;
 use std::path::Path;
 
-use {Result, Statement, Value};
+use {Result, Statement};
 
 /// A database connection.
 pub struct Connection {
@@ -283,49 +283,6 @@ where
             0
         } else {
             1
-        }
-    }
-}
-
-pub trait ValueInto: Sized {
-    fn try_convert_value_into(value: &Value) -> Option<Self>;
-}
-
-impl ValueInto for Value {
-    fn try_convert_value_into(value: &Value) -> Option<Self> {
-        Some(value.clone())
-    }
-}
-
-impl ValueInto for i64 {
-    fn try_convert_value_into(value: &Value) -> Option<Self> {
-        value.as_integer()
-    }
-}
-
-impl ValueInto for f64 {
-    fn try_convert_value_into(value: &Value) -> Option<Self> {
-        value.as_float()
-    }
-}
-
-impl ValueInto for String {
-    fn try_convert_value_into(value: &Value) -> Option<Self> {
-        value.as_string().map(|s| s.to_string())
-    }
-}
-
-impl ValueInto for Vec<u8> {
-    fn try_convert_value_into(value: &Value) -> Option<Self> {
-        value.as_binary().map(|s| s.to_vec())
-    }
-}
-
-impl<T: ValueInto> ValueInto for Option<T> {
-    fn try_convert_value_into(value: &Value) -> Option<Self> {
-        match value {
-            Value::Null => Some(None),
-            _ => T::try_convert_value_into(value).map(Some),
         }
     }
 }

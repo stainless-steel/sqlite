@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use {Error, Result, Statement, Value, ValueInto};
+use {Error, Result, Statement, Value};
 
 /// TODO doc
 #[derive(Debug)]
@@ -19,7 +19,7 @@ impl Row {
     /// TODO doc
     #[track_caller]
     pub fn try_get<T: ValueInto, C: ColumnIndex>(&self, column: C) -> Result<T> {
-        T::try_convert_value_into(column.get_value(self)).ok_or_else(|| Error {
+        T::into(column.get_value(self)).ok_or_else(|| Error {
             code: None,
             message: Some(format!("column {:?} could not be read", column)),
         })
@@ -55,5 +55,49 @@ impl ColumnIndex for &str {
 impl ColumnIndex for usize {
     fn get_value<'a>(&self, row: &'a Row) -> &'a Value {
         &row.row[*self]
+    }
+}
+
+/// TODO doc
+pub trait ValueInto: Sized {
+    fn into(value: &Value) -> Option<Self>;
+}
+
+impl ValueInto for Value {
+    fn into(value: &Value) -> Option<Self> {
+        Some(value.clone())
+    }
+}
+
+impl ValueInto for i64 {
+    fn into(value: &Value) -> Option<Self> {
+        value.as_integer()
+    }
+}
+
+impl ValueInto for f64 {
+    fn into(value: &Value) -> Option<Self> {
+        value.as_float()
+    }
+}
+
+impl ValueInto for String {
+    fn into(value: &Value) -> Option<Self> {
+        value.as_string().map(|s| s.to_string())
+    }
+}
+
+impl ValueInto for Vec<u8> {
+    fn into(value: &Value) -> Option<Self> {
+        value.as_binary().map(|s| s.to_vec())
+    }
+}
+
+impl<T: ValueInto> ValueInto for Option<T> {
+    fn into(value: &Value) -> Option<Self> {
+        match value {
+            Value::Null => Some(None),
+            _ => T::into(value).map(Some),
+        }
     }
 }
