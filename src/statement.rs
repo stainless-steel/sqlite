@@ -64,7 +64,7 @@ impl<'l> Statement<'l> {
         if let Some(i) = self.parameter_index(name)? {
             self.bind(i, value)
         } else {
-            raise!(format!("no such parameter: {}", name))
+            raise!("no such parameter: {}", name)
         }
     }
 

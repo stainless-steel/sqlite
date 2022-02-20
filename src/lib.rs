@@ -106,10 +106,10 @@ extern crate sqlite3_sys as ffi;
 use std::{error, fmt};
 
 macro_rules! raise(
-    ($message:expr) => (
+    ($message:expr $(, $($token:tt)* )?) => (
         return Err(::Error {
             code: None,
-            message: Some($message.to_string()),
+            message: Some(format!($message $(, $($token)* )*)),
         })
     );
 );

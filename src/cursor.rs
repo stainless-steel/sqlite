@@ -2,7 +2,7 @@ use ffi;
 use statement::{State, Statement};
 use std::collections::HashMap;
 
-use {Error, Result, Value};
+use {Result, Value};
 
 /// An iterator over rows.
 pub struct Cursor<'l> {
@@ -163,10 +163,10 @@ impl Row {
     #[track_caller]
     #[inline]
     pub fn try_get<T: ValueInto, C: ColumnIndex>(&self, column: C) -> Result<T> {
-        T::into(column.get_value(self)).ok_or_else(|| Error {
-            code: None,
-            message: Some(format!("column {:?} could not be read", column)),
-        })
+        match T::into(column.get_value(self)) {
+            Some(value) => Ok(value),
+            None => raise!("column {:?} could not be read", column),
+        }
     }
 }
 
