@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use {Error, Result, Statement, Value};
+use {Error, Result, Value};
 
 /// TODO doc
 #[derive(Debug)]
 pub struct Row {
-    row: Vec<Value>,
+    values: Vec<Value>,
     columns_map: HashMap<String, usize>,
 }
 
@@ -25,19 +25,13 @@ impl Row {
         })
     }
 
-    /// TODO doc
-    pub fn read<'l>(statement: &Statement<'l>) -> Result<Self> {
-        let count = statement.column_count();
-        let mut row = Vec::with_capacity(count);
-        for i in 0..count {
-            row.push(statement.read(i)?);
+    // Not part of public API.
+    #[doc(hidden)]
+    pub fn new(values: Vec<Value>, columns_map: HashMap<String, usize>) -> Self {
+        Self {
+            values,
+            columns_map,
         }
-
-        let columns_map = (0..statement.column_count())
-            .map(|i| (statement.column_name(i).to_string(), i))
-            .collect();
-
-        Ok(Self { row, columns_map })
     }
 }
 
@@ -48,13 +42,13 @@ pub trait ColumnIndex: std::fmt::Debug {
 
 impl ColumnIndex for &str {
     fn get_value<'a>(&self, row: &'a Row) -> &'a Value {
-        &row.row[row.columns_map[*self]]
+        &row.values[row.columns_map[*self]]
     }
 }
 
 impl ColumnIndex for usize {
     fn get_value<'a>(&self, row: &'a Row) -> &'a Value {
-        &row.row[*self]
+        &row.values[*self]
     }
 }
 

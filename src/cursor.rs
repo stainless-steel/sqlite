@@ -1,11 +1,15 @@
 use ffi;
 use statement::{State, Statement};
+use std::collections::HashMap;
+
 use {Result, Row, Value};
 
 /// An iterator over rows.
 pub struct Cursor<'l> {
     state: Option<State>,
+    values: Option<Vec<Value>>,
     statement: Statement<'l>,
+    columns_map: Option<HashMap<String, usize>>,
 }
 
 impl<'l> Cursor<'l> {
@@ -61,7 +65,8 @@ impl<'l> Cursor<'l> {
         self.statement.column_count()
     }
 
-    fn try_next(&mut self) -> Result<Option<Row>> {
+    /// Advance to the next row and read all columns.
+    pub fn try_next(&mut self) -> Result<Option<&[Value]>> {
         match self.state {
             Some(State::Row) => {}
             Some(State::Done) => return Ok(None),
@@ -70,9 +75,24 @@ impl<'l> Cursor<'l> {
                 return self.try_next();
             }
         }
-        let row = Row::read(&self.statement)?;
+        self.values = match self.values.take() {
+            Some(mut values) => {
+                for (i, value) in values.iter_mut().enumerate() {
+                    *value = self.statement.read(i)?;
+                }
+                Some(values)
+            }
+            _ => {
+                let count = self.statement.column_count();
+                let mut values = Vec::with_capacity(count);
+                for i in 0..count {
+                    values.push(self.statement.read(i)?);
+                }
+                Some(values)
+            }
+        };
         self.state = Some(self.statement.next()?);
-        Ok(Some(row))
+        Ok(Some(self.values.as_ref().unwrap()))
     }
 
     /// Return the raw pointer.
@@ -91,7 +111,21 @@ impl<'l> Iterator for Cursor<'l> {
     type Item = Result<Row>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.try_next().transpose()
+        let columns_map = match self.columns_map.clone() {
+            Some(columns_map) => columns_map,
+            None => {
+                self.columns_map = Some(
+                    (0..self.statement.column_count())
+                        .map(|i| (self.statement.column_name(i).to_string(), i))
+                        .collect(),
+                );
+                self.columns_map.clone().unwrap()
+            }
+        };
+
+        self.try_next()
+            .map(|option| option.map(|values| Row::new(values.to_vec(), columns_map)))
+            .transpose()
     }
 }
 
@@ -99,6 +133,8 @@ impl<'l> Iterator for Cursor<'l> {
 pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
     Cursor {
         state: None,
+        values: None,
         statement: statement,
+        columns_map: None,
     }
 }
