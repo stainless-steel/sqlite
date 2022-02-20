@@ -83,13 +83,13 @@ impl ValueInto for f64 {
 
 impl ValueInto for String {
     fn into(value: &Value) -> Option<Self> {
-        value.as_string().map(|s| s.to_string())
+        value.as_string().map(|slice| slice.to_string())
     }
 }
 
 impl ValueInto for Vec<u8> {
     fn into(value: &Value) -> Option<Self> {
-        value.as_binary().map(|s| s.to_vec())
+        value.as_binary().map(|bytes| bytes.to_vec())
     }
 }
 
