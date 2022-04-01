@@ -1,6 +1,7 @@
 use ffi;
 use libc::{c_double, c_int};
 use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 
 use {Cursor, Result, Type, Value};
 
@@ -364,6 +365,116 @@ impl Readable for Vec<u8> {
             buffer.set_len(count);
             copy(pointer as *const u8, buffer.as_mut_ptr(), count);
             Ok(buffer)
+        }
+    }
+}
+
+/// A helper to read at most a fixed number of `N` bytes from a column. This
+/// allocates the storage for the bytes read on the stack.
+pub struct FixedBytes<const N: usize> {
+    /// Storage to read to.
+    data: [MaybeUninit<u8>; N],
+    /// Number of bytes initialized.
+    init: usize,
+}
+
+impl<const N: usize> FixedBytes<N> {
+    /// Coerce into the underlying bytes if all of them have been initialized.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use sqlite::{Connection, State, FixedBytes};
+    ///
+    /// # fn main() -> Result<(), sqlite::Error> {
+    /// let c: Connection = todo!();
+    /// let stmt = c.prepare("SELECT id FROM users")?;
+    ///
+    /// while let State::Row = stmt.next()? {
+    ///     let id = stmt.read::<FixedBytes<16>>(0)?;
+    ///
+    ///     // Note: we have to check the result of `into_bytes` to ensure that the field contained exactly 16 bytes.
+    ///     let bytes: [u8; 16] = match id.into_bytes() {
+    ///         Some(bytes) => bytes,
+    ///         None => continue,
+    ///     };
+    ///
+    ///     /* use bytes */
+    /// }
+    /// # Ok(()) }
+    /// ```
+    pub fn into_bytes(self) -> Option<[u8; N]> {
+        if self.init == N {
+            // SAFETY: All of the bytes in the sequence have been initialized
+            // and can be safety transmuted.
+            //
+            // Method of transmuting comes from the implementation of
+            // `MaybeUninit::array_assume_init` which is not yet stable.
+            unsafe { Some((&self.data as *const _ as *const [u8; N]).read()) }
+        } else {
+            None
+        }
+    }
+
+    /// Coerce into the slice of initialized memory which is present.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use sqlite::{Connection, State, FixedBytes};
+    ///
+    /// # fn main() -> Result<(), sqlite::Error> {
+    /// let c: Connection = todo!();
+    /// let stmt = c.prepare("SELECT id FROM users")?;
+    ///
+    /// while let State::Row = stmt.next()? {
+    ///     let id = stmt.read::<FixedBytes<16>>(0)?;
+    ///     let bytes: &[u8] = id.as_bytes();
+    ///
+    ///     /* use bytes */
+    /// }
+    /// # Ok(()) }
+    /// ```
+    pub fn as_bytes(&self) -> &[u8] {
+        if self.init == 0 {
+            return &[];
+        }
+
+        // SAFETY: We've asserted that `initialized` accounts for the number of
+        // bytes that have been initialized.
+        unsafe { std::slice::from_raw_parts(self.data.as_ptr() as *const u8, self.init) }
+    }
+}
+
+impl<const N: usize> Readable for FixedBytes<N> {
+    #[inline]
+    fn read(statement: &Statement, i: usize) -> Result<Self> {
+        use std::ptr::copy_nonoverlapping;
+
+        let mut bytes = FixedBytes {
+            // SAFETY: this is safe as per `MaybeUninit::uninit_array`, which isn't stable (yet).
+            data: unsafe { MaybeUninit::<[MaybeUninit<u8>; N]>::uninit().assume_init() },
+            init: 0,
+        };
+
+        unsafe {
+            let pointer = ffi::sqlite3_column_blob(statement.raw.0, i as c_int);
+
+            if pointer.is_null() {
+                return Ok(bytes);
+            }
+
+            let count = ffi::sqlite3_column_bytes(statement.raw.0, i as c_int) as usize;
+            let copied = usize::min(N, count);
+
+            copy_nonoverlapping(
+                pointer as *const u8,
+                bytes.data.as_mut_ptr() as *mut u8,
+                copied,
+            );
+
+            bytes.init = copied;
+            Ok(bytes)
         }
     }
 }
