@@ -7,9 +7,9 @@ use {Result, Value};
 /// An iterator over rows.
 pub struct Cursor<'l> {
     state: Option<State>,
+    columns: Option<HashMap<String, usize>>,
     values: Option<Vec<Value>>,
     statement: Statement<'l>,
-    columns: Option<HashMap<String, usize>>,
 }
 
 impl<'l> Cursor<'l> {
