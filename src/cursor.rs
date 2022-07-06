@@ -15,8 +15,8 @@ pub struct Cursor<'l> {
 /// A row.
 #[derive(Debug)]
 pub struct Row {
-    values: Vec<Value>,
     columns: HashMap<String, usize>,
+    values: Vec<Value>,
 }
 
 /// A column index.
@@ -149,8 +149,8 @@ impl<'l> Iterator for Cursor<'l> {
         self.try_next()
             .map(|option| {
                 option.map(|values| Row {
-                    values: values.to_vec(),
                     columns,
+                    values: values.to_vec(),
                 })
             })
             .transpose()
