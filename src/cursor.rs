@@ -23,7 +23,7 @@ pub struct Row {
 ///
 /// Indexed either by position (`usize`) or by column name (`&str`).
 pub trait ColumnIndex: std::fmt::Debug {
-    fn get_value<'l>(&self, row: &'l Row) -> &'l Value;
+    fn get<'l>(&self, row: &'l Row) -> &'l Value;
 }
 
 /// Convert a Rust type to a SQL value.
@@ -184,7 +184,7 @@ impl Row {
     #[track_caller]
     #[inline]
     pub fn try_get<T: ValueInto, U: ColumnIndex>(&self, column: U) -> Result<T> {
-        match T::into(column.get_value(self)) {
+        match T::into(column.get(self)) {
             Some(value) => Ok(value),
             None => raise!("column {:?} could not be read", column),
         }
@@ -192,13 +192,13 @@ impl Row {
 }
 
 impl ColumnIndex for &str {
-    fn get_value<'l>(&self, row: &'l Row) -> &'l Value {
+    fn get<'l>(&self, row: &'l Row) -> &'l Value {
         &row.values[row.columns[*self]]
     }
 }
 
 impl ColumnIndex for usize {
-    fn get_value<'l>(&self, row: &'l Row) -> &'l Value {
+    fn get<'l>(&self, row: &'l Row) -> &'l Value {
         &row.values[*self]
     }
 }
