@@ -67,10 +67,10 @@ impl<'l> Cursor<'l> {
     /// cursor.try_next()?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
-    pub fn bind_by_name<S, V>(mut self, values: V) -> Result<Self>
+    pub fn bind_by_name<T, U>(mut self, values: U) -> Result<Self>
     where
-        S: AsRef<str>,
-        V: IntoIterator<Item = (S, Value)>,
+        T: AsRef<str>,
+        U: IntoIterator<Item = (T, Value)>,
     {
         self.state = None;
         self.statement.reset()?;
@@ -175,7 +175,7 @@ impl Row {
     /// Panics if the column could not be read.
     #[track_caller]
     #[inline]
-    pub fn get<T: ValueInto, C: ColumnIndex>(&self, column: C) -> T {
+    pub fn get<T: ValueInto, U: ColumnIndex>(&self, column: U) -> T {
         self.try_get(column).unwrap()
     }
 
@@ -183,7 +183,7 @@ impl Row {
     /// read.
     #[track_caller]
     #[inline]
-    pub fn try_get<T: ValueInto, C: ColumnIndex>(&self, column: C) -> Result<T> {
+    pub fn try_get<T: ValueInto, U: ColumnIndex>(&self, column: U) -> Result<T> {
         match T::into(column.get_value(self)) {
             Some(value) => Ok(value),
             None => raise!("column {:?} could not be read", column),
