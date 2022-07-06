@@ -12,6 +12,28 @@ pub struct Cursor<'l> {
     statement: Statement<'l>,
 }
 
+/// A row.
+#[derive(Debug)]
+pub struct Row {
+    values: Vec<Value>,
+    columns: HashMap<String, usize>,
+}
+
+/// A column index.
+///
+/// Indexed either by position (`usize`) or by column name (`&str`).
+pub trait ColumnIndex: std::fmt::Debug {
+    fn get_value<'a>(&self, row: &'a Row) -> &'a Value;
+}
+
+/// Convert a Rust type to a SQL value.
+///
+/// It supports: `i64`, `f64`, `String`, `Vec<u8>` and also any option of those types:
+/// `Option<i64>`, `Option<f64>`, `Option<String>` and `Option<Vec<u8>>`.
+pub trait ValueInto: Sized {
+    fn into(value: &Value) -> Option<Self>;
+}
+
 impl<'l> Cursor<'l> {
     /// Bind values to parameters by index.
     ///
@@ -145,13 +167,6 @@ pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
     }
 }
 
-/// A row.
-#[derive(Debug)]
-pub struct Row {
-    values: Vec<Value>,
-    columns: HashMap<String, usize>,
-}
-
 impl Row {
     /// Get the value of a column in the row.
     ///
@@ -176,13 +191,6 @@ impl Row {
     }
 }
 
-/// A column index.
-///
-/// Indexed either by position (`usize`) or by column name (`&str`).
-pub trait ColumnIndex: std::fmt::Debug {
-    fn get_value<'a>(&self, row: &'a Row) -> &'a Value;
-}
-
 impl ColumnIndex for &str {
     fn get_value<'a>(&self, row: &'a Row) -> &'a Value {
         &row.values[row.columns[*self]]
@@ -193,14 +201,6 @@ impl ColumnIndex for usize {
     fn get_value<'a>(&self, row: &'a Row) -> &'a Value {
         &row.values[*self]
     }
-}
-
-/// Convert a Rust type to a SQL value.
-///
-/// It supports: `i64`, `f64`, `String`, `Vec<u8>` and also any option of those types:
-/// `Option<i64>`, `Option<f64>`, `Option<String>` and `Option<Vec<u8>>`.
-pub trait ValueInto: Sized {
-    fn into(value: &Value) -> Option<Self>;
 }
 
 impl ValueInto for Value {
