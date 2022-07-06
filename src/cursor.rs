@@ -139,13 +139,13 @@ impl<'l> Iterator for Cursor<'l> {
 pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
     Cursor {
         state: None,
+        columns: None,
         values: None,
         statement: statement,
-        columns: None,
     }
 }
 
-/// TODO doc
+/// A row.
 #[derive(Debug)]
 pub struct Row {
     values: Vec<Value>,
@@ -153,14 +153,19 @@ pub struct Row {
 }
 
 impl Row {
-    /// TODO doc
+    /// Get the value of a column in the row.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the column could not be read.
     #[track_caller]
     #[inline]
     pub fn get<T: ValueInto, C: ColumnIndex>(&self, column: C) -> T {
         self.try_get(column).unwrap()
     }
 
-    /// TODO doc
+    /// Try to get the value of a column in the row and return an error if the column could not be
+    /// read.
     #[track_caller]
     #[inline]
     pub fn try_get<T: ValueInto, C: ColumnIndex>(&self, column: C) -> Result<T> {
@@ -171,7 +176,9 @@ impl Row {
     }
 }
 
-/// TODO doc
+/// A column index.
+///
+/// Indexed either by position (`usize`) or by column name (`&str`).
 pub trait ColumnIndex: std::fmt::Debug {
     fn get_value<'a>(&self, row: &'a Row) -> &'a Value;
 }
@@ -188,7 +195,10 @@ impl ColumnIndex for usize {
     }
 }
 
-/// TODO doc
+/// Convert a Rust type to a SQL value.
+///
+/// It supports: `i64`, `f64`, `String`, `Vec<u8>` and also any option of those types:
+/// `Option<i64>`, `Option<f64>`, `Option<String>` and `Option<Vec<u8>>`.
 pub trait ValueInto: Sized {
     fn into(value: &Value) -> Option<Self>;
 }
