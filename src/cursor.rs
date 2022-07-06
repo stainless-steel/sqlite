@@ -194,6 +194,11 @@ impl Row {
 impl ColumnIndex for &str {
     #[inline]
     fn get<'l>(&self, row: &'l Row) -> &'l Value {
+        debug_assert!(
+            row.columns.contains_key(*self),
+            "invalid column name: {}",
+            self
+        );
         &row.values[row.columns[*self]]
     }
 }
@@ -201,6 +206,7 @@ impl ColumnIndex for &str {
 impl ColumnIndex for usize {
     #[inline]
     fn get<'l>(&self, row: &'l Row) -> &'l Value {
+        debug_assert!(row.values.len() > *self, "invalid column index: {}", self);
         &row.values[*self]
     }
 }
