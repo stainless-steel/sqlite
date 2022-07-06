@@ -23,7 +23,7 @@ pub struct Row {
 ///
 /// Indexed either by position (`usize`) or by column name (`&str`).
 pub trait ColumnIndex: std::fmt::Debug {
-    fn get_value<'a>(&self, row: &'a Row) -> &'a Value;
+    fn get_value<'l>(&self, row: &'l Row) -> &'l Value;
 }
 
 /// Convert a Rust type to a SQL value.
@@ -192,13 +192,13 @@ impl Row {
 }
 
 impl ColumnIndex for &str {
-    fn get_value<'a>(&self, row: &'a Row) -> &'a Value {
+    fn get_value<'l>(&self, row: &'l Row) -> &'l Value {
         &row.values[row.columns[*self]]
     }
 }
 
 impl ColumnIndex for usize {
-    fn get_value<'a>(&self, row: &'a Row) -> &'a Value {
+    fn get_value<'l>(&self, row: &'l Row) -> &'l Value {
         &row.values[*self]
     }
 }
