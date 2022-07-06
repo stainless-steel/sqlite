@@ -192,48 +192,56 @@ impl Row {
 }
 
 impl ColumnIndex for &str {
+    #[inline]
     fn get<'l>(&self, row: &'l Row) -> &'l Value {
         &row.values[row.columns[*self]]
     }
 }
 
 impl ColumnIndex for usize {
+    #[inline]
     fn get<'l>(&self, row: &'l Row) -> &'l Value {
         &row.values[*self]
     }
 }
 
 impl ValueInto for Value {
+    #[inline]
     fn into(value: &Value) -> Option<Self> {
         Some(value.clone())
     }
 }
 
 impl ValueInto for i64 {
+    #[inline]
     fn into(value: &Value) -> Option<Self> {
         value.as_integer()
     }
 }
 
 impl ValueInto for f64 {
+    #[inline]
     fn into(value: &Value) -> Option<Self> {
         value.as_float()
     }
 }
 
 impl ValueInto for String {
+    #[inline]
     fn into(value: &Value) -> Option<Self> {
         value.as_string().map(|slice| slice.to_string())
     }
 }
 
 impl ValueInto for Vec<u8> {
+    #[inline]
     fn into(value: &Value) -> Option<Self> {
         value.as_binary().map(|bytes| bytes.to_vec())
     }
 }
 
 impl<T: ValueInto> ValueInto for Option<T> {
+    #[inline]
     fn into(value: &Value) -> Option<Self> {
         match value {
             Value::Null => Some(None),
