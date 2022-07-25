@@ -157,9 +157,9 @@ impl<'l> Statement<'l> {
 
     /// Reset the statement.
     #[inline]
-    pub fn reset(&mut self) -> Result<()> {
+    pub fn reset(self) -> Result<Self> {
         unsafe { ok!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
-        Ok(())
+        Ok(self)
     }
 
     /// Upgrade to a cursor.
