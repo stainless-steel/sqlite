@@ -204,7 +204,7 @@ pub enum Type {
     Null,
 }
 
-/// A typed value.
+/// A value of a specific type.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     /// Binary data.

@@ -19,17 +19,12 @@ pub struct Row {
     values: Vec<Value>,
 }
 
-/// A column index.
-///
-/// Indexed either by position (`usize`) or by column name (`&str`).
+/// A type suitable for indexing columns.
 pub trait ColumnIndex: std::fmt::Debug {
     fn get<'l>(&self, row: &'l Row) -> &'l Value;
 }
 
-/// Convert a Rust type to a SQL value.
-///
-/// It supports: `i64`, `f64`, `String`, `Vec<u8>` and also any option of those types:
-/// `Option<i64>`, `Option<f64>`, `Option<String>` and `Option<Vec<u8>>`.
+/// A type that values can be converted into.
 pub trait ValueInto: Sized {
     fn into(value: &Value) -> Option<Self>;
 }
@@ -157,16 +152,6 @@ impl<'l> Iterator for Cursor<'l> {
     }
 }
 
-#[inline]
-pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
-    Cursor {
-        state: None,
-        columns: None,
-        values: None,
-        statement: statement,
-    }
-}
-
 impl Row {
     /// Get the value of a column in the row.
     ///
@@ -179,8 +164,9 @@ impl Row {
         self.try_get(column).unwrap()
     }
 
-    /// Try to get the value of a column in the row and return an error if the column could not be
-    /// read.
+    /// Try to get the value of a column in the row.
+    ///
+    /// It returns an error if the column could not be read.
     #[track_caller]
     #[inline]
     pub fn try_get<T: ValueInto, U: ColumnIndex>(&self, column: U) -> Result<T> {
@@ -253,5 +239,15 @@ impl<T: ValueInto> ValueInto for Option<T> {
             Value::Null => Some(None),
             _ => T::into(value).map(Some),
         }
+    }
+}
+
+#[inline]
+pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
+    Cursor {
+        state: None,
+        columns: None,
+        values: None,
+        statement: statement,
     }
 }
