@@ -118,11 +118,6 @@ impl<'l> Cursor<'l> {
     pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
         self.statement.as_raw()
     }
-
-    #[deprecated(since = "0.26.0", note = "Please use `column_count` instead.")]
-    pub fn count(&self) -> usize {
-        self.column_count()
-    }
 }
 
 impl<'l> Iterator for Cursor<'l> {
