@@ -32,7 +32,7 @@ linkage = ["sqlite3-sys/linkage"]
 libc = "0.2"
 
 [dependencies.sqlite3-sys]
-version = "0.13"
+version = "0.14"
 default-features = false
 
 [dev-dependencies]

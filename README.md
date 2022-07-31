@@ -1,6 +1,6 @@
 # SQLite [![Package][package-img]][package-url] [![Documentation][documentation-img]][documentation-url] [![Build][build-img]][build-url]
 
-The package provides an interface to [SQLite][1].
+The package provides an interface to [SQLite].
 
 ## Example
 
@@ -75,7 +75,7 @@ Your contribution is highly appreciated. Do not hesitate to open an issue or a
 pull request. Note that any contribution submitted for inclusion in the project
 will be licensed according to the terms given in [LICENSE.md](LICENSE.md).
 
-[1]: https://www.sqlite.org
+[SQLite]: https://www.sqlite.org
 
 [build-img]: https://github.com/stainless-steel/sqlite/workflows/build/badge.svg
 [build-url]: https://github.com/stainless-steel/sqlite/actions/workflows/build.yml
