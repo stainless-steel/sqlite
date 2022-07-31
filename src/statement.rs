@@ -45,8 +45,9 @@ impl<'l> Statement<'l> {
     ///
     /// The first parameter has index 1.
     #[inline]
-    pub fn bind<T: Bindable>(&mut self, i: usize, value: T) -> Result<()> {
-        value.bind(self, i)
+    pub fn bind<T: Bindable>(mut self, i: usize, value: T) -> Result<Self> {
+        value.bind(&mut self, i)?;
+        Ok(self)
     }
 
     /// Bind a value to a parameter by name.
@@ -60,11 +61,11 @@ impl<'l> Statement<'l> {
     /// statement.bind_by_name(":name", "Bob")?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
-    pub fn bind_by_name<T: Bindable>(&mut self, name: &str, value: T) -> Result<()> {
+    pub fn bind_by_name<T: Bindable>(self, name: &str, value: T) -> Result<Self> {
         if let Some(i) = self.parameter_index(name)? {
             self.bind(i, value)
         } else {
-            raise!(format!("no such parameter: {}", name))
+            raise!("no such parameter: {}", name)
         }
     }
 
@@ -156,9 +157,9 @@ impl<'l> Statement<'l> {
 
     /// Reset the statement.
     #[inline]
-    pub fn reset(&mut self) -> Result<()> {
+    pub fn reset(self) -> Result<Self> {
         unsafe { ok!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
-        Ok(())
+        Ok(self)
     }
 
     /// Upgrade to a cursor.

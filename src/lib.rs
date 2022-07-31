@@ -59,9 +59,9 @@
 //!
 //! let mut statement = connection
 //!     .prepare("SELECT * FROM users WHERE age > ?")
+//!     .unwrap()
+//!     .bind(1, 50)
 //!     .unwrap();
-//!
-//! statement.bind(1, 50).unwrap();
 //!
 //! while let State::Row = statement.next().unwrap() {
 //!     println!("name = {}", statement.read::<String>(0).unwrap());
@@ -88,13 +88,12 @@
 //! let mut cursor = connection
 //!     .prepare("SELECT * FROM users WHERE age > ?")
 //!     .unwrap()
-//!     .into_cursor();
+//!     .into_cursor()
+//!     .bind(&[Value::Integer(50)]).unwrap();
 //!
-//! cursor.bind(&[Value::Integer(50)]).unwrap();
-//!
-//! while let Some(row) = cursor.next().unwrap() {
-//!     println!("name = {}", row[0].as_string().unwrap());
-//!     println!("age = {}", row[1].as_integer().unwrap());
+//! while let Some(Ok(row)) = cursor.next() {
+//!     println!("name = {}", row.get::<String, _>(0));
+//!     println!("age = {}", row.get::<i64, _>(1));
 //! }
 //! ```
 //!
@@ -106,10 +105,10 @@ extern crate sqlite3_sys as ffi;
 use std::{error, fmt};
 
 macro_rules! raise(
-    ($message:expr) => (
+    ($message:expr $(, $($token:tt)* )?) => (
         return Err(::Error {
             code: None,
-            message: Some($message.to_string()),
+            message: Some(format!($message $(, $($token)* )*)),
         })
     );
 );
@@ -293,9 +292,8 @@ mod connection;
 mod cursor;
 mod statement;
 
-pub use connection::Connection;
-pub use connection::OpenFlags;
-pub use cursor::Cursor;
+pub use connection::{Connection, OpenFlags};
+pub use cursor::{ColumnIndex, Cursor, Row, ValueInto};
 pub use statement::{Bindable, Readable, State, Statement};
 
 /// Open a read-write connection to a new or existing database.
