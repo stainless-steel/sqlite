@@ -63,7 +63,7 @@
 //!     .bind(1, 50)
 //!     .unwrap();
 //!
-//! while let State::Row = statement.next().unwrap() {
+//! while let Ok(State::Row) = statement.next() {
 //!     println!("name = {}", statement.read::<String>(0).unwrap());
 //!     println!("age = {}", statement.read::<i64>(1).unwrap());
 //! }
