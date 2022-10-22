@@ -83,6 +83,12 @@ impl<'l> Cursor<'l> {
         self.statement.column_count()
     }
 
+    /// Return column names.
+    #[inline]
+    pub fn column_names(&self) -> Vec<&str> {
+        self.statement.column_names()
+    }
+
     /// Advance to the next row and read all columns.
     pub fn try_next(&mut self) -> Result<Option<&[Value]>> {
         match self.state {
