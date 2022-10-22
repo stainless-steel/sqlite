@@ -3,35 +3,29 @@ name: build
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:
   macos:
-    name: macOS
     runs-on: macos-10.15
     steps:
       - uses: actions/checkout@v1
-      - name: Run the test suite
-        uses: actions-rs/cargo@v1
+      - uses: actions-rs/cargo@v1
         with: {command: test}
-      - name: Run the benchmark suite
-        uses: actions-rs/toolchain@v1
+      - uses: actions-rs/toolchain@v1
         with: {toolchain: nightly}
       - run: cargo +nightly bench
 
   ubuntu:
-    name: Ubuntu
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v1
-      - name: Run the test suite
-        uses: actions-rs/cargo@v1
+      - uses: actions-rs/cargo@v1
         with: {command: test}
-      - name: Run the benchmark suite
-        uses: actions-rs/toolchain@v1
+      - uses: actions-rs/toolchain@v1
         with: {toolchain: nightly}
       - run: cargo +nightly bench
