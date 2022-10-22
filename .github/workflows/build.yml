@@ -10,8 +10,15 @@ on:
   workflow_dispatch:
 
 jobs:
+  agnostic:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/cargo@v1
+        with: {command: fmt, args: --all -- --check}
+
   macos:
-    runs-on: macos-10.15
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/cargo@v1
@@ -21,7 +28,7 @@ jobs:
       - run: cargo +nightly bench
 
   ubuntu:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/cargo@v1
