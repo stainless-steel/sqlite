@@ -1,7 +1,7 @@
 extern crate sqlite;
 extern crate temporary;
 
-use sqlite::{Connection, OpenFlags, State, Type, Value};
+use sqlite::{Connection, OpenFlags, State, Statement, Type, Value};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -423,6 +423,37 @@ fn statement_read_with_nullable() {
     );
     assert_eq!(ok!(statement.read::<Option<String>>(4)), None);
     assert_eq!(ok!(statement.next()), State::Done);
+}
+
+#[test]
+fn statement_reuse() {
+    struct Database<'l> {
+        #[allow(dead_code)]
+        connection: &'l Connection,
+        statement: Option<Statement<'l>>,
+    }
+
+    let connection = setup_users(":memory:");
+    let query = "SELECT name FROM users WHERE age > :age";
+    let statement = ok!(connection.prepare(query));
+
+    let mut database = Database {
+        connection: &connection,
+        statement: Some(statement),
+    };
+
+    for _ in 0..5 {
+        let mut statement = database
+            .statement
+            .take()
+            .unwrap()
+            .reset()
+            .unwrap()
+            .bind_by_name(":age", 40)
+            .unwrap();
+        assert_eq!(ok!(statement.next()), State::Row);
+        database.statement = Some(statement);
+    }
 }
 
 #[test]
