@@ -62,12 +62,27 @@ fn connection_iterate() {
 }
 
 #[test]
-fn connection_open_with_flags_full_mutex() {
+fn connection_open_with_flags() {
+    use temporary::Directory;
+
+    let directory = ok!(Directory::new("sqlite"));
+    let path = directory.path().join("database.sqlite3");
+    setup_users(&path);
+
+    let flags = OpenFlags::new().set_read_only();
+    let connection = ok!(Connection::open_with_flags(path, flags));
+    match connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)") {
+        Err(_) => {}
+        _ => unreachable!(),
+    }
+}
+
+#[test]
+fn connection_open_with_full_mutex() {
     use std::sync::Arc;
     use std::thread;
 
-    let flags = OpenFlags::new().set_full_mutex().set_read_only();
-    let connection = ok!(Connection::open_with_flags(":memory:", flags));
+    let connection = ok!(Connection::open_with_full_mutex(":memory:"));
     let connection = Arc::new(connection);
 
     let mut threads = Vec::new();
@@ -80,22 +95,6 @@ fn connection_open_with_flags_full_mutex() {
     }
     for thread in threads {
         ok!(thread.join());
-    }
-}
-
-#[test]
-fn connection_open_with_flags_read_only() {
-    use temporary::Directory;
-
-    let directory = ok!(Directory::new("sqlite"));
-    let path = directory.path().join("database.sqlite3");
-    setup_users(&path);
-
-    let flags = OpenFlags::new().set_read_only();
-    let connection = ok!(Connection::open_with_flags(path, flags));
-    match connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)") {
-        Err(_) => {}
-        _ => unreachable!(),
     }
 }
 
