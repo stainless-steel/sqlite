@@ -62,7 +62,29 @@ fn connection_iterate() {
 }
 
 #[test]
-fn connection_open_with_flags() {
+fn connection_open_with_flags_full_mutex() {
+    use std::sync::Arc;
+    use std::thread;
+
+    let flags = OpenFlags::new().set_full_mutex().set_read_only();
+    let connection = ok!(Connection::open_with_flags(":memory:", flags));
+    let connection = Arc::new(connection);
+
+    let mut threads = Vec::new();
+    for _ in 0..5 {
+        let connection_ = connection.clone();
+        let thread = thread::spawn(move || {
+            ok!(connection_.execute("SELECT 1"));
+        });
+        threads.push(thread);
+    }
+    for thread in threads {
+        ok!(thread.join());
+    }
+}
+
+#[test]
+fn connection_open_with_flags_read_only() {
     use temporary::Directory;
 
     let directory = ok!(Directory::new("sqlite"));
