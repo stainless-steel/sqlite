@@ -32,7 +32,8 @@ pub trait ValueInto: Sized {
 impl<'l> Cursor<'l> {
     /// Bind values to parameters by index.
     ///
-    /// The index of each value is assumed to be the value’s position in the array.
+    /// The index of each value is assumed to be the value’s position in the
+    /// array.
     pub fn bind(mut self, values: &[Value]) -> Result<Self> {
         self.state = None;
         self.statement = self.statement.reset()?;

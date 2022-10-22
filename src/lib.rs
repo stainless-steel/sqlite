@@ -2,7 +2,7 @@
 //!
 //! ## Example
 //!
-//! Open a connection, create a table, and insert some rows:
+//! Open a connection, create a table, and insert a few rows:
 //!
 //! ```
 //! let connection = sqlite::open(":memory:").unwrap();
@@ -41,8 +41,8 @@
 //!     .unwrap();
 //! ```
 //!
-//! The same query using a prepared statement, which is much more efficient than
-//! the previous technique:
+//! Run the same query but using a prepared statement, which is much more
+//! efficient than the previous technique:
 //!
 //! ```
 //! use sqlite::State;
@@ -69,8 +69,8 @@
 //! }
 //! ```
 //!
-//! The same query using a cursor, which is a wrapper around a prepared
-//! statement providing the notion of row and featuring all-at-once binding:
+//! Run the same query but using a cursor, which is a wrapper around a prepared
+//! statement providing the notion of row:
 //!
 //! ```
 //! use sqlite::Value;
