@@ -1,22 +1,26 @@
 use ffi;
 use libc::{c_char, c_int, c_void};
 use std::marker::PhantomData;
+use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
 use {Result, Statement};
 
 /// A database connection.
 pub struct Connection {
-    raw: *mut ffi::sqlite3,
-    busy_callback: Option<Box<dyn FnMut(usize) -> bool>>,
+    raw: Raw,
+    busy_callback: Option<Box<dyn FnMut(usize) -> bool + Send>>,
     phantom: PhantomData<ffi::sqlite3>,
 }
+
+/// A thread-safe database connection.
+pub struct ConnectionWithFullMutex(Connection);
 
 /// Flags for opening a database connection.
 #[derive(Clone, Copy, Debug)]
 pub struct OpenFlags(c_int);
 
-unsafe impl Send for Connection {}
+struct Raw(*mut ffi::sqlite3);
 
 impl Connection {
     /// Open a read-write connection to a new or existing database.
@@ -24,7 +28,7 @@ impl Connection {
         Connection::open_with_flags(path, OpenFlags::new().set_create().set_read_write())
     }
 
-    /// Open a database connection with specific flags.
+    /// Open a connection with specific flags.
     pub fn open_with_flags<T: AsRef<Path>>(path: T, flags: OpenFlags) -> Result<Connection> {
         let mut raw = 0 as *mut _;
         unsafe {
@@ -52,10 +56,22 @@ impl Connection {
             }
         }
         Ok(Connection {
-            raw: raw,
+            raw: Raw(raw),
             busy_callback: None,
             phantom: PhantomData,
         })
+    }
+
+    /// Open a thread-safe read-write connection to a new or existing database.
+    pub fn open_with_full_mutex<T: AsRef<Path>>(path: T) -> Result<ConnectionWithFullMutex> {
+        Connection::open_with_flags(
+            path,
+            OpenFlags::new()
+                .set_create()
+                .set_read_write()
+                .set_full_mutex(),
+        )
+        .map(ConnectionWithFullMutex)
     }
 
     /// Execute a statement without processing the resulting rows if any.
@@ -63,9 +79,9 @@ impl Connection {
     pub fn execute<T: AsRef<str>>(&self, statement: T) -> Result<()> {
         unsafe {
             ok!(
-                self.raw,
+                self.raw.0,
                 ffi::sqlite3_exec(
-                    self.raw,
+                    self.raw.0,
                     str_to_cstr!(statement.as_ref()).as_ptr(),
                     None,
                     0 as *mut _,
@@ -89,9 +105,9 @@ impl Connection {
         unsafe {
             let callback = Box::new(callback);
             ok!(
-                self.raw,
+                self.raw.0,
                 ffi::sqlite3_exec(
-                    self.raw,
+                    self.raw.0,
                     str_to_cstr!(statement.as_ref()).as_ptr(),
                     Some(process_callback::<F>),
                     &*callback as *const F as *mut F as *mut _,
@@ -105,21 +121,21 @@ impl Connection {
     /// Create a prepared statement.
     #[inline]
     pub fn prepare<'l, T: AsRef<str>>(&'l self, statement: T) -> Result<Statement<'l>> {
-        ::statement::new(self.raw, statement)
+        ::statement::new(self.raw.0, statement)
     }
 
     /// Return the number of rows inserted, updated, or deleted by the most
     /// recent INSERT, UPDATE, or DELETE statement.
     #[inline]
     pub fn change_count(&self) -> usize {
-        unsafe { ffi::sqlite3_changes(self.raw) as usize }
+        unsafe { ffi::sqlite3_changes(self.raw.0) as usize }
     }
 
     /// Return the total number of rows inserted, updated, and deleted by all
     /// INSERT, UPDATE, and DELETE statements since the connection was opened.
     #[inline]
     pub fn total_change_count(&self) -> usize {
-        unsafe { ffi::sqlite3_total_changes(self.raw) as usize }
+        unsafe { ffi::sqlite3_total_changes(self.raw.0) as usize }
     }
 
     /// Set a callback for handling busy events.
@@ -135,12 +151,12 @@ impl Connection {
         unsafe {
             let callback = Box::new(callback);
             let result = ffi::sqlite3_busy_handler(
-                self.raw,
+                self.raw.0,
                 Some(busy_callback::<F>),
                 &*callback as *const F as *mut F as *mut _,
             );
             self.busy_callback = Some(callback);
-            ok!(self.raw, result);
+            ok!(self.raw.0, result);
         }
         Ok(())
     }
@@ -151,8 +167,8 @@ impl Connection {
     pub fn set_busy_timeout(&mut self, milliseconds: usize) -> Result<()> {
         unsafe {
             ok!(
-                self.raw,
-                ffi::sqlite3_busy_timeout(self.raw, milliseconds as c_int)
+                self.raw.0,
+                ffi::sqlite3_busy_timeout(self.raw.0, milliseconds as c_int)
             );
         }
         Ok(())
@@ -164,8 +180,8 @@ impl Connection {
         self.busy_callback = None;
         unsafe {
             ok!(
-                self.raw,
-                ffi::sqlite3_busy_handler(self.raw, None, 0 as *mut _)
+                self.raw.0,
+                ffi::sqlite3_busy_handler(self.raw.0, None, 0 as *mut _)
             );
         }
         Ok(())
@@ -174,7 +190,7 @@ impl Connection {
     /// Return the raw pointer.
     #[inline]
     pub fn as_raw(&self) -> *mut ffi::sqlite3 {
-        self.raw
+        self.raw.0
     }
 }
 
@@ -183,7 +199,7 @@ impl Drop for Connection {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.remove_busy_handler();
-        unsafe { ffi::sqlite3_close(self.raw) };
+        unsafe { ffi::sqlite3_close(self.raw.0) };
     }
 }
 
@@ -228,6 +244,24 @@ impl OpenFlags {
         self
     }
 }
+
+impl Deref for ConnectionWithFullMutex {
+    type Target = Connection;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ConnectionWithFullMutex {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+unsafe impl Sync for ConnectionWithFullMutex {}
+
+unsafe impl Send for Raw {}
 
 extern "C" fn busy_callback<F>(callback: *mut c_void, attempts: c_int) -> c_int
 where

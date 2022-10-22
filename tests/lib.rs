@@ -78,6 +78,27 @@ fn connection_open_with_flags() {
 }
 
 #[test]
+fn connection_open_with_full_mutex() {
+    use std::sync::Arc;
+    use std::thread;
+
+    let connection = ok!(Connection::open_with_full_mutex(":memory:"));
+    let connection = Arc::new(connection);
+
+    let mut threads = Vec::new();
+    for _ in 0..5 {
+        let connection_ = connection.clone();
+        let thread = thread::spawn(move || {
+            ok!(connection_.execute("SELECT 1"));
+        });
+        threads.push(thread);
+    }
+    for thread in threads {
+        ok!(thread.join());
+    }
+}
+
+#[test]
 fn connection_set_busy_handler() {
     use std::thread;
     use temporary::Directory;
