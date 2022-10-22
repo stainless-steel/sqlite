@@ -52,7 +52,7 @@ while let Ok(State::Row) = statement.next() {
 ```
 
 Run the same query but using a cursor, which is a wrapper around a prepared
-statement providing the notion of row:
+statement providing the notion of row and featuring all-at-once binding:
 
 ```rust
 use sqlite::Value;
