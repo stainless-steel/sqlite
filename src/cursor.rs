@@ -135,19 +135,21 @@ impl<'l> Iterator for Cursor<'l> {
             Some(columns) => columns,
             None => {
                 self.columns = Some(
-                    (0..self.statement.column_count())
-                        .map(|i| (self.statement.column_name(i).to_string(), i))
+                    self.statement
+                        .column_names()
+                        .iter()
+                        .enumerate()
+                        .map(|(i, name)| (name.to_string(), i))
                         .collect(),
                 );
                 self.columns.clone().unwrap()
             }
         };
-
         self.try_next()
-            .map(|option| {
-                option.map(|values| Row {
+            .map(|row| {
+                row.map(|row| Row {
                     columns,
-                    values: values.to_vec(),
+                    values: row.to_vec(),
                 })
             })
             .transpose()
