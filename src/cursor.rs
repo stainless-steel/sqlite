@@ -135,8 +135,7 @@ impl<'l> Iterator for Cursor<'l> {
             Some(columns) => columns,
             None => {
                 self.columns = Some(
-                    self.statement
-                        .column_names()
+                    self.column_names()
                         .iter()
                         .enumerate()
                         .map(|(i, name)| (name.to_string(), i))
