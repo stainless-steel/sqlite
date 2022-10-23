@@ -154,8 +154,7 @@ fn cursor_read() {
     let statement = ok!(connection.prepare(statement));
 
     let mut count = 0;
-    for row in statement.into_cursor() {
-        let row = ok!(row);
+    for row in statement.into_cursor().map(|row| ok!(row)) {
         let id = row.get::<i64, _>(0);
         if id == 1 {
             assert_eq!(row.get::<f64, _>(1), 42.69);
@@ -175,15 +174,14 @@ fn cursor_read_with_nullable() {
     let statement = "SELECT id, name, email FROM users";
     let statement = ok!(connection.prepare(statement));
 
-    let mut cursor = statement.into_cursor();
-    let row = ok!(ok!(cursor.next()));
-    assert_eq!(row.get::<i64, _>(0), 1);
-    assert_eq!(row.get::<Value, _>(0), Value::Integer(1));
-    assert_eq!(row.get::<String, _>(1), "Alice");
-    assert_eq!(row.get::<Value, _>(1), Value::String("Alice".into()));
-    assert_eq!(row.get::<Option<String>, _>(2), None);
-    assert_eq!(row.get::<Value, _>(2), Value::Null);
-    assert_eq!(ok!(row.try_get::<Option<String>, _>(2)), None);
+    let row = ok!(ok!(statement.into_cursor().next()));
+    assert_eq!(row.get::<i64, _>("id"), 1);
+    assert_eq!(row.get::<Value, _>("id"), Value::Integer(1));
+    assert_eq!(row.get::<String, _>("name"), "Alice");
+    assert_eq!(row.get::<Value, _>("name"), Value::String("Alice".into()));
+    assert_eq!(row.get::<Option<String>, _>("email"), None);
+    assert_eq!(row.get::<Value, _>("email"), Value::Null);
+    assert_eq!(ok!(row.try_get::<Option<String>, _>("email")), None);
 }
 
 #[test]
@@ -194,8 +192,8 @@ fn cursor_try_read_with_nullable() {
 
     let mut cursor = statement.into_cursor();
     let row = ok!(ok!(cursor.try_next()));
-    assert_eq!(row[0].as_integer().unwrap(), 1);
-    assert_eq!(row[1].as_string().unwrap(), "Alice");
+    assert_eq!(ok!(row[0].as_integer()), 1);
+    assert_eq!(ok!(row[1].as_string()), "Alice");
     assert_eq!(row[2].as_string(), None);
 }
 
@@ -205,11 +203,7 @@ fn cursor_wildcard() {
     let statement = "SELECT value FROM english WHERE value LIKE '%type'";
     let statement = ok!(connection.prepare(statement));
 
-    let mut count = 0;
-    for row in statement.into_cursor() {
-        count += if let Ok(_) = row { 1 } else { 0 };
-    }
-    assert_eq!(count, 6);
+    assert_eq!(statement.into_cursor().filter(|row| row.is_ok()).count(), 6);
 }
 
 #[test]
@@ -220,11 +214,7 @@ fn cursor_wildcard_with_binding() {
         .prepare(statement)
         .and_then(|statement| statement.bind(1, "%type")));
 
-    let mut count = 0;
-    for row in statement.into_cursor() {
-        count += if let Ok(_) = row { 1 } else { 0 };
-    }
-    assert_eq!(count, 6);
+    assert_eq!(statement.into_cursor().filter(|row| row.is_ok()).count(), 6);
 }
 
 #[test]

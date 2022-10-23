@@ -64,8 +64,7 @@ let cursor = connection
     .bind(&[Value::Integer(50)])
     .unwrap();
 
-for row in cursor {
-    let row = row.unwrap();
+for row in cursor.map(|row| row.unwrap()) {
     println!("name = {}", row.get::<String, _>("name"));
     println!("age = {}", row.get::<i64, _>("age"));
 }
