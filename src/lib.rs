@@ -85,15 +85,17 @@
 //! #     )
 //! #     .unwrap();
 //!
-//! let mut cursor = connection
+//! let cursor = connection
 //!     .prepare("SELECT * FROM users WHERE age > ?")
 //!     .unwrap()
 //!     .into_cursor()
-//!     .bind(&[Value::Integer(50)]).unwrap();
+//!     .bind(&[Value::Integer(50)])
+//!     .unwrap();
 //!
-//! while let Some(Ok(row)) = cursor.next() {
-//!     println!("name = {}", row.get::<String, _>(0));
-//!     println!("age = {}", row.get::<i64, _>(1));
+//! for row in cursor {
+//!     let row = row.unwrap();
+//!     println!("name = {}", row.get::<String, _>("name"));
+//!     println!("age = {}", row.get::<i64, _>("age"));
 //! }
 //! ```
 //!

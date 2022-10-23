@@ -154,8 +154,8 @@ fn cursor_read() {
     let statement = ok!(connection.prepare(statement));
 
     let mut count = 0;
-    let mut cursor = statement.into_cursor();
-    while let Some(Ok(row)) = cursor.next() {
+    for row in statement.into_cursor() {
+        let row = ok!(row);
         let id = row.get::<i64, _>(0);
         if id == 1 {
             assert_eq!(row.get::<f64, _>(1), 42.69);
@@ -176,7 +176,7 @@ fn cursor_read_with_nullable() {
     let statement = ok!(connection.prepare(statement));
 
     let mut cursor = statement.into_cursor();
-    let row = ok!(cursor.next()).unwrap();
+    let row = ok!(ok!(cursor.next()));
     assert_eq!(row.get::<i64, _>(0), 1);
     assert_eq!(row.get::<Value, _>(0), Value::Integer(1));
     assert_eq!(row.get::<String, _>(1), "Alice");
@@ -193,7 +193,7 @@ fn cursor_try_read_with_nullable() {
     let statement = ok!(connection.prepare(statement));
 
     let mut cursor = statement.into_cursor();
-    let row = ok!(cursor.try_next()).unwrap();
+    let row = ok!(ok!(cursor.try_next()));
     assert_eq!(row[0].as_integer().unwrap(), 1);
     assert_eq!(row[1].as_string().unwrap(), "Alice");
     assert_eq!(row[2].as_string(), None);
@@ -206,9 +206,8 @@ fn cursor_wildcard() {
     let statement = ok!(connection.prepare(statement));
 
     let mut count = 0;
-    let mut cursor = statement.into_cursor();
-    while let Some(Ok(_)) = cursor.next() {
-        count += 1;
+    for row in statement.into_cursor() {
+        count += if let Ok(_) = row { 1 } else { 0 };
     }
     assert_eq!(count, 6);
 }
@@ -222,9 +221,8 @@ fn cursor_wildcard_with_binding() {
         .and_then(|statement| statement.bind(1, "%type")));
 
     let mut count = 0;
-    let mut cursor = statement.into_cursor();
-    while let Some(Ok(_)) = cursor.next() {
-        count += 1;
+    for row in statement.into_cursor() {
+        count += if let Ok(_) = row { 1 } else { 0 };
     }
     assert_eq!(count, 6);
 }
@@ -322,14 +320,14 @@ fn statement_bind_by_name_multiple() {
         .and_then(|statement| statement.bind_by_name(":age", 40)));
 
     let mut cursor = statement.into_cursor();
-    let row = ok!(cursor.next()).unwrap();
+    let row = ok!(ok!(cursor.next()));
     assert_eq!(row.get::<String, _>(0), "Alice");
 
     let statement = ok!(connection
         .prepare(query)
         .and_then(|statement| statement.bind_by_name(":age", 45)));
     let mut cursor = statement.into_cursor();
-    let row = ok!(cursor.next()).unwrap();
+    let row = ok!(ok!(cursor.next()));
     assert_eq!(row.get::<String, _>(0), "Alice");
 }
 
