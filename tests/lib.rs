@@ -155,11 +155,11 @@ fn cursor_read() {
 
     let mut count = 0;
     for row in statement.into_cursor().map(|row| ok!(row)) {
-        let id = row.get::<i64, _>(0);
+        let id = row.get::<i64, _>("id");
         if id == 1 {
-            assert_eq!(row.get::<f64, _>(1), 42.69);
+            assert_eq!(row.get::<f64, _>("age"), 42.69);
         } else if id == 2 {
-            assert_eq!(row.get::<Option<f64>, _>(1).unwrap_or(69.42), 69.42);
+            assert_eq!(row.get::<Option<f64>, _>("age").unwrap_or(69.42), 69.42);
         } else {
             assert!(false);
         }
@@ -185,7 +185,7 @@ fn cursor_read_with_nullable() {
 }
 
 #[test]
-fn cursor_try_read_with_nullable() {
+fn cursor_read_with_nullable_try_next() {
     let connection = setup_users(":memory:");
     let statement = "SELECT id, name, email FROM users";
     let statement = ok!(connection.prepare(statement));
@@ -230,8 +230,8 @@ fn cursor_workflow() {
     for _ in 0..10 {
         select = ok!(select.bind(&[Value::Integer(1)]));
         let row = ok!(ok!(select.next()));
-        assert_eq!(row.get::<i64, _>(0), 1);
-        assert_eq!(row.get::<String, _>(1), "Alice");
+        assert_eq!(row.get::<i64, _>("id"), 1);
+        assert_eq!(row.get::<String, _>("name"), "Alice");
         assert!(select.next().is_none());
     }
 
@@ -243,8 +243,8 @@ fn cursor_workflow() {
 
     let mut select = ok!(select.bind(&[Value::Integer(42)]));
     let row = ok!(ok!(select.next()));
-    assert_eq!(row.get::<i64, _>(0), 42);
-    assert_eq!(row.get::<String, _>(1), "Bob");
+    assert_eq!(row.get::<i64, _>("id"), 42);
+    assert_eq!(row.get::<String, _>("name"), "Bob");
     assert!(select.next().is_none());
 }
 

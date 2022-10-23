@@ -23,10 +23,33 @@ fn read_cursor(bencher: &mut Bencher) {
             .bind(&[Integer(42), Float(42.0)])
             .unwrap();
         let mut count = 0;
-        while let Some(row) = cursor_.next() {
-            let row = ok!(row);
+        while let Some(Ok(row)) = cursor_.next() {
             assert!(row.get::<i64, _>(0) > 42);
             assert!(row.get::<f64, _>(1) > 42.0);
+            count += 1;
+        }
+        assert_eq!(count, 100 - 42);
+        cursor = Some(cursor_);
+    })
+}
+
+#[bench]
+fn read_cursor_try_next(bencher: &mut Bencher) {
+    let connection = create();
+    populate(&connection, 100);
+    let query = "SELECT * FROM data WHERE a > ? AND b > ?";
+    let mut cursor = Some(ok!(connection.prepare(query)).into_cursor());
+
+    bencher.iter(|| {
+        let mut cursor_ = cursor
+            .take()
+            .unwrap()
+            .bind(&[Integer(42), Float(42.0)])
+            .unwrap();
+        let mut count = 0;
+        while let Ok(Some(row)) = cursor_.try_next() {
+            assert!(ok!(row[0].as_integer()) > 42);
+            assert!(ok!(row[1].as_float()) > 42.0);
             count += 1;
         }
         assert_eq!(count, 100 - 42);
