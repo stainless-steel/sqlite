@@ -430,7 +430,7 @@ fn statement_reuse() {
     struct Database<'l> {
         #[allow(dead_code)]
         connection: &'l Connection,
-        statement: Option<Statement<'l>>,
+        statement: Statement<'l>,
     }
 
     let connection = setup_users(":memory:");
@@ -439,20 +439,17 @@ fn statement_reuse() {
 
     let mut database = Database {
         connection: &connection,
-        statement: Some(statement),
+        statement: statement,
     };
 
     for _ in 0..5 {
-        let mut statement = database
+        database.statement = database
             .statement
-            .take()
-            .unwrap()
             .reset()
             .unwrap()
             .bind_by_name(":age", 40)
             .unwrap();
-        assert_eq!(ok!(statement.next()), State::Row);
-        database.statement = Some(statement);
+        assert_eq!(ok!(database.statement.next()), State::Row);
     }
 }
 
