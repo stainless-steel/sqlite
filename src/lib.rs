@@ -292,7 +292,7 @@ mod connection;
 mod cursor;
 mod statement;
 
-pub use connection::{Connection, OpenFlags};
+pub use connection::{Connection, ConnectionWithFullMutex, OpenFlags};
 pub use cursor::{ColumnIndex, Cursor, Row, ValueInto};
 pub use statement::{Bindable, Readable, State, Statement};
 
