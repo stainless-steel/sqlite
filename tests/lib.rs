@@ -418,7 +418,21 @@ fn statement_reuse() {
     struct Database<'l> {
         #[allow(dead_code)]
         connection: &'l Connection,
-        statement: Statement<'l>,
+        statement: Option<Statement<'l>>,
+    }
+
+    impl<'l> Database<'l> {
+        fn run_once(&mut self) -> sqlite::Result<()> {
+            let mut statement = self
+                .statement
+                .take()
+                .unwrap()
+                .reset()?
+                .bind_by_name(":age", 40)?;
+            assert_eq!(ok!(statement.next()), State::Row);
+            self.statement = Some(statement);
+            Ok(())
+        }
     }
 
     let connection = setup_users(":memory:");
@@ -427,17 +441,11 @@ fn statement_reuse() {
 
     let mut database = Database {
         connection: &connection,
-        statement: statement,
+        statement: Some(statement),
     };
 
     for _ in 0..5 {
-        database.statement = database
-            .statement
-            .reset()
-            .unwrap()
-            .bind_by_name(":age", 40)
-            .unwrap();
-        assert_eq!(ok!(database.statement.next()), State::Row);
+        assert!(database.run_once().is_ok());
     }
 }
 
