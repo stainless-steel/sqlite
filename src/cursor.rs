@@ -36,9 +36,9 @@ impl<'l> Cursor<'l> {
     /// array.
     pub fn bind(mut self, values: &[Value]) -> Result<Self> {
         self.state = None;
-        self.statement = self.statement.reset()?;
+        self.statement.reset()?;
         for (i, value) in values.iter().enumerate() {
-            self.statement = self.statement.bind(i + 1, value)?;
+            self.statement.bind(i + 1, value)?;
         }
         Ok(self)
     }
@@ -69,10 +69,10 @@ impl<'l> Cursor<'l> {
         U: IntoIterator<Item = (T, Value)>,
     {
         self.state = None;
-        self.statement = self.statement.reset()?;
+        self.statement.reset()?;
         for (name, value) in values {
             if let Some(i) = self.statement.parameter_index(name.as_ref())? {
-                self.statement = self.statement.bind(i, &value)?;
+                self.statement.bind(i, &value)?;
             }
         }
         Ok(self)

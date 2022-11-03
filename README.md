@@ -39,11 +39,8 @@ than the previous technique:
 ```rust
 use sqlite::State;
 
-let mut statement = connection
-    .prepare("SELECT * FROM users WHERE age > ?")
-    .unwrap()
-    .bind(1, 50)
-    .unwrap();
+let mut statement = connection.prepare("SELECT * FROM users WHERE age > ?").unwrap();
+statement.bind(1, 50).unwrap();
 
 while let Ok(State::Row) = statement.next() {
     println!("name = {}", statement.read::<String>(0).unwrap());

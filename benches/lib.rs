@@ -62,12 +62,10 @@ fn read_statement(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
     let query = "SELECT * FROM data WHERE a > ? AND b > ?";
-    let mut statement = Some(ok!(connection.prepare(query)));
+    let mut statement = ok!(connection.prepare(query));
 
     bencher.iter(|| {
-        let mut statement_ = statement
-            .take()
-            .unwrap()
+        statement
             .reset()
             .unwrap()
             .bind(1, 42)
@@ -75,13 +73,12 @@ fn read_statement(bencher: &mut Bencher) {
             .bind(2, 42.0)
             .unwrap();
         let mut count = 0;
-        while let State::Row = ok!(statement_.next()) {
-            assert!(ok!(statement_.read::<i64>(0)) > 42);
-            assert!(ok!(statement_.read::<f64>(1)) > 42.0);
+        while let State::Row = ok!(statement.next()) {
+            assert!(ok!(statement.read::<i64>(0)) > 42);
+            assert!(ok!(statement.read::<f64>(1)) > 42.0);
             count += 1;
         }
         assert_eq!(count, 100 - 42);
-        statement = Some(statement_);
     })
 }
 
@@ -109,12 +106,10 @@ fn write_cursor(bencher: &mut Bencher) {
 fn write_statement(bencher: &mut Bencher) {
     let connection = create();
     let query = "INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)";
-    let mut statement = Some(ok!(connection.prepare(query)));
+    let mut statement = ok!(connection.prepare(query));
 
     bencher.iter(|| {
-        let mut statement_ = statement
-            .take()
-            .unwrap()
+        statement
             .reset()
             .unwrap()
             .bind(1, 42)
@@ -125,8 +120,7 @@ fn write_statement(bencher: &mut Bencher) {
             .unwrap()
             .bind(4, 42.0)
             .unwrap();
-        assert_eq!(ok!(statement_.next()), State::Done);
-        statement = Some(statement_);
+        assert_eq!(ok!(statement.next()), State::Done);
     })
 }
 
@@ -141,7 +135,7 @@ fn populate(connection: &Connection, count: usize) {
     let query = "INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(query));
     for i in 1..(count + 1) {
-        statement = statement
+        statement
             .reset()
             .unwrap()
             .bind(1, i as i64)
