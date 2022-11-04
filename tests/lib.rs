@@ -47,8 +47,8 @@ fn connection_iterate() {
     let connection = setup_users(":memory:");
 
     let mut done = false;
-    let statement = "SELECT * FROM users";
-    ok!(connection.iterate(statement, |pairs| {
+    let query = "SELECT * FROM users";
+    ok!(connection.iterate(query, |pairs| {
         assert_eq!(pairs.len(), 5);
         assert_eq!(pairs[0], pair!("id", "1"));
         assert_eq!(pairs[1], pair!("name", "Alice"));
@@ -113,14 +113,13 @@ fn connection_set_busy_handler() {
             thread::spawn(move || {
                 let mut connection = ok!(sqlite::open(&path));
                 ok!(connection.set_busy_handler(|_| true));
-                let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
-                let mut statement = ok!(connection
-                    .prepare(statement)
-                    .and_then(|statement| statement.bind(1, 2i64))
-                    .and_then(|statement| statement.bind(2, "Bob"))
-                    .and_then(|statement| statement.bind(3, 69.42))
-                    .and_then(|statement| statement.bind(4, &[0x69u8, 0x42u8][..]))
-                    .and_then(|statement| statement.bind(5, ())));
+                let query = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
+                let mut statement = ok!(connection.prepare(query));
+                ok!(statement.bind(1, 2i64));
+                ok!(statement.bind(2, "Bob"));
+                ok!(statement.bind(3, 69.42));
+                ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
+                ok!(statement.bind(5, ()));
                 assert_eq!(ok!(statement.next()), State::Done);
                 true
             })
@@ -150,8 +149,8 @@ fn cursor_bind_by_name() {
 fn cursor_read() {
     let connection = setup_users(":memory:");
     ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
-    let statement = "SELECT id, age FROM users ORDER BY 1 DESC";
-    let statement = ok!(connection.prepare(statement));
+    let query = "SELECT id, age FROM users ORDER BY 1 DESC";
+    let statement = ok!(connection.prepare(query));
 
     let mut count = 0;
     for row in statement.into_cursor().map(|row| ok!(row)) {
@@ -171,8 +170,8 @@ fn cursor_read() {
 #[test]
 fn cursor_read_with_nullable() {
     let connection = setup_users(":memory:");
-    let statement = "SELECT id, name, email FROM users";
-    let statement = ok!(connection.prepare(statement));
+    let query = "SELECT id, name, email FROM users";
+    let statement = ok!(connection.prepare(query));
 
     let row = ok!(ok!(statement.into_cursor().next()));
     assert_eq!(row.get::<i64, _>("id"), 1);
@@ -187,8 +186,8 @@ fn cursor_read_with_nullable() {
 #[test]
 fn cursor_read_with_nullable_try_next() {
     let connection = setup_users(":memory:");
-    let statement = "SELECT id, name, email FROM users";
-    let statement = ok!(connection.prepare(statement));
+    let query = "SELECT id, name, email FROM users";
+    let statement = ok!(connection.prepare(query));
 
     let mut cursor = statement.into_cursor();
     let row = ok!(ok!(cursor.try_next()));
@@ -200,8 +199,8 @@ fn cursor_read_with_nullable_try_next() {
 #[test]
 fn cursor_wildcard() {
     let connection = setup_english(":memory:");
-    let statement = "SELECT value FROM english WHERE value LIKE '%type'";
-    let statement = ok!(connection.prepare(statement));
+    let query = "SELECT value FROM english WHERE value LIKE '%type'";
+    let statement = ok!(connection.prepare(query));
 
     assert_eq!(statement.into_cursor().filter(|row| row.is_ok()).count(), 6);
 }
@@ -209,10 +208,9 @@ fn cursor_wildcard() {
 #[test]
 fn cursor_wildcard_with_binding() {
     let connection = setup_english(":memory:");
-    let statement = "SELECT value FROM english WHERE value LIKE ?";
-    let statement = ok!(connection
-        .prepare(statement)
-        .and_then(|statement| statement.bind(1, "%type")));
+    let query = "SELECT value FROM english WHERE value LIKE ?";
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind(1, "%type"));
 
     assert_eq!(statement.into_cursor().filter(|row| row.is_ok()).count(), 6);
 }
@@ -251,52 +249,48 @@ fn cursor_workflow() {
 #[test]
 fn statement_bind() {
     let connection = setup_users(":memory:");
-    let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
-    let mut statement = ok!(connection
-        .prepare(statement)
-        .and_then(|statement| statement.bind(1, 2i64))
-        .and_then(|statement| statement.bind(2, "Bob"))
-        .and_then(|statement| statement.bind(3, 69.42))
-        .and_then(|statement| statement.bind(4, &[0x69u8, 0x42u8][..]))
-        .and_then(|statement| statement.bind(5, ())));
+    let query = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind(1, 2i64));
+    ok!(statement.bind(2, "Bob"));
+    ok!(statement.bind(3, 69.42));
+    ok!(statement.bind(4, &[0x69u8, 0x42u8][..]));
+    ok!(statement.bind(5, ()));
     assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]
 fn statement_bind_with_nullable() {
     let connection = setup_users(":memory:");
-    let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
-    let mut statement = ok!(connection
-        .prepare(statement)
-        .and_then(|statement| statement.bind(1, None::<i64>))
-        .and_then(|statement| statement.bind(2, None::<&str>))
-        .and_then(|statement| statement.bind(3, None::<f64>))
-        .and_then(|statement| statement.bind(4, None::<&[u8]>))
-        .and_then(|statement| statement.bind(5, None::<&str>)));
+    let query = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind(1, None::<i64>));
+    ok!(statement.bind(2, None::<&str>));
+    ok!(statement.bind(3, None::<f64>));
+    ok!(statement.bind(4, None::<&[u8]>));
+    ok!(statement.bind(5, None::<&str>));
     assert_eq!(ok!(statement.next()), State::Done);
 
-    let statement = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
-    let mut statement = ok!(connection
-        .prepare(statement)
-        .and_then(|statement| statement.bind(1, Some(2i64)))
-        .and_then(|statement| statement.bind(2, Some("Bob")))
-        .and_then(|statement| statement.bind(3, Some(69.42)))
-        .and_then(|statement| statement.bind(4, Some(&[0x69u8, 0x42u8][..])))
-        .and_then(|statement| statement.bind(5, None::<&str>)));
+    let query = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind(1, Some(2i64)));
+    ok!(statement.bind(2, Some("Bob")));
+    ok!(statement.bind(3, Some(69.42)));
+    ok!(statement.bind(4, Some(&[0x69u8, 0x42u8][..])));
+    ok!(statement.bind(5, None::<&str>));
     assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]
 fn statement_bind_by_name() {
     let connection = setup_users(":memory:");
-    let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
-    let statement = ok!(connection
-        .prepare(statement)
-        .and_then(|statement| statement.bind_by_name(":id", 2i64))
-        .and_then(|statement| statement.bind_by_name(":name", "Bob"))
-        .and_then(|statement| statement.bind_by_name(":age", 69.42))
-        .and_then(|statement| statement.bind_by_name(":photo", &[0x69u8, 0x42u8][..]))
-        .and_then(|statement| statement.bind_by_name(":email", ())));
+    let query = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind_by_name(":id", 2i64));
+    ok!(statement.bind_by_name(":name", "Bob"));
+    ok!(statement.bind_by_name(":age", 69.42));
+    ok!(statement.bind_by_name(":photo", &[0x69u8, 0x42u8][..]));
+    ok!(statement.bind_by_name(":email", ()));
 
     assert!(statement.bind_by_name(":missing", 404).is_err());
 }
@@ -305,17 +299,15 @@ fn statement_bind_by_name() {
 fn statement_bind_by_name_multiple() {
     let connection = setup_users(":memory:");
     let query = "SELECT name FROM users WHERE age > :age - 5 AND age < :age + 5";
-    let statement = ok!(connection
-        .prepare(query)
-        .and_then(|statement| statement.bind_by_name(":age", 40)));
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind_by_name(":age", 40));
 
     let mut cursor = statement.into_cursor();
     let row = ok!(ok!(cursor.next()));
     assert_eq!(row.get::<String, _>(0), "Alice");
 
-    let statement = ok!(connection
-        .prepare(query)
-        .and_then(|statement| statement.bind_by_name(":age", 45)));
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind_by_name(":age", 45));
     let mut cursor = statement.into_cursor();
     let row = ok!(ok!(cursor.next()));
     assert_eq!(row.get::<String, _>(0), "Alice");
@@ -324,8 +316,8 @@ fn statement_bind_by_name_multiple() {
 #[test]
 fn statement_column_count() {
     let connection = setup_users(":memory:");
-    let statement = "SELECT * FROM users";
-    let mut statement = ok!(connection.prepare(statement));
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
 
     assert_eq!(ok!(statement.next()), State::Row);
 
@@ -335,8 +327,8 @@ fn statement_column_count() {
 #[test]
 fn statement_column_name() {
     let connection = setup_users(":memory:");
-    let statement = "SELECT id, name, age, photo AS user_photo FROM users";
-    let statement = ok!(connection.prepare(statement));
+    let query = "SELECT id, name, age, photo AS user_photo FROM users";
+    let statement = ok!(connection.prepare(query));
 
     let names = statement.column_names();
     assert_eq!(names, vec!["id", "name", "age", "user_photo"]);
@@ -346,8 +338,8 @@ fn statement_column_name() {
 #[test]
 fn statement_column_type() {
     let connection = setup_users(":memory:");
-    let statement = "SELECT * FROM users";
-    let mut statement = ok!(connection.prepare(statement));
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
 
     assert_eq!(statement.column_type(0), Type::Null);
     assert_eq!(statement.column_type(1), Type::Null);
@@ -365,14 +357,13 @@ fn statement_column_type() {
 #[test]
 fn statement_parameter_index() {
     let connection = setup_users(":memory:");
-    let statement = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
-    let mut statement = ok!(connection
-        .prepare(statement)
-        .and_then(|statement| statement.bind_by_name(":id", 2i64))
-        .and_then(|statement| statement.bind_by_name(":name", "Bob"))
-        .and_then(|statement| statement.bind_by_name(":age", 69.42))
-        .and_then(|statement| statement.bind_by_name(":photo", &[0x69u8, 0x42u8][..]))
-        .and_then(|statement| statement.bind_by_name(":email", ())));
+    let query = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind_by_name(":id", 2i64));
+    ok!(statement.bind_by_name(":name", "Bob"));
+    ok!(statement.bind_by_name(":age", 69.42));
+    ok!(statement.bind_by_name(":photo", &[0x69u8, 0x42u8][..]));
+    ok!(statement.bind_by_name(":email", ()));
     assert_eq!(ok!(statement.parameter_index(":missing")), None);
     assert_eq!(ok!(statement.next()), State::Done);
 }
@@ -380,8 +371,8 @@ fn statement_parameter_index() {
 #[test]
 fn statement_read() {
     let connection = setup_users(":memory:");
-    let statement = "SELECT * FROM users";
-    let mut statement = ok!(connection.prepare(statement));
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
 
     assert_eq!(ok!(statement.next()), State::Row);
     assert_eq!(ok!(statement.read::<i64>(0)), 1);
@@ -395,8 +386,8 @@ fn statement_read() {
 #[test]
 fn statement_read_with_nullable() {
     let connection = setup_users(":memory:");
-    let statement = "SELECT * FROM users";
-    let mut statement = ok!(connection.prepare(statement));
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
 
     assert_eq!(ok!(statement.next()), State::Row);
     assert_eq!(ok!(statement.read::<Option<i64>>(0)), Some(1));
@@ -418,19 +409,14 @@ fn statement_reuse() {
     struct Database<'l> {
         #[allow(dead_code)]
         connection: &'l Connection,
-        statement: Option<Statement<'l>>,
+        statement: Statement<'l>,
     }
 
     impl<'l> Database<'l> {
         fn run_once(&mut self) -> sqlite::Result<()> {
-            let mut statement = self
-                .statement
-                .take()
-                .unwrap()
-                .reset()?
-                .bind_by_name(":age", 40)?;
-            assert_eq!(ok!(statement.next()), State::Row);
-            self.statement = Some(statement);
+            self.statement.reset()?;
+            self.statement.bind_by_name(":age", 40)?;
+            assert_eq!(ok!(self.statement.next()), State::Row);
             Ok(())
         }
     }
@@ -441,7 +427,7 @@ fn statement_reuse() {
 
     let mut database = Database {
         connection: &connection,
-        statement: Some(statement),
+        statement: statement,
     };
 
     for _ in 0..5 {
@@ -452,8 +438,8 @@ fn statement_reuse() {
 #[test]
 fn statement_wildcard() {
     let connection = setup_english(":memory:");
-    let statement = "SELECT value FROM english WHERE value LIKE '%type'";
-    let mut statement = ok!(connection.prepare(statement));
+    let query = "SELECT value FROM english WHERE value LIKE '%type'";
+    let mut statement = ok!(connection.prepare(query));
 
     let mut count = 0;
     while let State::Row = ok!(statement.next()) {
@@ -465,10 +451,9 @@ fn statement_wildcard() {
 #[test]
 fn statement_wildcard_with_binding() {
     let connection = setup_english(":memory:");
-    let statement = "SELECT value FROM english WHERE value LIKE ?";
-    let mut statement = ok!(connection
-        .prepare(statement)
-        .and_then(|statement| statement.bind(1, "%type")));
+    let query = "SELECT value FROM english WHERE value LIKE ?";
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind(1, "%type"));
 
     let mut count = 0;
     while let State::Row = ok!(statement.next()) {
