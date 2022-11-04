@@ -65,13 +65,9 @@ fn read_statement(bencher: &mut Bencher) {
     let mut statement = ok!(connection.prepare(query));
 
     bencher.iter(|| {
-        statement
-            .reset()
-            .unwrap()
-            .bind(1, 42)
-            .unwrap()
-            .bind(2, 42.0)
-            .unwrap();
+        ok!(statement.reset());
+        ok!(statement.bind(1, 42));
+        ok!(statement.bind(2, 42.0));
         let mut count = 0;
         while let State::Row = ok!(statement.next()) {
             assert!(ok!(statement.read::<i64>(0)) > 42);
@@ -109,17 +105,11 @@ fn write_statement(bencher: &mut Bencher) {
     let mut statement = ok!(connection.prepare(query));
 
     bencher.iter(|| {
-        statement
-            .reset()
-            .unwrap()
-            .bind(1, 42)
-            .unwrap()
-            .bind(2, 42.0)
-            .unwrap()
-            .bind(3, 42.0)
-            .unwrap()
-            .bind(4, 42.0)
-            .unwrap();
+        ok!(statement.reset());
+        ok!(statement.bind(1, 42));
+        ok!(statement.bind(2, 42.0));
+        ok!(statement.bind(3, 42.0));
+        ok!(statement.bind(4, 42.0));
         assert_eq!(ok!(statement.next()), State::Done);
     })
 }
@@ -135,17 +125,11 @@ fn populate(connection: &Connection, count: usize) {
     let query = "INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(query));
     for i in 1..(count + 1) {
-        statement
-            .reset()
-            .unwrap()
-            .bind(1, i as i64)
-            .unwrap()
-            .bind(2, i as f64)
-            .unwrap()
-            .bind(3, i as f64)
-            .unwrap()
-            .bind(4, i as f64)
-            .unwrap();
+        ok!(statement.reset());
+        ok!(statement.bind(1, i as i64));
+        ok!(statement.bind(2, i as f64));
+        ok!(statement.bind(3, i as f64));
+        ok!(statement.bind(4, i as f64));
         assert_eq!(ok!(statement.next()), State::Done);
     }
 }
