@@ -58,7 +58,7 @@ let cursor = connection
     .prepare("SELECT * FROM users WHERE age > ?")
     .unwrap()
     .into_cursor()
-    .bind(&[Value::Integer(50)])
+    .bind(&[50.into()])
     .unwrap();
 
 for row in cursor.map(|row| row.unwrap()) {

@@ -86,7 +86,7 @@
 //!     .prepare("SELECT * FROM users WHERE age > ?")
 //!     .unwrap()
 //!     .into_cursor()
-//!     .bind(&[Value::Integer(50)])
+//!     .bind(&[50.into()])
 //!     .unwrap();
 //!
 //! for row in cursor.map(|row| row.unwrap()) {
@@ -283,6 +283,41 @@ impl Value {
             &Value::String(_) => Type::String,
             &Value::Null => Type::Null,
         }
+    }
+}
+
+impl From<Vec<u8>> for Value {
+    #[inline]
+    fn from(value: Vec<u8>) -> Self {
+        Value::Binary(value)
+    }
+}
+
+impl From<f64> for Value {
+    #[inline]
+    fn from(value: f64) -> Self {
+        Value::Float(value)
+    }
+}
+
+impl From<i64> for Value {
+    #[inline]
+    fn from(value: i64) -> Self {
+        Value::Integer(value)
+    }
+}
+
+impl From<String> for Value {
+    #[inline]
+    fn from(value: String) -> Self {
+        Value::String(value)
+    }
+}
+
+impl From<()> for Value {
+    #[inline]
+    fn from(_: ()) -> Self {
+        Value::Null
     }
 }
 

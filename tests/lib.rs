@@ -138,8 +138,8 @@ fn cursor_bind_by_name() {
     let statement = ok!(connection.prepare("INSERT INTO users VALUES (:id, :name)"));
 
     let mut map = HashMap::new();
-    map.insert(":name".to_string(), Value::String("Bob".to_string()));
-    map.insert(":id".to_string(), Value::Integer(42));
+    map.insert(":name".to_string(), "Bob".to_string().into());
+    map.insert(":id".to_string(), 42.into());
 
     let mut cursor = ok!(statement.into_cursor().bind_by_name(map));
     assert!(cursor.next().is_none());
@@ -175,9 +175,9 @@ fn cursor_read_with_nullable() {
 
     let row = ok!(ok!(statement.into_cursor().next()));
     assert_eq!(row.get::<i64, _>("id"), 1);
-    assert_eq!(row.get::<Value, _>("id"), Value::Integer(1));
+    assert_eq!(row.get::<Value, _>("id"), 1.into());
     assert_eq!(row.get::<String, _>("name"), "Alice");
-    assert_eq!(row.get::<Value, _>("name"), Value::String("Alice".into()));
+    assert_eq!(row.get::<Value, _>("name"), String::from("Alice").into());
     assert_eq!(row.get::<Option<String>, _>("email"), None);
     assert_eq!(row.get::<Value, _>("email"), Value::Null);
     assert_eq!(ok!(row.try_get::<Option<String>, _>("email")), None);
@@ -226,20 +226,20 @@ fn cursor_workflow() {
     let insert = ok!(connection.prepare(insert)).into_cursor();
 
     for _ in 0..10 {
-        select = ok!(select.bind(&[Value::Integer(1)]));
+        select = ok!(select.bind(&[1.into()]));
         let row = ok!(ok!(select.next()));
         assert_eq!(row.get::<i64, _>("id"), 1);
         assert_eq!(row.get::<String, _>("name"), "Alice");
         assert!(select.next().is_none());
     }
 
-    let mut select = ok!(select.bind(&[Value::Integer(42)]));
+    let mut select = ok!(select.bind(&[42.into()]));
     assert!(select.next().is_none());
 
-    let mut insert = ok!(insert.bind(&[Value::Integer(42), Value::String("Bob".to_string())]));
+    let mut insert = ok!(insert.bind(&[42.into(), String::from("Bob").into()]));
     assert!(insert.next().is_none());
 
-    let mut select = ok!(select.bind(&[Value::Integer(42)]));
+    let mut select = ok!(select.bind(&[42.into()]));
     let row = ok!(ok!(select.next()));
     assert_eq!(row.get::<i64, _>("id"), 42);
     assert_eq!(row.get::<String, _>("name"), "Bob");
