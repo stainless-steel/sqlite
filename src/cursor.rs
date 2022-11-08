@@ -38,7 +38,7 @@ impl<'l> Cursor<'l> {
         self.state = None;
         self.statement.reset()?;
         for (i, value) in values.iter().enumerate() {
-            self.statement.bind(i + 1, value)?;
+            self.statement.bind((i + 1, value))?;
         }
         Ok(self)
     }
@@ -72,7 +72,7 @@ impl<'l> Cursor<'l> {
         self.statement.reset()?;
         for (name, value) in values {
             if let Some(i) = self.statement.parameter_index(name.as_ref())? {
-                self.statement.bind(i, &value)?;
+                self.statement.bind((i, &value))?;
             }
         }
         Ok(self)

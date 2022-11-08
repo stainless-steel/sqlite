@@ -27,9 +27,7 @@ pub enum State {
 /// A type suitable for binding to a prepared statement.
 pub trait Bindable {
     /// Bind to a parameter.
-    ///
-    /// The first parameter has index 1.
-    fn bind(self, _: &mut Statement, _: usize) -> Result<()>;
+    fn bind(self, _: &mut Statement) -> Result<()>;
 }
 
 /// A type suitable for reading from a prepared statement.
@@ -41,32 +39,29 @@ pub trait Readable: Sized {
 }
 
 impl<'l> Statement<'l> {
-    /// Bind a value to a parameter by index.
-    ///
-    /// The first parameter has index 1.
-    #[inline]
-    pub fn bind<T: Bindable>(&mut self, i: usize, value: T) -> Result<()> {
-        value.bind(self, i)?;
-        Ok(())
-    }
-
-    /// Bind a value to a parameter by name.
+    /// Bind a value to a parameter.
     ///
     /// # Examples
     ///
     /// ```
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (name STRING)");
-    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
-    /// statement.bind_by_name(":name", "Bob")?;
+    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = ?")?;
+    /// statement.bind((1, "Bob"))?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
-    pub fn bind_by_name<T: Bindable>(&mut self, name: &str, value: T) -> Result<()> {
-        if let Some(i) = self.parameter_index(name)? {
-            self.bind(i, value)
-        } else {
-            raise!("no such parameter: {}", name)
-        }
+    ///
+    /// ```
+    /// # let connection = sqlite::open(":memory:").unwrap();
+    /// # connection.execute("CREATE TABLE users (name STRING)");
+    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
+    /// statement.bind((":name", "Bob"))?;
+    /// # Ok::<(), sqlite::Error>(())
+    /// ```
+    #[inline]
+    pub fn bind<T: Bindable>(&mut self, value: T) -> Result<()> {
+        value.bind(self)?;
+        Ok(())
     }
 
     /// Return the number of columns.
@@ -183,30 +178,37 @@ impl<'l> Drop for Statement<'l> {
     }
 }
 
-impl<'l> Bindable for &'l Value {
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        match self {
-            &Value::Binary(ref value) => (value as &[u8]).bind(statement, i),
-            &Value::Float(value) => value.bind(statement, i),
-            &Value::Integer(value) => value.bind(statement, i),
-            &Value::String(ref value) => (value as &str).bind(statement, i),
-            &Value::Null => ().bind(statement, i),
+impl Bindable for (usize, Value) {
+    #[inline]
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        (self.0, &self.1).bind(statement)
+    }
+}
+
+impl Bindable for (usize, &Value) {
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        match self.1 {
+            &Value::Binary(ref value) => (self.0, value as &[u8]).bind(statement),
+            &Value::Float(value) => (self.0, value).bind(statement),
+            &Value::Integer(value) => (self.0, value).bind(statement),
+            &Value::String(ref value) => (self.0, value as &str).bind(statement),
+            &Value::Null => (self.0, ()).bind(statement),
         }
     }
 }
 
-impl<'l> Bindable for &'l [u8] {
+impl Bindable for (usize, &[u8]) {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        debug_assert!(self.0 > 0, "the indexing starts from 1");
         unsafe {
             ok!(
                 statement.raw.1,
                 ffi::sqlite3_bind_blob(
                     statement.raw.0,
-                    i as c_int,
-                    self.as_ptr() as *const _,
-                    self.len() as c_int,
+                    self.0 as c_int,
+                    self.1.as_ptr() as *const _,
+                    self.1.len() as c_int,
                     transient!(),
                 )
             );
@@ -215,46 +217,50 @@ impl<'l> Bindable for &'l [u8] {
     }
 }
 
-impl Bindable for f64 {
+impl Bindable for (usize, f64) {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        debug_assert!(self.0 > 0, "the indexing starts from 1");
         unsafe {
             ok!(
                 statement.raw.1,
-                ffi::sqlite3_bind_double(statement.raw.0, i as c_int, self as c_double)
+                ffi::sqlite3_bind_double(statement.raw.0, self.0 as c_int, self.1 as c_double)
             );
         }
         Ok(())
     }
 }
 
-impl Bindable for i64 {
+impl Bindable for (usize, i64) {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        debug_assert!(self.0 > 0, "the indexing starts from 1");
         unsafe {
             ok!(
                 statement.raw.1,
-                ffi::sqlite3_bind_int64(statement.raw.0, i as c_int, self as ffi::sqlite3_int64)
+                ffi::sqlite3_bind_int64(
+                    statement.raw.0,
+                    self.0 as c_int,
+                    self.1 as ffi::sqlite3_int64
+                )
             );
         }
         Ok(())
     }
 }
 
-impl<'l> Bindable for &'l str {
+impl Bindable for (usize, &str) {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        debug_assert!(self.0 > 0, "the indexing starts from 1");
         unsafe {
             ok!(
                 statement.raw.1,
                 ffi::sqlite3_bind_text(
                     statement.raw.0,
-                    i as c_int,
-                    self.as_ptr() as *const _,
-                    self.len() as c_int,
+                    self.0 as c_int,
+                    self.1.as_ptr() as *const _,
+                    self.1.len() as c_int,
                     transient!(),
                 )
             );
@@ -263,30 +269,103 @@ impl<'l> Bindable for &'l str {
     }
 }
 
-impl Bindable for () {
+impl Bindable for (usize, ()) {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        debug_assert!(self.0 > 0, "the indexing starts from 1");
         unsafe {
             ok!(
                 statement.raw.1,
-                ffi::sqlite3_bind_null(statement.raw.0, i as c_int)
+                ffi::sqlite3_bind_null(statement.raw.0, self.0 as c_int)
             );
         }
         Ok(())
     }
 }
 
-impl<T: Bindable> Bindable for Option<T> {
+impl<T> Bindable for (usize, Option<T>)
+where
+    (usize, T): Bindable,
+{
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
-        match self {
-            Some(inner) => inner.bind(statement, i),
-            None => ().bind(statement, i),
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        match self.1 {
+            Some(value) => (self.0, value).bind(statement),
+            None => (self.0, ()).bind(statement),
         }
     }
 }
+
+impl<'l, T> Bindable for (usize, &'l Option<T>)
+where
+    (usize, &'l T): Bindable,
+{
+    #[inline]
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        match self.1 {
+            Some(value) => (self.0, value).bind(statement),
+            None => (self.0, ()).bind(statement),
+        }
+    }
+}
+
+impl<'l, T> Bindable for &'l [T]
+where
+    (usize, &'l T): Bindable,
+{
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        for (i, value) in self.iter().enumerate() {
+            (i + 1, value).bind(statement)?;
+        }
+        Ok(())
+    }
+}
+
+impl<T> Bindable for Vec<T>
+where
+    (usize, T): Bindable,
+{
+    fn bind(mut self, statement: &mut Statement) -> Result<()> {
+        for (i, value) in self.drain(..).enumerate() {
+            (i + 1, value).bind(statement)?;
+        }
+        Ok(())
+    }
+}
+
+macro_rules! implement(
+    ($type:ty) => {
+        impl Bindable for (&str, $type) {
+            #[inline]
+            fn bind(self, statement: &mut Statement) -> Result<()> {
+                if let Some(i) = statement.parameter_index(self.0)? {
+                    (i, self.1).bind(statement)
+                } else {
+                    raise!("no such parameter: {}", self.0)
+                }
+            }
+        }
+
+        impl Bindable for (&str, Option<$type>) {
+            #[inline]
+            fn bind(self, statement: &mut Statement) -> Result<()> {
+                if let Some(i) = statement.parameter_index(self.0)? {
+                    (i, self.1).bind(statement)
+                } else {
+                    raise!("no such parameter: {}", self.0)
+                }
+            }
+        }
+    }
+);
+
+implement!(Value);
+implement!(&Value);
+implement!(&[u8]);
+implement!(f64);
+implement!(i64);
+implement!(&str);
+implement!(());
 
 impl Readable for Value {
     fn read(statement: &Statement, i: usize) -> Result<Self> {

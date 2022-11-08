@@ -66,8 +66,8 @@ fn read_statement(bencher: &mut Bencher) {
 
     bencher.iter(|| {
         ok!(statement.reset());
-        ok!(statement.bind(1, 42));
-        ok!(statement.bind(2, 42.0));
+        ok!(statement.bind((1, 42)));
+        ok!(statement.bind((2, 42.0)));
         let mut count = 0;
         while let State::Row = ok!(statement.next()) {
             assert!(ok!(statement.read::<i64>(0)) > 42);
@@ -106,10 +106,10 @@ fn write_statement(bencher: &mut Bencher) {
 
     bencher.iter(|| {
         ok!(statement.reset());
-        ok!(statement.bind(1, 42));
-        ok!(statement.bind(2, 42.0));
-        ok!(statement.bind(3, 42.0));
-        ok!(statement.bind(4, 42.0));
+        ok!(statement.bind((1, 42)));
+        ok!(statement.bind((2, 42.0)));
+        ok!(statement.bind((3, 42.0)));
+        ok!(statement.bind((4, 42.0)));
         assert_eq!(ok!(statement.next()), State::Done);
     })
 }
@@ -126,10 +126,10 @@ fn populate(connection: &Connection, count: usize) {
     let mut statement = ok!(connection.prepare(query));
     for i in 1..(count + 1) {
         ok!(statement.reset());
-        ok!(statement.bind(1, i as i64));
-        ok!(statement.bind(2, i as f64));
-        ok!(statement.bind(3, i as f64));
-        ok!(statement.bind(4, i as f64));
+        ok!(statement.bind((1, i as i64)));
+        ok!(statement.bind((2, i as f64)));
+        ok!(statement.bind((3, i as f64)));
+        ok!(statement.bind((4, i as f64)));
         assert_eq!(ok!(statement.next()), State::Done);
     }
 }
