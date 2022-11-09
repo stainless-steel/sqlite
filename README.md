@@ -40,7 +40,7 @@ than the previous technique:
 use sqlite::State;
 
 let mut statement = connection.prepare("SELECT * FROM users WHERE age > ?").unwrap();
-statement.bind(1, 50).unwrap();
+statement.bind((1, 50)).unwrap();
 
 while let Ok(State::Row) = statement.next() {
     println!("name = {}", statement.read::<String>(0).unwrap());
@@ -52,13 +52,11 @@ Run the same query but using a cursor, which is a wrapper around a prepared
 statement providing the notion of row and featuring all-at-once binding:
 
 ```rust
-use sqlite::Value;
-
 let cursor = connection
     .prepare("SELECT * FROM users WHERE age > ?")
     .unwrap()
     .into_cursor()
-    .bind(&[50.into()])
+    .bind((1, 50)])
     .unwrap();
 
 for row in cursor.map(|row| row.unwrap()) {

@@ -70,7 +70,6 @@
 //! statement providing the notion of row and featuring all-at-once binding:
 //!
 //! ```
-//! use sqlite::Value;
 //! # let connection = sqlite::open(":memory:").unwrap();
 //! # connection
 //! #     .execute(
@@ -86,7 +85,7 @@
 //!     .prepare("SELECT * FROM users WHERE age > ?")
 //!     .unwrap()
 //!     .into_cursor()
-//!     .bind(&[50.into()])
+//!     .bind((1, 50))
 //!     .unwrap();
 //!
 //! for row in cursor.map(|row| row.unwrap()) {
@@ -304,6 +303,13 @@ impl From<i64> for Value {
     #[inline]
     fn from(value: i64) -> Self {
         Value::Integer(value)
+    }
+}
+
+impl From<&str> for Value {
+    #[inline]
+    fn from(value: &str) -> Self {
+        Value::String(value.into())
     }
 }
 

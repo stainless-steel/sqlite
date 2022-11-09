@@ -1,5 +1,5 @@
 use ffi;
-use statement::{State, Statement};
+use statement::{Bindable, State, Statement};
 use std::collections::HashMap;
 
 use {Result, Value};
@@ -30,51 +30,28 @@ pub trait ValueInto: Sized {
 }
 
 impl<'l> Cursor<'l> {
-    /// Bind values to parameters by index.
+    /// Bind values to parameters.
     ///
-    /// The index of each value is assumed to be the value’s position in the
-    /// array.
-    pub fn bind(mut self, values: &[Value]) -> Result<Self> {
+    /// See `Statement::bind` for further details.
+    pub fn bind<T: Bindable>(mut self, value: T) -> Result<Self> {
         self.state = None;
         self.statement.reset()?;
-        for (i, value) in values.iter().enumerate() {
-            self.statement.bind((i + 1, value))?;
-        }
+        self.statement.bind(value)?;
         Ok(self)
     }
 
-    /// Bind values to parameters by name.
+    /// Bind values to parameters via an iterator.
     ///
-    /// Parameters that are not part of the statement will be ignored.
-    ///
-    /// # Examples
-    ///
+    /// See `Statement::bind_from` for further details.
     /// ```
-    /// # use sqlite::Value;
-    /// # let connection = sqlite::open(":memory:").unwrap();
-    /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
-    /// let statement = connection.prepare("INSERT INTO users VALUES (:id, :name)")?;
-    /// let mut cursor = statement
-    ///     .into_cursor()
-    ///     .bind_by_name(vec![
-    ///         (":name", Value::String("Bob".to_owned())),
-    ///         (":id", Value::Integer(42)),
-    ///     ])?;
-    /// cursor.try_next()?;
-    /// # Ok::<(), sqlite::Error>(())
-    /// ```
-    pub fn bind_by_name<T, U>(mut self, values: U) -> Result<Self>
+    pub fn bind_from<T, U>(mut self, value: T) -> Result<Self>
     where
-        T: AsRef<str>,
-        U: IntoIterator<Item = (T, Value)>,
+        T: IntoIterator<Item = U>,
+        U: Bindable,
     {
         self.state = None;
         self.statement.reset()?;
-        for (name, value) in values {
-            if let Some(i) = self.statement.parameter_index(name.as_ref())? {
-                self.statement.bind((i, &value))?;
-            }
-        }
+        self.statement.bind_from(value)?;
         Ok(self)
     }
 

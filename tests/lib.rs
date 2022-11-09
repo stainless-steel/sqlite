@@ -137,11 +137,11 @@ fn cursor_bind_by_name() {
     ok!(connection.execute("CREATE TABLE users (id INTEGER, name STRING)"));
     let statement = ok!(connection.prepare("INSERT INTO users VALUES (:id, :name)"));
 
-    let mut map = HashMap::new();
-    map.insert(":name".to_string(), "Bob".to_string().into());
-    map.insert(":id".to_string(), 42.into());
+    let mut map = HashMap::<_, Value>::new();
+    map.insert(":name", "Bob".to_string().into());
+    map.insert(":id", 42.into());
 
-    let mut cursor = ok!(statement.into_cursor().bind_by_name(map));
+    let mut cursor = ok!(statement.into_cursor().bind_from(map));
     assert!(cursor.next().is_none());
 }
 
@@ -216,20 +216,20 @@ fn cursor_workflow() {
     let insert = ok!(connection.prepare(insert)).into_cursor();
 
     for _ in 0..10 {
-        select = ok!(select.bind(&[1.into()]));
+        select = ok!(select.bind((1, 1)));
         let row = ok!(ok!(select.next()));
         assert_eq!(row.get::<i64, _>("id"), 1);
         assert_eq!(row.get::<String, _>("name"), "Alice");
         assert!(select.next().is_none());
     }
 
-    let mut select = ok!(select.bind(&[42.into()]));
+    let mut select = ok!(select.bind((1, 42)));
     assert!(select.next().is_none());
 
-    let mut insert = ok!(insert.bind(&[42.into(), String::from("Bob").into()]));
+    let mut insert = ok!(insert.bind::<&[Value]>(&[42.into(), String::from("Bob").into()][..]));
     assert!(insert.next().is_none());
 
-    let mut select = ok!(select.bind(&[42.into()]));
+    let mut select = ok!(select.bind((1, 42)));
     let row = ok!(ok!(select.next()));
     assert_eq!(row.get::<i64, _>("id"), 42);
     assert_eq!(row.get::<String, _>("name"), "Bob");

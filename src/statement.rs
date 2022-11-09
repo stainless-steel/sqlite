@@ -47,44 +47,87 @@ pub trait ReadableAt: Sized {
 }
 
 impl<'l> Statement<'l> {
-    /// Bind a value to a parameter.
+    /// Bind values to parameters.
     ///
     /// # Examples
     ///
     /// ```
     /// # let connection = sqlite::open(":memory:").unwrap();
-    /// # connection.execute("CREATE TABLE users (name STRING)");
-    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = ?")?;
+    /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
+    /// let query = "SELECT * FROM users WHERE name = ?";
+    /// let mut statement = connection.prepare(query)?;
     /// statement.bind((1, "Bob"))?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
     ///
     /// ```
     /// # let connection = sqlite::open(":memory:").unwrap();
-    /// # connection.execute("CREATE TABLE users (name STRING)");
-    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = ?")?;
+    /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
+    /// let query = "SELECT * FROM users WHERE name = ?";
+    /// let mut statement = connection.prepare(query)?;
     /// statement.bind(&[(1, "Bob")][..])?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
     ///
     /// ```
     /// # let connection = sqlite::open(":memory:").unwrap();
-    /// # connection.execute("CREATE TABLE users (name STRING)");
-    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
+    /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
+    /// let query = "SELECT * FROM users WHERE name = :name";
+    /// let mut statement = connection.prepare(query)?;
     /// statement.bind((":name", "Bob"))?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
     ///
     /// ```
     /// # let connection = sqlite::open(":memory:").unwrap();
-    /// # connection.execute("CREATE TABLE users (name STRING)");
-    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
+    /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
+    /// let query = "SELECT * FROM users WHERE name = :name";
+    /// let mut statement = connection.prepare(query)?;
     /// statement.bind(&[(":name", "Bob")][..])?;
+    /// # Ok::<(), sqlite::Error>(())
+    /// ```
+    ///
+    /// ```
+    /// # use sqlite::Value;
+    /// # let connection = sqlite::open(":memory:").unwrap();
+    /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
+    /// let query = "SELECT * FROM users WHERE id = :id AND name = :name";
+    /// let mut statement = connection.prepare(query)?;
+    /// statement.bind::<&[(_, Value)]>(&[
+    ///     (":id", 1.into()),
+    ///     (":name", "Bob".into()),
+    /// ][..])?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
     #[inline]
     pub fn bind<T: Bindable>(&mut self, value: T) -> Result<()> {
         value.bind(self)?;
+        Ok(())
+    }
+
+    /// Bind values to parameters via an iterator.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use sqlite::Value;
+    /// # let connection = sqlite::open(":memory:").unwrap();
+    /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
+    /// let mut statement = connection.prepare("INSERT INTO users VALUES (:id, :name)")?;
+    /// statement.bind_from::<_, (_, Value)>([
+    ///     (":name", "Bob".into()),
+    ///     (":id", 42.into()),
+    /// ])?;
+    /// # Ok::<(), sqlite::Error>(())
+    /// ```
+    pub fn bind_from<T, U>(&mut self, value: T) -> Result<()>
+    where
+        T: IntoIterator<Item = U>,
+        U: Bindable,
+    {
+        for value in value {
+            self.bind(value)?;
+        }
         Ok(())
     }
 
