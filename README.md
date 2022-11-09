@@ -49,14 +49,14 @@ while let Ok(State::Row) = statement.next() {
 ```
 
 Run the same query but using a cursor, which is a wrapper around a prepared
-statement providing the notion of row and featuring all-at-once binding:
+statement providing the notion of row:
 
 ```rust
 let cursor = connection
     .prepare("SELECT * FROM users WHERE age > ?")
     .unwrap()
     .into_cursor()
-    .bind((1, 50)])
+    .bind((1, 50))
     .unwrap();
 
 for row in cursor.map(|row| row.unwrap()) {

@@ -113,7 +113,8 @@ impl<'l> Statement<'l> {
     /// # use sqlite::Value;
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
-    /// let mut statement = connection.prepare("INSERT INTO users VALUES (:id, :name)")?;
+    /// let query = "INSERT INTO users VALUES (:id, :name)";
+    /// let mut statement = connection.prepare(query)?;
     /// statement.bind_from::<_, (_, Value)>([
     ///     (":name", "Bob".into()),
     ///     (":id", 42.into()),
