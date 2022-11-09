@@ -159,7 +159,7 @@ impl Row {
 impl ColumnIndex for &str {
     #[inline]
     fn get<'l>(&self, row: &'l Row) -> &'l Value {
-        debug_assert!(row.columns.contains_key(*self), "the index is out of range",);
+        debug_assert!(row.columns.contains_key(*self), "the index is out of range");
         &row.values[row.columns[*self]]
     }
 }

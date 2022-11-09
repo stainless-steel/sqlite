@@ -289,7 +289,7 @@ where
         if let Some(i) = statement.parameter_index(self.0)? {
             self.1.bind(statement, i)?;
         } else {
-            raise!("no such parameter: {}", self.0)
+            raise!("the index is out of range ({})", self.0)
         }
         Ok(())
     }
@@ -304,7 +304,7 @@ where
             if let Some(i) = statement.parameter_index(name)? {
                 value.clone().bind(statement, i)?;
             } else {
-                raise!("no such parameter: {}", name);
+                raise!("the index is out of range ({})", name);
             }
         }
         Ok(())
@@ -314,7 +314,7 @@ where
 impl BindableAt for &[u8] {
     #[inline]
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
+        debug_assert!(i > 0, "the index is out of range");
         unsafe {
             ok!(
                 statement.raw.1,
@@ -334,7 +334,7 @@ impl BindableAt for &[u8] {
 impl BindableAt for f64 {
     #[inline]
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
+        debug_assert!(i > 0, "the index is out of range");
         unsafe {
             ok!(
                 statement.raw.1,
@@ -348,7 +348,7 @@ impl BindableAt for f64 {
 impl BindableAt for i64 {
     #[inline]
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
+        debug_assert!(i > 0, "the index is out of range");
         unsafe {
             ok!(
                 statement.raw.1,
@@ -362,7 +362,7 @@ impl BindableAt for i64 {
 impl BindableAt for &str {
     #[inline]
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
+        debug_assert!(i > 0, "the index is out of range");
         unsafe {
             ok!(
                 statement.raw.1,
@@ -382,7 +382,7 @@ impl BindableAt for &str {
 impl BindableAt for () {
     #[inline]
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the indexing starts from 1");
+        debug_assert!(i > 0, "the index is out of range");
         unsafe {
             ok!(
                 statement.raw.1,
