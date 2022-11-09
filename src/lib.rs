@@ -327,7 +327,7 @@ mod statement;
 
 pub use connection::{Connection, ConnectionWithFullMutex, OpenFlags};
 pub use cursor::{ColumnIndex, Cursor, Row, ValueInto};
-pub use statement::{Bindable, Readable, State, Statement};
+pub use statement::{Bindable, BindableAt, ReadableAt, State, Statement};
 
 /// Open a read-write connection to a new or existing database.
 #[inline]
