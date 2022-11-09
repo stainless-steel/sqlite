@@ -42,15 +42,15 @@ impl<'l> Cursor<'l> {
 
     /// Bind values to parameters via an iterator.
     ///
-    /// See `Statement::bind_from` for further details.
-    pub fn bind_from<T, U>(mut self, value: T) -> Result<Self>
+    /// See `Statement::bind_iter` for further details.
+    pub fn bind_iter<T, U>(mut self, value: T) -> Result<Self>
     where
         T: IntoIterator<Item = U>,
         U: Bindable,
     {
         self.state = None;
         self.statement.reset()?;
-        self.statement.bind_from(value)?;
+        self.statement.bind_iter(value)?;
         Ok(self)
     }
 

@@ -115,13 +115,13 @@ impl<'l> Statement<'l> {
     /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
     /// let query = "INSERT INTO users VALUES (:id, :name)";
     /// let mut statement = connection.prepare(query)?;
-    /// statement.bind_from::<_, (_, Value)>([
+    /// statement.bind_iter::<_, (_, Value)>([
     ///     (":name", "Bob".into()),
     ///     (":id", 42.into()),
     /// ])?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
-    pub fn bind_from<T, U>(&mut self, value: T) -> Result<()>
+    pub fn bind_iter<T, U>(&mut self, value: T) -> Result<()>
     where
         T: IntoIterator<Item = U>,
         U: Bindable,

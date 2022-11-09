@@ -19,7 +19,7 @@ fn bind_by_name() {
     map.insert(":name", "Bob".to_string().into());
     map.insert(":id", 42.into());
 
-    let mut cursor = ok!(statement.into_cursor().bind_from(map));
+    let mut cursor = ok!(statement.into_cursor().bind_iter(map));
     assert!(cursor.next().is_none());
 }
 
