@@ -243,7 +243,7 @@ fn statement_bind_by_index() {
     let mut statement = ok!(connection.prepare(query));
 
     ok!(statement.reset());
-    ok!(statement.bind((1, 2i64)));
+    ok!(statement.bind(&[(1, 2i64)][..]));
     ok!(statement.bind((2, "Bob")));
     ok!(statement.bind((3, 69.42)));
     ok!(statement.bind((4, &[0x69u8, 0x42u8][..])));
@@ -281,6 +281,18 @@ fn statement_bind_by_index() {
         ][..]
     ));
     assert_eq!(ok!(statement.next()), State::Done);
+
+    ok!(statement.reset());
+    ok!(statement.bind(
+        &[
+            (1, Value::Integer(2)),
+            (2, Value::String("Bob".into())),
+            (3, Value::Float(69.42)),
+            (4, Value::Binary([0x69u8, 0x42u8].to_vec())),
+            (5, Value::Null),
+        ][..]
+    ));
+    assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]
@@ -289,13 +301,28 @@ fn statement_bind_by_name() {
     let query = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
     let mut statement = ok!(connection.prepare(query));
 
-    ok!(statement.bind((":id", 2i64)));
+    ok!(statement.reset());
+    ok!(statement.bind(&[(":id", 2i64)][..]));
     ok!(statement.bind((":name", "Bob")));
     ok!(statement.bind((":age", 69.42)));
     ok!(statement.bind((":photo", &[0x69u8, 0x42u8][..])));
     ok!(statement.bind((":email", ())));
+    assert_eq!(ok!(statement.next()), State::Done);
 
+    ok!(statement.reset());
     assert!(statement.bind((":missing", 404)).is_err());
+
+    ok!(statement.reset());
+    ok!(statement.bind(
+        &[
+            (":id", Value::Integer(2)),
+            (":name", Value::String("Bob".into())),
+            (":age", Value::Float(69.42)),
+            (":photo", Value::Binary([0x69u8, 0x42u8].to_vec())),
+            (":email", Value::Null),
+        ][..]
+    ));
+    assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]

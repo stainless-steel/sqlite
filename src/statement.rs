@@ -62,8 +62,24 @@ impl<'l> Statement<'l> {
     /// ```
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (name STRING)");
+    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = ?")?;
+    /// statement.bind(&[(1, "Bob")][..])?;
+    /// # Ok::<(), sqlite::Error>(())
+    /// ```
+    ///
+    /// ```
+    /// # let connection = sqlite::open(":memory:").unwrap();
+    /// # connection.execute("CREATE TABLE users (name STRING)");
     /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
     /// statement.bind((":name", "Bob"))?;
+    /// # Ok::<(), sqlite::Error>(())
+    /// ```
+    ///
+    /// ```
+    /// # let connection = sqlite::open(":memory:").unwrap();
+    /// # connection.execute("CREATE TABLE users (name STRING)");
+    /// let mut statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
+    /// statement.bind(&[(":name", "Bob")][..])?;
     /// # Ok::<(), sqlite::Error>(())
     /// ```
     #[inline]
@@ -196,6 +212,30 @@ where
     }
 }
 
+impl<T> Bindable for &[T]
+where
+    T: BindableAt + Clone,
+{
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        for (i, value) in self.iter().enumerate() {
+            value.clone().bind(statement, i + 1)?;
+        }
+        Ok(())
+    }
+}
+
+impl<T> Bindable for &[(usize, T)]
+where
+    T: BindableAt + Clone,
+{
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        for (i, value) in self.iter() {
+            value.clone().bind(statement, *i)?;
+        }
+        Ok(())
+    }
+}
+
 impl<T> Bindable for (&str, T)
 where
     T: BindableAt,
@@ -203,32 +243,25 @@ where
     #[inline]
     fn bind(self, statement: &mut Statement) -> Result<()> {
         if let Some(i) = statement.parameter_index(self.0)? {
-            self.1.bind(statement, i)
+            self.1.bind(statement, i)?;
         } else {
             raise!("no such parameter: {}", self.0)
-        }
-    }
-}
-
-impl<'l, T> Bindable for &'l [T]
-where
-    &'l T: BindableAt,
-{
-    fn bind(self, statement: &mut Statement) -> Result<()> {
-        for (i, value) in self.iter().enumerate() {
-            value.bind(statement, i + 1)?;
         }
         Ok(())
     }
 }
 
-impl<T> Bindable for Vec<T>
+impl<T> Bindable for &[(&str, T)]
 where
-    T: BindableAt,
+    T: BindableAt + Clone,
 {
-    fn bind(mut self, statement: &mut Statement) -> Result<()> {
-        for (i, value) in self.drain(..).enumerate() {
-            value.bind(statement, i + 1)?;
+    fn bind(self, statement: &mut Statement) -> Result<()> {
+        for (name, value) in self.iter() {
+            if let Some(i) = statement.parameter_index(name)? {
+                value.clone().bind(statement, i)?;
+            } else {
+                raise!("no such parameter: {}", name);
+            }
         }
         Ok(())
     }
@@ -348,14 +381,14 @@ where
     }
 }
 
-impl<'l, T> BindableAt for &'l Option<T>
+impl<T> BindableAt for &Option<T>
 where
-    &'l T: BindableAt,
+    T: BindableAt + Clone,
 {
     #[inline]
     fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
         match self {
-            Some(value) => value.bind(statement, i),
+            Some(value) => value.clone().bind(statement, i),
             None => ().bind(statement, i),
         }
     }
