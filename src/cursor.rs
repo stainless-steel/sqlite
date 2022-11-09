@@ -1,6 +1,6 @@
-use ffi;
 use statement::{Bindable, State, Statement};
 use std::collections::HashMap;
+use std::ops::Deref;
 
 use {Result, Value};
 
@@ -54,18 +54,6 @@ impl<'l> Cursor<'l> {
         Ok(self)
     }
 
-    /// Return the number of columns.
-    #[inline]
-    pub fn column_count(&self) -> usize {
-        self.statement.column_count()
-    }
-
-    /// Return column names.
-    #[inline]
-    pub fn column_names(&self) -> Vec<&str> {
-        self.statement.column_names()
-    }
-
     /// Advance to the next row and read all columns.
     pub fn try_next(&mut self) -> Result<Option<&[Value]>> {
         match self.state {
@@ -95,11 +83,14 @@ impl<'l> Cursor<'l> {
         self.state = Some(self.statement.next()?);
         Ok(Some(self.values.as_ref().unwrap()))
     }
+}
 
-    /// Return the raw pointer.
+impl<'l> Deref for Cursor<'l> {
+    type Target = Statement<'l>;
+
     #[inline]
-    pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
-        self.statement.as_raw()
+    fn deref(&self) -> &Self::Target {
+        &self.statement
     }
 }
 
