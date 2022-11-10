@@ -53,135 +53,92 @@ impl Value {
     }
 }
 
-impl From<Vec<u8>> for Value {
-    #[inline]
-    fn from(value: Vec<u8>) -> Self {
-        Value::Binary(value)
-    }
-}
-
-impl From<&[u8]> for Value {
-    #[inline]
-    fn from(value: &[u8]) -> Self {
-        Value::Binary(value.into())
-    }
-}
-
-impl From<f64> for Value {
-    #[inline]
-    fn from(value: f64) -> Self {
-        Value::Float(value)
-    }
-}
-
-impl From<i64> for Value {
-    #[inline]
-    fn from(value: i64) -> Self {
-        Value::Integer(value)
-    }
-}
-
-impl From<String> for Value {
-    #[inline]
-    fn from(value: String) -> Self {
-        Value::String(value)
-    }
-}
-
-impl From<&str> for Value {
-    #[inline]
-    fn from(value: &str) -> Self {
-        Value::String(value.into())
-    }
-}
-
-impl From<()> for Value {
-    #[inline]
-    fn from(_: ()) -> Self {
-        Value::Null
-    }
-}
-
-impl TryFrom<Value> for Vec<u8> {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(value: Value) -> Result<Self> {
-        if let Value::Binary(value) = value {
-            return Ok(value);
+macro_rules! implement(
+    ($type:ty, Null) => {
+        impl From<$type> for Value {
+            #[inline]
+            fn from(_: $type) -> Self {
+                Value::Null
+            }
         }
-        raise!("failed to convert");
-    }
-}
-
-impl<'l> TryFrom<&'l Value> for &'l [u8] {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(value: &'l Value) -> Result<Self> {
-        if let &Value::Binary(ref value) = value {
-            return Ok(value);
+    };
+    ($type:ty, $value:ident) => {
+        impl From<$type> for Value {
+            #[inline]
+            fn from(value: $type) -> Self {
+                Value::$value(value.into())
+            }
         }
-        raise!("failed to convert");
-    }
-}
+    };
+);
 
-impl TryFrom<&Value> for f64 {
-    type Error = Error;
+implement!(Vec<u8>, Binary);
+implement!(&[u8], Binary);
+implement!(f64, Float);
+implement!(i64, Integer);
+implement!(String, String);
+implement!(&str, String);
+implement!((), Null);
 
-    #[inline]
-    fn try_from(value: &Value) -> Result<Self> {
-        if let &Value::Float(value) = value {
-            return Ok(value);
+macro_rules! implement(
+    (@value $type:ty, $value:ident) => {
+        impl TryFrom<Value> for $type {
+            type Error = Error;
+
+            #[inline]
+            fn try_from(value: Value) -> Result<Self> {
+                if let Value::$value(value) = value {
+                    return Ok(value);
+                }
+                raise!("failed to convert");
+            }
         }
-        raise!("failed to convert");
-    }
-}
+    };
+    (@reference $type:ty, Null) => {
+        impl TryFrom<&Value> for $type {
+            type Error = Error;
 
-impl TryFrom<&Value> for i64 {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(value: &Value) -> Result<Self> {
-        if let &Value::Integer(value) = value {
-            return Ok(value);
+            #[inline]
+            fn try_from(value: &Value) -> Result<Self> {
+                if let &Value::Null = value {
+                    return Ok(());
+                }
+                raise!("failed to convert");
+            }
         }
-        raise!("failed to convert");
-    }
-}
+    };
+    (@reference $type:ty, $value:ident) => {
+        impl TryFrom<&Value> for $type {
+            type Error = Error;
 
-impl TryFrom<Value> for String {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(value: Value) -> Result<Self> {
-        if let Value::String(value) = value {
-            return Ok(value);
+            #[inline]
+            fn try_from(value: &Value) -> Result<Self> {
+                if let &Value::$value(value) = value {
+                    return Ok(value);
+                }
+                raise!("failed to convert");
+            }
         }
-        raise!("failed to convert");
-    }
-}
+    };
+    (@reference-lifetime $type:ty, $value:ident) => {
+        impl<'l> TryFrom<&'l Value> for $type {
+            type Error = Error;
 
-impl<'l> TryFrom<&'l Value> for &'l str {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(value: &'l Value) -> Result<Self> {
-        if let &Value::String(ref value) = value {
-            return Ok(value);
+            #[inline]
+            fn try_from(value: &'l Value) -> Result<Self> {
+                if let &Value::$value(ref value) = value {
+                    return Ok(value);
+                }
+                raise!("failed to convert");
+            }
         }
-        raise!("failed to convert");
-    }
-}
+    };
+);
 
-impl TryFrom<&Value> for () {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(value: &Value) -> Result<Self> {
-        if let &Value::Null = value {
-            return Ok(());
-        }
-        raise!("failed to convert");
-    }
-}
+implement!(@value Vec<u8>, Binary);
+implement!(@reference-lifetime &'l [u8], Binary);
+implement!(@value String, String);
+implement!(@reference-lifetime &'l str, String);
+implement!(@reference f64, Float);
+implement!(@reference i64, Integer);
+implement!(@reference (), Null);
