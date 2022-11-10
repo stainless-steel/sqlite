@@ -8,23 +8,21 @@ Open a connection, create a table, and insert a few rows:
 
 ```rust
 let connection = sqlite::open(":memory:").unwrap();
-
-connection
-    .execute(
-        "
-        CREATE TABLE users (name TEXT, age INTEGER);
-        INSERT INTO users VALUES ('Alice', 42);
-        INSERT INTO users VALUES ('Bob', 69);
-        ",
-    )
-    .unwrap();
+let query = "
+    CREATE TABLE users (name TEXT, age INTEGER);
+    INSERT INTO users VALUES ('Alice', 42);
+    INSERT INTO users VALUES ('Bob', 69);
+";
+connection.execute(query).unwrap();
 ```
 
-Select some rows and process them one by one as plain text:
+Select some rows and process them one by one as plain text, which is generally
+not efficient:
 
 ```rust
+let query = "SELECT * FROM users WHERE age > 50";
 connection
-    .iterate("SELECT * FROM users WHERE age > 50", |pairs| {
+    .iterate(query, |pairs| {
         for &(column, value) in pairs.iter() {
             println!("{} = {}", column, value.unwrap());
         }
@@ -39,7 +37,8 @@ than the previous technique:
 ```rust
 use sqlite::State;
 
-let mut statement = connection.prepare("SELECT * FROM users WHERE age > ?").unwrap();
+let query = "SELECT * FROM users WHERE age > ?";
+let mut statement = connection.prepare(query).unwrap();
 statement.bind((1, 50)).unwrap();
 
 while let Ok(State::Row) = statement.next() {
@@ -48,12 +47,12 @@ while let Ok(State::Row) = statement.next() {
 }
 ```
 
-Run the same query but using a cursor, which is a wrapper around a prepared
-statement providing the notion of row:
+Run the same query but using a cursor, which provides an alternative interface:
 
 ```rust
+let query = "SELECT * FROM users WHERE age > ?";
 let cursor = connection
-    .prepare("SELECT * FROM users WHERE age > ?")
+    .prepare(query)
     .unwrap()
     .into_cursor()
     .bind((1, 50))
