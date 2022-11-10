@@ -4,7 +4,8 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
-use {Result, Statement};
+use error::Result;
+use statement::Statement;
 
 /// A database connection.
 pub struct Connection {
@@ -40,7 +41,7 @@ impl Connection {
             );
             match code {
                 ffi::SQLITE_OK => {}
-                code => match ::last_error(raw) {
+                code => match ::error::last(raw) {
                     Some(error) => {
                         ffi::sqlite3_close(raw);
                         return Err(error);

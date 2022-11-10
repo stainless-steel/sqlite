@@ -2,7 +2,9 @@ use ffi;
 use libc::{c_double, c_int};
 use std::marker::PhantomData;
 
-use {Cursor, Result, Type, Value};
+use cursor::Cursor;
+use error::Result;
+use value::{Type, Value};
 
 // https://sqlite.org/c3ref/c_static.html
 macro_rules! transient(

@@ -1,9 +1,10 @@
-use statement::{Bindable, State, Statement};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use {Error, Result, Value};
+use error::{Error, Result};
+use statement::{Bindable, State, Statement};
+use value::Value;
 
 /// An iterator over rows.
 pub struct Cursor<'l> {
