@@ -1,8 +1,9 @@
 use statement::{Bindable, State, Statement};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::ops::Deref;
 
-use {Result, Value};
+use {Error, Result, Value};
 
 /// An iterator over rows.
 pub struct Cursor<'l> {
@@ -22,11 +23,6 @@ pub struct Row {
 /// A type suitable for indexing columns.
 pub trait ColumnIndex: std::fmt::Debug {
     fn get<'l>(&self, row: &'l Row) -> &'l Value;
-}
-
-/// A type that values can be converted into.
-pub trait ValueInto: Sized {
-    fn into(value: &Value) -> Option<Self>;
 }
 
 impl<'l> Cursor<'l> {
@@ -128,22 +124,23 @@ impl Row {
     /// # Panics
     ///
     /// Panics if the column could not be read.
-    #[track_caller]
     #[inline]
-    pub fn get<T: ValueInto, U: ColumnIndex>(&self, column: U) -> T {
+    pub fn get<'l, T, U>(&'l self, column: U) -> T
+    where
+        T: TryFrom<&'l Value, Error = Error>,
+        U: ColumnIndex,
+    {
         self.try_get(column).unwrap()
     }
 
     /// Try to get the value of a column in the row.
-    ///
-    /// It returns an error if the column could not be read.
-    #[track_caller]
     #[inline]
-    pub fn try_get<T: ValueInto, U: ColumnIndex>(&self, column: U) -> Result<T> {
-        match T::into(column.get(self)) {
-            Some(value) => Ok(value),
-            None => raise!("column {:?} could not be read", column),
-        }
+    pub fn try_get<'l, T, U>(&'l self, column: U) -> Result<T>
+    where
+        T: TryFrom<&'l Value, Error = Error>,
+        U: ColumnIndex,
+    {
+        T::try_from(column.get(self))
     }
 }
 
@@ -160,51 +157,6 @@ impl ColumnIndex for usize {
     fn get<'l>(&self, row: &'l Row) -> &'l Value {
         debug_assert!(*self < row.values.len(), "the index is out of range");
         &row.values[*self]
-    }
-}
-
-impl ValueInto for Value {
-    #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        Some(value.clone())
-    }
-}
-
-impl ValueInto for i64 {
-    #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        value.as_integer()
-    }
-}
-
-impl ValueInto for f64 {
-    #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        value.as_float()
-    }
-}
-
-impl ValueInto for String {
-    #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        value.as_string().map(|slice| slice.to_string())
-    }
-}
-
-impl ValueInto for Vec<u8> {
-    #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        value.as_binary().map(|bytes| bytes.to_vec())
-    }
-}
-
-impl<T: ValueInto> ValueInto for Option<T> {
-    #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        match value {
-            Value::Null => Some(None),
-            _ => T::into(value).map(Some),
-        }
     }
 }
 

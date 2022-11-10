@@ -89,7 +89,7 @@
 //!     .unwrap();
 //!
 //! for row in cursor.map(|row| row.unwrap()) {
-//!     println!("name = {}", row.get::<String, _>("name"));
+//!     println!("name = {}", row.get::<&str, _>("name"));
 //!     println!("age = {}", row.get::<i64, _>("age"));
 //! }
 //! ```
@@ -99,6 +99,7 @@
 extern crate libc;
 extern crate sqlite3_sys as ffi;
 
+use std::convert::TryFrom;
 use std::{error, fmt};
 
 macro_rules! raise(
@@ -237,42 +238,6 @@ impl error::Error for Error {
 }
 
 impl Value {
-    /// Return the binary data if the value is `Binary`.
-    #[inline]
-    pub fn as_binary(&self) -> Option<&[u8]> {
-        if let &Value::Binary(ref value) = self {
-            return Some(value);
-        }
-        None
-    }
-
-    /// Return the floating-point number if the value is `Float`.
-    #[inline]
-    pub fn as_float(&self) -> Option<f64> {
-        if let &Value::Float(value) = self {
-            return Some(value);
-        }
-        None
-    }
-
-    /// Return the integer number if the value is `Integer`.
-    #[inline]
-    pub fn as_integer(&self) -> Option<i64> {
-        if let &Value::Integer(value) = self {
-            return Some(value);
-        }
-        None
-    }
-
-    /// Return the string if the value is `String`.
-    #[inline]
-    pub fn as_string(&self) -> Option<&str> {
-        if let &Value::String(ref value) = self {
-            return Some(value);
-        }
-        None
-    }
-
     /// Return the type.
     pub fn kind(&self) -> Type {
         match self {
@@ -283,12 +248,27 @@ impl Value {
             &Value::Null => Type::Null,
         }
     }
+
+    #[inline]
+    pub fn try_into<'l, T>(&'l self) -> Result<T>
+    where
+        T: TryFrom<&'l Value, Error = Error>,
+    {
+        T::try_from(self)
+    }
 }
 
 impl From<Vec<u8>> for Value {
     #[inline]
     fn from(value: Vec<u8>) -> Self {
         Value::Binary(value)
+    }
+}
+
+impl From<&[u8]> for Value {
+    #[inline]
+    fn from(value: &[u8]) -> Self {
+        Value::Binary(value.into())
     }
 }
 
@@ -306,17 +286,17 @@ impl From<i64> for Value {
     }
 }
 
-impl From<&str> for Value {
-    #[inline]
-    fn from(value: &str) -> Self {
-        Value::String(value.into())
-    }
-}
-
 impl From<String> for Value {
     #[inline]
     fn from(value: String) -> Self {
         Value::String(value)
+    }
+}
+
+impl From<&str> for Value {
+    #[inline]
+    fn from(value: &str) -> Self {
+        Value::String(value.into())
     }
 }
 
@@ -327,12 +307,96 @@ impl From<()> for Value {
     }
 }
 
+impl TryFrom<Value> for Vec<u8> {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(value: Value) -> Result<Self> {
+        if let Value::Binary(value) = value {
+            return Ok(value);
+        }
+        raise!("failed to convert");
+    }
+}
+
+impl<'l> TryFrom<&'l Value> for &'l [u8] {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(value: &'l Value) -> Result<Self> {
+        if let &Value::Binary(ref value) = value {
+            return Ok(value);
+        }
+        raise!("failed to convert");
+    }
+}
+
+impl TryFrom<&Value> for f64 {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(value: &Value) -> Result<Self> {
+        if let &Value::Float(value) = value {
+            return Ok(value);
+        }
+        raise!("failed to convert");
+    }
+}
+
+impl TryFrom<&Value> for i64 {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(value: &Value) -> Result<Self> {
+        if let &Value::Integer(value) = value {
+            return Ok(value);
+        }
+        raise!("failed to convert");
+    }
+}
+
+impl TryFrom<Value> for String {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(value: Value) -> Result<Self> {
+        if let Value::String(value) = value {
+            return Ok(value);
+        }
+        raise!("failed to convert");
+    }
+}
+
+impl<'l> TryFrom<&'l Value> for &'l str {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(value: &'l Value) -> Result<Self> {
+        if let &Value::String(ref value) = value {
+            return Ok(value);
+        }
+        raise!("failed to convert");
+    }
+}
+
+impl TryFrom<&Value> for () {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(value: &Value) -> Result<Self> {
+        if let &Value::Null = value {
+            return Ok(());
+        }
+        raise!("failed to convert");
+    }
+}
+
 mod connection;
 mod cursor;
 mod statement;
 
 pub use connection::{Connection, ConnectionWithFullMutex, OpenFlags};
-pub use cursor::{ColumnIndex, Cursor, Row, ValueInto};
+pub use cursor::{ColumnIndex, Cursor, Row};
 pub use statement::{Bindable, BindableAt, ReadableAt, State, Statement};
 
 /// Open a read-write connection to a new or existing database.
