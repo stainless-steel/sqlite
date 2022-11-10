@@ -75,18 +75,30 @@ fn next_deref() {
 }
 
 #[test]
-fn next_get() {
+fn next_get_with_name() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
     let statement = ok!(connection.prepare(query));
 
     let row = ok!(ok!(statement.into_cursor().next()));
     assert_eq!(row.get::<i64, _>("id"), 1);
-    // assert_eq!(row.get::<Value, _>("id"), 1.into());
     assert_eq!(row.get::<&str, _>("name"), "Alice");
-    // assert_eq!(row.get::<Value, _>("name"), String::from("Alice").into());
-    assert_eq!(row.get::<Option<&str>, _>("email"), None);
-    // assert_eq!(row.get::<Value, _>("email"), Value::Null);
+    assert_eq!(row.get::<f64, _>("age"), 42.69);
+    assert_eq!(row.get::<&[u8], _>("photo"), &[0x42u8, 0x69u8][..]);
+}
+
+#[test]
+fn next_get_with_name_and_option() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let statement = ok!(connection.prepare(query));
+
+    let row = ok!(ok!(statement.into_cursor().next()));
+    assert!(row.get::<Option<i64>, _>("id").is_some());
+    assert!(row.get::<Option<&str>, _>("name").is_some());
+    assert!(row.get::<Option<f64>, _>("age").is_some());
+    assert!(row.get::<Option<&[u8]>, _>("photo").is_some());
+    assert!(row.get::<Option<&str>, _>("email").is_none());
 }
 
 #[test]
