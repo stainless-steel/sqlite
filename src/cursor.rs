@@ -145,6 +145,15 @@ impl Row {
     }
 }
 
+impl Deref for Row {
+    type Target = [Value];
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.values
+    }
+}
+
 impl ColumnIndex for &str {
     #[inline]
     fn get<'l>(&self, row: &'l Row) -> &'l Value {

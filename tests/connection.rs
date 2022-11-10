@@ -29,7 +29,7 @@ fn change_count() {
 }
 
 #[test]
-fn error() {
+fn execute() {
     let connection = setup_users(":memory:");
     match connection.execute(":)") {
         Err(error) => assert_eq!(

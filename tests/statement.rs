@@ -9,7 +9,7 @@ use common::{setup_english, setup_users};
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[test]
-fn bind_by_index() {
+fn bind_with_index() {
     let connection = setup_users(":memory:");
     let query = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(query));
@@ -68,7 +68,7 @@ fn bind_by_index() {
 }
 
 #[test]
-fn bind_by_name() {
+fn bind_with_name() {
     let connection = setup_users(":memory:");
     let query = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
     let mut statement = ok!(connection.prepare(query));
@@ -98,27 +98,12 @@ fn bind_by_name() {
 }
 
 #[test]
-fn bind_with_wildcard() {
-    let connection = setup_english(":memory:");
-    let query = "SELECT value FROM english WHERE value LIKE ?";
-    let mut statement = ok!(connection.prepare(query));
-    ok!(statement.bind((1, "%type")));
-
-    let mut count = 0;
-    while let State::Row = ok!(statement.next()) {
-        count += 1;
-    }
-    assert_eq!(count, 6);
-}
-
-#[test]
 fn column_count() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(query));
 
     assert_eq!(ok!(statement.next()), State::Row);
-
     assert_eq!(statement.column_count(), 5);
 }
 
@@ -153,6 +138,28 @@ fn column_type() {
 }
 
 #[test]
+fn count() {
+    let connection = setup_english(":memory:");
+
+    let query = "SELECT value FROM english WHERE value LIKE ?";
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind((1, "%type")));
+    let mut count = 0;
+    while let State::Row = ok!(statement.next()) {
+        count += 1;
+    }
+    assert_eq!(count, 6);
+
+    let query = "SELECT value FROM english WHERE value LIKE '%type'";
+    let mut statement = ok!(connection.prepare(query));
+    let mut count = 0;
+    while let State::Row = ok!(statement.next()) {
+        count += 1;
+    }
+    assert_eq!(count, 6);
+}
+
+#[test]
 fn parameter_index() {
     let connection = setup_users(":memory:");
     let query = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
@@ -182,7 +189,7 @@ fn read() {
 }
 
 #[test]
-fn read_with_nullable() {
+fn read_with_option() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(query));
@@ -203,7 +210,7 @@ fn read_with_nullable() {
 }
 
 #[test]
-fn reuse() {
+fn workflow() {
     struct Database<'l> {
         #[allow(dead_code)]
         connection: &'l Connection,
@@ -231,17 +238,4 @@ fn reuse() {
     for _ in 0..5 {
         assert!(database.run_once().is_ok());
     }
-}
-
-#[test]
-fn wildcard() {
-    let connection = setup_english(":memory:");
-    let query = "SELECT value FROM english WHERE value LIKE '%type'";
-    let mut statement = ok!(connection.prepare(query));
-
-    let mut count = 0;
-    while let State::Row = ok!(statement.next()) {
-        count += 1;
-    }
-    assert_eq!(count, 6);
 }

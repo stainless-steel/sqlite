@@ -44,6 +44,7 @@ impl Value {
         }
     }
 
+    /// Try to return the value.
     #[inline]
     pub fn try_into<'l, T>(&'l self) -> Result<T>
     where
@@ -119,6 +120,18 @@ macro_rules! implement(
                 raise!("failed to convert");
             }
         }
+
+        impl TryFrom<&Value> for Option<$type> {
+            type Error = Error;
+
+            #[inline]
+            fn try_from(value: &Value) -> Result<Self> {
+                if let &Value::Null = value {
+                    return Ok(None);
+                }
+                <$type>::try_from(value).and_then(|value| Ok(Some(value)))
+            }
+        }
     };
     (@reference-lifetime $type:ty, $value:ident) => {
         impl<'l> TryFrom<&'l Value> for $type {
@@ -130,6 +143,18 @@ macro_rules! implement(
                     return Ok(value);
                 }
                 raise!("failed to convert");
+            }
+        }
+
+        impl<'l> TryFrom<&'l Value> for Option<$type> {
+            type Error = Error;
+
+            #[inline]
+            fn try_from(value: &'l Value) -> Result<Self> {
+                if let Value::Null = value {
+                    return Ok(None);
+                }
+                <$type>::try_from(value).and_then(|value| Ok(Some(value)))
             }
         }
     };
