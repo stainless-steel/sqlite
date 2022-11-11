@@ -188,6 +188,12 @@ impl<'l> Statement<'l> {
         )
     }
 
+    /// Convert into a cursor.
+    #[inline]
+    pub fn into_cursor(self) -> Cursor<'l> {
+        self.into()
+    }
+
     /// Advance to the next state.
     ///
     /// The function should be called multiple times until `State::Done` is
@@ -240,12 +246,6 @@ impl<'l> Statement<'l> {
         Ok(())
     }
 
-    /// Upgrade to a cursor.
-    #[inline]
-    pub fn into_cursor(self) -> Cursor<'l> {
-        ::cursor::new(self)
-    }
-
     /// Return the raw pointer.
     #[inline]
     pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
@@ -257,6 +257,13 @@ impl<'l> Drop for Statement<'l> {
     #[inline]
     fn drop(&mut self) {
         unsafe { ffi::sqlite3_finalize(self.raw.0) };
+    }
+}
+
+impl<'l> From<Statement<'l>> for Cursor<'l> {
+    #[inline]
+    fn from(statement: Statement<'l>) -> Self {
+        ::cursor::new(statement)
     }
 }
 

@@ -52,6 +52,12 @@ impl<'l> Cursor<'l> {
         Ok(self)
     }
 
+    /// Convert into a prepared statement.
+    #[inline]
+    pub fn into_statement(self) -> Statement<'l> {
+        self.into()
+    }
+
     /// Advance to the next row and read all columns.
     pub fn try_next(&mut self) -> Result<Option<&[Value]>> {
         match self.state {
@@ -76,6 +82,13 @@ impl<'l> Deref for Cursor<'l> {
     #[inline]
     fn deref(&self) -> &Self::Target {
         &self.statement
+    }
+}
+
+impl<'l> From<Cursor<'l>> for Statement<'l> {
+    #[inline]
+    fn from(cursor: Cursor<'l>) -> Self {
+        cursor.statement
     }
 }
 
