@@ -23,7 +23,7 @@ pub struct Row {
 }
 
 /// A type suitable for indexing columns in a row.
-pub trait RowColumnIndex: std::fmt::Debug {
+pub trait RowIndex: std::fmt::Debug {
     /// Identify the ordinal position.
     fn index(self, row: &Row) -> usize;
 }
@@ -106,7 +106,7 @@ impl Row {
     pub fn get<'l, T, U>(&'l self, column: U) -> T
     where
         T: TryFrom<&'l Value, Error = Error>,
-        U: RowColumnIndex,
+        U: RowIndex,
     {
         self.try_get(column).unwrap()
     }
@@ -116,7 +116,7 @@ impl Row {
     pub fn try_get<'l, T, U>(&'l self, column: U) -> Result<T>
     where
         T: TryFrom<&'l Value, Error = Error>,
-        U: RowColumnIndex,
+        U: RowIndex,
     {
         T::try_from(&self.values[column.index(self)])
     }
@@ -138,7 +138,7 @@ impl From<Row> for Vec<Value> {
     }
 }
 
-impl RowColumnIndex for &str {
+impl RowIndex for &str {
     #[inline]
     fn index(self, row: &Row) -> usize {
         debug_assert!(row.columns.contains_key(self), "the index is out of range");
@@ -146,7 +146,7 @@ impl RowColumnIndex for &str {
     }
 }
 
-impl RowColumnIndex for usize {
+impl RowIndex for usize {
     #[inline]
     fn index(self, row: &Row) -> usize {
         debug_assert!(self < row.values.len(), "the index is out of range");

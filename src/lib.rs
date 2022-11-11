@@ -134,7 +134,7 @@ pub use error::{Error, Result};
 pub use value::{Type, Value};
 
 pub use connection::{Connection, ConnectionWithFullMutex, OpenFlags};
-pub use cursor::{Cursor, Row, RowColumnIndex};
+pub use cursor::{Cursor, Row, RowIndex};
 pub use statement::{
     Bindable, BindableWithIndex, ColumnIndex, ParameterIndex, ReadableWithIndex, State, Statement,
 };
