@@ -24,6 +24,8 @@ pub struct Row {
 /// A type suitable for indexing columns in a row.
 pub trait RowIndex: std::fmt::Debug {
     /// Identify the ordinal position.
+    ///
+    /// The first column has index 0.
     fn index(self, row: &Row) -> usize;
 }
 

@@ -30,20 +30,22 @@ pub trait Bindable {
 /// A type suitable for binding to a prepared statement given a parameter index.
 pub trait BindableWithIndex {
     /// Bind to a parameter.
-    ///
-    /// The first parameter has index 1.
     fn bind<T: ParameterIndex>(self, _: &mut Statement, _: T) -> Result<()>;
 }
 
 /// A type suitable for indexing columns in a prepared statement.
 pub trait ColumnIndex: Copy + std::fmt::Debug {
     /// Identify the ordinal position.
+    ///
+    /// The first column has index 0.
     fn index(self, statement: &Statement) -> Result<usize>;
 }
 
 /// A type suitable for indexing parameters in a prepared statement.
 pub trait ParameterIndex: Copy + std::fmt::Debug {
     /// Identify the ordinal position.
+    ///
+    /// The first parameter has index 1.
     fn index(self, statement: &Statement) -> Result<usize>;
 }
 
