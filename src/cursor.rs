@@ -11,7 +11,7 @@ use value::Value;
 pub struct Cursor<'l> {
     statement: Statement<'l>,
     columns: Rc<HashMap<String, usize>>,
-    values: Option<Vec<Value>>,
+    values: Vec<Value>,
     state: Option<State>,
 }
 
@@ -62,24 +62,11 @@ impl<'l> Cursor<'l> {
                 return self.try_next();
             }
         }
-        self.values = match self.values.take() {
-            Some(mut values) => {
-                for (i, value) in values.iter_mut().enumerate() {
-                    *value = self.statement.read(i)?;
-                }
-                Some(values)
-            }
-            _ => {
-                let count = self.statement.column_count();
-                let mut values = Vec::with_capacity(count);
-                for i in 0..count {
-                    values.push(self.statement.read(i)?);
-                }
-                Some(values)
-            }
-        };
+        for (i, value) in self.values.iter_mut().enumerate() {
+            *value = self.statement.read(i)?;
+        }
         self.state = Some(self.statement.next()?);
-        Ok(Some(self.values.as_ref().unwrap()))
+        Ok(Some(&self.values))
     }
 }
 
@@ -166,10 +153,11 @@ pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
         .enumerate()
         .map(|(i, name)| (name.to_string(), i))
         .collect();
+    let values = vec![Value::Null; statement.column_count()];
     Cursor {
         statement: statement,
         columns: Rc::new(columns),
-        values: None,
+        values: values,
         state: None,
     }
 }
