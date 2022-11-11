@@ -51,8 +51,8 @@ fn read_try_next(bencher: &mut Bencher) {
             .unwrap();
         let mut count = 0;
         while let Ok(Some(row)) = cursor_.try_next() {
-            assert!(ok!(row[0].as_integer()) > 42);
-            assert!(ok!(row[1].as_float()) > 42.0);
+            assert!(ok!(row[0].try_into::<i64>()) > 42);
+            assert!(ok!(row[1].try_into::<f64>()) > 42.0);
             count += 1;
         }
         assert_eq!(count, 100 - 42);
