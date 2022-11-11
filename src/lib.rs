@@ -54,8 +54,8 @@
 //! statement.bind((1, 50)).unwrap();
 //!
 //! while let Ok(State::Row) = statement.next() {
-//!     println!("name = {}", statement.read::<String, _>(0).unwrap());
-//!     println!("age = {}", statement.read::<i64, _>(1).unwrap());
+//!     println!("name = {}", statement.read::<String, _>("name").unwrap());
+//!     println!("age = {}", statement.read::<i64, _>("age").unwrap());
 //! }
 //! ```
 //!

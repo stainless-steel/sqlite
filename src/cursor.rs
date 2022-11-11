@@ -10,7 +10,6 @@ use value::Value;
 /// An iterator over rows.
 pub struct Cursor<'l> {
     statement: Statement<'l>,
-    columns: Rc<HashMap<String, usize>>,
     values: Vec<Value>,
     state: Option<State>,
 }
@@ -18,7 +17,7 @@ pub struct Cursor<'l> {
 /// A row.
 #[derive(Debug)]
 pub struct Row {
-    columns: Rc<HashMap<String, usize>>,
+    column_mapping: Rc<HashMap<String, usize>>,
     values: Vec<Value>,
 }
 
@@ -84,11 +83,11 @@ impl<'l> Iterator for Cursor<'l> {
     type Item = Result<Row>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let columns = self.columns.clone();
+        let column_mapping = self.statement.column_mapping();
         self.try_next()
             .map(|row| {
                 row.map(|row| Row {
-                    columns: columns,
+                    column_mapping: column_mapping,
                     values: row.to_vec(),
                 })
             })
@@ -143,8 +142,11 @@ where
 impl RowIndex for &str {
     #[inline]
     fn index(self, row: &Row) -> usize {
-        debug_assert!(row.columns.contains_key(self), "the index is out of range");
-        row.columns[self]
+        debug_assert!(
+            row.column_mapping.contains_key(self),
+            "the index is out of range"
+        );
+        row.column_mapping[self]
     }
 }
 
@@ -157,16 +159,9 @@ impl RowIndex for usize {
 }
 
 pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
-    let columns = statement
-        .column_names()
-        .iter()
-        .enumerate()
-        .map(|(index, name)| (name.to_string(), index))
-        .collect();
     let values = vec![Value::Null; statement.column_count()];
     Cursor {
         statement: statement,
-        columns: Rc::new(columns),
         values: values,
         state: None,
     }

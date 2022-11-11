@@ -115,7 +115,7 @@ fn column_name() {
 
     let names = statement.column_names();
     assert_eq!(names, vec!["id", "name", "age", "user_photo"]);
-    assert_eq!("user_photo", statement.column_name(3));
+    assert_eq!("user_photo", ok!(statement.column_name(3)));
 }
 
 #[test]
@@ -174,7 +174,7 @@ fn parameter_index() {
 }
 
 #[test]
-fn read() {
+fn read_with_index() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(query));
@@ -189,7 +189,7 @@ fn read() {
 }
 
 #[test]
-fn read_with_option() {
+fn read_with_index_and_option() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(query));
@@ -206,6 +206,42 @@ fn read_with_option() {
         Some(vec![0x42, 0x69])
     );
     assert_eq!(ok!(statement.read::<Option<String>, _>(4)), None);
+    assert_eq!(ok!(statement.next()), State::Done);
+}
+
+#[test]
+fn read_with_name_and_option() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+
+    assert_eq!(ok!(statement.next()), State::Row);
+    assert_eq!(ok!(statement.read::<Option<i64>, _>("id")), Some(1));
+    assert_eq!(
+        ok!(statement.read::<Option<String>, _>("name")),
+        Some(String::from("Alice"))
+    );
+    assert_eq!(ok!(statement.read::<Option<f64>, _>("age")), Some(42.69));
+    assert_eq!(
+        ok!(statement.read::<Option<Vec<u8>>, _>("photo")),
+        Some(vec![0x42, 0x69])
+    );
+    assert_eq!(ok!(statement.read::<Option<String>, _>("email")), None);
+    assert_eq!(ok!(statement.next()), State::Done);
+}
+
+#[test]
+fn read_with_name() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+
+    assert_eq!(ok!(statement.next()), State::Row);
+    assert_eq!(ok!(statement.read::<i64, _>("id")), 1);
+    assert_eq!(ok!(statement.read::<String, _>("name")), String::from("Alice"));
+    assert_eq!(ok!(statement.read::<f64, _>("age")), 42.69);
+    assert_eq!(ok!(statement.read::<Vec<u8>, _>("photo")), vec![0x42, 0x69]);
+    assert_eq!(ok!(statement.read::<Value, _>("email")), Value::Null);
     assert_eq!(ok!(statement.next()), State::Done);
 }
 

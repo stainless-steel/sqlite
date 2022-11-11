@@ -1,6 +1,8 @@
 use ffi;
 use libc::{c_double, c_int};
+use std::collections::HashMap;
 use std::marker::PhantomData;
+use std::rc::Rc;
 
 use cursor::Cursor;
 use error::Result;
@@ -14,6 +16,8 @@ macro_rules! transient(
 /// A prepared statement.
 pub struct Statement<'l> {
     raw: (*mut ffi::sqlite3_stmt, *mut ffi::sqlite3),
+    column_names: Vec<String>,
+    column_mapping: Rc<HashMap<String, usize>>,
     phantom: PhantomData<(ffi::sqlite3_stmt, &'l ffi::sqlite3)>,
 }
 
@@ -147,28 +151,25 @@ impl<'l> Statement<'l> {
     /// Return the number of columns.
     #[inline]
     pub fn column_count(&self) -> usize {
-        unsafe { ffi::sqlite3_column_count(self.raw.0) as usize }
+        self.column_names.len()
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub fn column_mapping(&self) -> Rc<HashMap<String, usize>> {
+        self.column_mapping.clone()
     }
 
     /// Return the name of a column.
-    ///
-    /// The first column has index 0.
     #[inline]
-    pub fn column_name(&self, index: usize) -> &str {
-        debug_assert!(index < self.column_count(), "the index is out of range");
-        unsafe {
-            let pointer = ffi::sqlite3_column_name(self.raw.0, index as c_int);
-            debug_assert!(!pointer.is_null());
-            c_str_to_str!(pointer).unwrap()
-        }
+    pub fn column_name<T: ColumnIndex>(&self, index: T) -> Result<&str> {
+        Ok(&self.column_names[index.index(self)?])
     }
 
     /// Return column names.
     #[inline]
-    pub fn column_names(&self) -> Vec<&str> {
-        (0..self.column_count())
-            .map(|index| self.column_name(index))
-            .collect()
+    pub fn column_names(&self) -> &[String] {
+        &self.column_names
     }
 
     /// Return the type of a column.
@@ -425,6 +426,17 @@ where
     }
 }
 
+impl ColumnIndex for &str {
+    #[inline]
+    fn index(self, statement: &Statement) -> Result<usize> {
+        if statement.column_mapping.contains_key(self) {
+            Ok(statement.column_mapping[self])
+        } else {
+            raise!("the index is out of range ({})", self);
+        }
+    }
+}
+
 impl ColumnIndex for usize {
     #[inline]
     fn index(self, statement: &Statement) -> Result<usize> {
@@ -550,8 +562,23 @@ where
             )
         );
     }
+    let column_count = unsafe { ffi::sqlite3_column_count(raw_statement) as usize };
+    let column_names = (0..column_count)
+        .map(|index| unsafe {
+            let raw = ffi::sqlite3_column_name(raw_statement, index as c_int);
+            debug_assert!(!raw.is_null());
+            c_str_to_str!(raw).unwrap().to_string()
+        })
+        .collect::<Vec<_>>();
+    let column_mapping = column_names
+        .iter()
+        .enumerate()
+        .map(|(index, name)| (name.to_string(), index))
+        .collect();
     Ok(Statement {
         raw: (raw_statement, raw_connection),
+        column_names: column_names,
+        column_mapping: Rc::new(column_mapping),
         phantom: PhantomData,
     })
 }
