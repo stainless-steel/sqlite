@@ -13,7 +13,7 @@ use common::{create, populate};
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[bench]
-fn read(bencher: &mut Bencher) {
+fn read_next(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
     let query = "SELECT * FROM data WHERE a > ? AND b > ?";
@@ -27,8 +27,8 @@ fn read(bencher: &mut Bencher) {
             .unwrap();
         let mut count = 0;
         while let Some(Ok(row)) = cursor_.next() {
-            assert!(row.get::<i64, _>(0) > 42);
-            assert!(row.get::<f64, _>(1) > 42.0);
+            assert!(row.read::<i64, _>(0) > 42);
+            assert!(row.read::<f64, _>(1) > 42.0);
             count += 1;
         }
         assert_eq!(count, 100 - 42);
