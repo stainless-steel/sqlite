@@ -59,7 +59,7 @@ let cursor = connection
     .unwrap();
 
 for row in cursor.map(|row| row.unwrap()) {
-    println!("name = {}", row.read::<String, _>("name"));
+    println!("name = {}", row.read::<&str, _>("name"));
     println!("age = {}", row.read::<i64, _>("age"));
 }
 ```
