@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::ops::Deref;
+use std::ops::{Deref, Index};
 use std::rc::Rc;
 
 use error::{Error, Result};
@@ -122,19 +122,21 @@ impl Row {
     }
 }
 
-impl Deref for Row {
-    type Target = [Value];
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.values
-    }
-}
-
 impl From<Row> for Vec<Value> {
     #[inline]
     fn from(row: Row) -> Self {
         row.values
+    }
+}
+
+impl<T> Index<T> for Row
+where
+    T: RowIndex,
+{
+    type Output = Value;
+
+    fn index(&self, index: T) -> &Value {
+        &self.values[index.index(self)]
     }
 }
 

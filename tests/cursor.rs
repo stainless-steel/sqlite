@@ -62,18 +62,6 @@ fn iter() {
     }
     assert_eq!(count, 2);
 }
-
-#[test]
-fn next_deref() {
-    let connection = setup_users(":memory:");
-    let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
-
-    let row = ok!(ok!(statement.into_cursor().next()));
-    assert_eq!(row[0], Value::Integer(1));
-    assert_eq!(row[2], Value::Float(42.69));
-}
-
 #[test]
 fn next_get_with_name() {
     let connection = setup_users(":memory:");
@@ -100,6 +88,22 @@ fn next_get_with_name_and_option() {
     assert!(row.get::<Option<&[u8]>, _>("photo").is_some());
     assert!(row.get::<Option<&str>, _>("email").is_none());
 }
+
+#[test]
+fn next_index() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let statement = ok!(connection.prepare(query));
+
+    let row = ok!(ok!(statement.into_cursor().next()));
+
+    assert_eq!(row[0], Value::Integer(1));
+    assert_eq!(row[2], Value::Float(42.69));
+
+    assert_eq!(row["id"], Value::Integer(1));
+    assert_eq!(row["age"], Value::Float(42.69));
+}
+
 
 #[test]
 fn next_try_get_with_index() {
