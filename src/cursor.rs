@@ -21,9 +21,9 @@ pub struct Row {
     values: Vec<Value>,
 }
 
-/// A type suitable for indexing columns.
-pub trait ColumnIndex: std::fmt::Debug {
-    fn get<'l>(&self, row: &'l Row) -> &'l Value;
+/// A type suitable for indexing a row.
+pub trait RowIndex: std::fmt::Debug {
+    fn index(self, row: &Row) -> usize;
 }
 
 impl<'l> Cursor<'l> {
@@ -129,7 +129,7 @@ impl Row {
     pub fn get<'l, T, U>(&'l self, column: U) -> T
     where
         T: TryFrom<&'l Value, Error = Error>,
-        U: ColumnIndex,
+        U: RowIndex,
     {
         self.try_get(column).unwrap()
     }
@@ -139,9 +139,9 @@ impl Row {
     pub fn try_get<'l, T, U>(&'l self, column: U) -> Result<T>
     where
         T: TryFrom<&'l Value, Error = Error>,
-        U: ColumnIndex,
+        U: RowIndex,
     {
-        T::try_from(column.get(self))
+        T::try_from(&self.values[column.index(self)])
     }
 }
 
@@ -154,19 +154,19 @@ impl Deref for Row {
     }
 }
 
-impl ColumnIndex for &str {
+impl RowIndex for &str {
     #[inline]
-    fn get<'l>(&self, row: &'l Row) -> &'l Value {
-        debug_assert!(row.columns.contains_key(*self), "the index is out of range");
-        &row.values[row.columns[*self]]
+    fn index(self, row: &Row) -> usize {
+        debug_assert!(row.columns.contains_key(self), "the index is out of range");
+        row.columns[self]
     }
 }
 
-impl ColumnIndex for usize {
+impl RowIndex for usize {
     #[inline]
-    fn get<'l>(&self, row: &'l Row) -> &'l Value {
-        debug_assert!(*self < row.values.len(), "the index is out of range");
-        &row.values[*self]
+    fn index(self, row: &Row) -> usize {
+        debug_assert!(self < row.values.len(), "the index is out of range");
+        self
     }
 }
 

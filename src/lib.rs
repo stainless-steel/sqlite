@@ -134,7 +134,7 @@ pub use error::{Error, Result};
 pub use value::{Type, Value};
 
 pub use connection::{Connection, ConnectionWithFullMutex, OpenFlags};
-pub use cursor::{ColumnIndex, Cursor, Row};
+pub use cursor::{Cursor, Row, RowIndex};
 pub use statement::{Bindable, BindableAt, ReadableAt, State, Statement};
 
 /// Open a read-write connection to a new or existing database.
