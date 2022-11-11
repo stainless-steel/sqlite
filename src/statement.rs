@@ -23,8 +23,8 @@ pub trait Bindable {
     fn bind(self, _: &mut Statement) -> Result<()>;
 }
 
-/// A type suitable for binding to a prepared statement by index.
-pub trait BindableAt {
+/// A type suitable for binding to a prepared statement given a parameter index.
+pub trait BindableWithIndex {
     /// Bind to a parameter.
     ///
     /// The first parameter has index 1.
@@ -43,13 +43,13 @@ pub trait ParameterIndex: Copy + std::fmt::Debug {
     fn index(self, statement: &Statement) -> Result<usize>;
 }
 
-/// A type suitable for reading from a prepared statement by index.
-pub trait ReadableAt: Sized {
+/// A type suitable for reading from a prepared statement given a column index.
+pub trait ReadableWithIndex: Sized {
     /// Read from a column.
     fn read<T: ColumnIndex>(_: &Statement, _: T) -> Result<Self>;
 }
 
-/// A state of a prepared statement.
+/// The state of a prepared statement.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum State {
     /// There is a row available for reading.
@@ -226,10 +226,10 @@ impl<'l> Statement<'l> {
     #[inline]
     pub fn read<T, U>(&self, index: U) -> Result<T>
     where
-        T: ReadableAt,
+        T: ReadableWithIndex,
         U: ColumnIndex,
     {
-        ReadableAt::read(self, index)
+        ReadableWithIndex::read(self, index)
     }
 
     /// Reset the statement.
@@ -262,7 +262,7 @@ impl<'l> Drop for Statement<'l> {
 impl<T, U> Bindable for (T, U)
 where
     T: ParameterIndex,
-    U: BindableAt,
+    U: BindableWithIndex,
 {
     #[inline]
     fn bind(self, statement: &mut Statement) -> Result<()> {
@@ -272,7 +272,7 @@ where
 
 impl<T> Bindable for &[T]
 where
-    T: BindableAt + Clone,
+    T: BindableWithIndex + Clone,
 {
     fn bind(self, statement: &mut Statement) -> Result<()> {
         for (index, value) in self.iter().enumerate() {
@@ -285,7 +285,7 @@ where
 impl<T, U> Bindable for &[(T, U)]
 where
     T: ParameterIndex,
-    U: BindableAt + Clone,
+    U: BindableWithIndex + Clone,
 {
     fn bind(self, statement: &mut Statement) -> Result<()> {
         for (index, value) in self.iter() {
@@ -295,7 +295,7 @@ where
     }
 }
 
-impl BindableAt for &[u8] {
+impl BindableWithIndex for &[u8] {
     #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         unsafe {
@@ -314,7 +314,7 @@ impl BindableAt for &[u8] {
     }
 }
 
-impl BindableAt for f64 {
+impl BindableWithIndex for f64 {
     #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         unsafe {
@@ -331,7 +331,7 @@ impl BindableAt for f64 {
     }
 }
 
-impl BindableAt for i64 {
+impl BindableWithIndex for i64 {
     #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         unsafe {
@@ -348,7 +348,7 @@ impl BindableAt for i64 {
     }
 }
 
-impl BindableAt for &str {
+impl BindableWithIndex for &str {
     #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         unsafe {
@@ -367,7 +367,7 @@ impl BindableAt for &str {
     }
 }
 
-impl BindableAt for () {
+impl BindableWithIndex for () {
     #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         unsafe {
@@ -380,14 +380,14 @@ impl BindableAt for () {
     }
 }
 
-impl BindableAt for Value {
+impl BindableWithIndex for Value {
     #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         (index, &self).bind(statement)
     }
 }
 
-impl BindableAt for &Value {
+impl BindableWithIndex for &Value {
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         match self {
             &Value::Binary(ref value) => (value as &[u8]).bind(statement, index),
@@ -399,9 +399,9 @@ impl BindableAt for &Value {
     }
 }
 
-impl<T> BindableAt for Option<T>
+impl<T> BindableWithIndex for Option<T>
 where
-    T: BindableAt,
+    T: BindableWithIndex,
 {
     #[inline]
     fn bind<U: ParameterIndex>(self, statement: &mut Statement, index: U) -> Result<()> {
@@ -412,9 +412,9 @@ where
     }
 }
 
-impl<T> BindableAt for &Option<T>
+impl<T> BindableWithIndex for &Option<T>
 where
-    T: BindableAt + Clone,
+    T: BindableWithIndex + Clone,
 {
     #[inline]
     fn bind<U: ParameterIndex>(self, statement: &mut Statement, index: U) -> Result<()> {
@@ -457,19 +457,19 @@ impl ParameterIndex for usize {
     }
 }
 
-impl ReadableAt for Value {
+impl ReadableWithIndex for Value {
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         Ok(match statement.column_type(index)? {
-            Type::Binary => Value::Binary(ReadableAt::read(statement, index)?),
-            Type::Float => Value::Float(ReadableAt::read(statement, index)?),
-            Type::Integer => Value::Integer(ReadableAt::read(statement, index)?),
-            Type::String => Value::String(ReadableAt::read(statement, index)?),
+            Type::Binary => Value::Binary(ReadableWithIndex::read(statement, index)?),
+            Type::Float => Value::Float(ReadableWithIndex::read(statement, index)?),
+            Type::Integer => Value::Integer(ReadableWithIndex::read(statement, index)?),
+            Type::String => Value::String(ReadableWithIndex::read(statement, index)?),
             Type::Null => Value::Null,
         })
     }
 }
 
-impl ReadableAt for f64 {
+impl ReadableWithIndex for f64 {
     #[inline]
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         Ok(unsafe {
@@ -478,7 +478,7 @@ impl ReadableAt for f64 {
     }
 }
 
-impl ReadableAt for i64 {
+impl ReadableWithIndex for i64 {
     #[inline]
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         Ok(unsafe {
@@ -487,7 +487,7 @@ impl ReadableAt for i64 {
     }
 }
 
-impl ReadableAt for String {
+impl ReadableWithIndex for String {
     #[inline]
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         unsafe {
@@ -501,7 +501,7 @@ impl ReadableAt for String {
     }
 }
 
-impl ReadableAt for Vec<u8> {
+impl ReadableWithIndex for Vec<u8> {
     #[inline]
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         use std::ptr::copy_nonoverlapping as copy;
@@ -521,7 +521,7 @@ impl ReadableAt for Vec<u8> {
     }
 }
 
-impl<T: ReadableAt> ReadableAt for Option<T> {
+impl<T: ReadableWithIndex> ReadableWithIndex for Option<T> {
     #[inline]
     fn read<U: ColumnIndex>(statement: &Statement, index: U) -> Result<Self> {
         if statement.column_type(index)? == Type::Null {
