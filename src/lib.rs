@@ -7,9 +7,9 @@
 //! ```
 //! let connection = sqlite::open(":memory:").unwrap();
 //! let query = "
-//!         CREATE TABLE users (name TEXT, age INTEGER);
-//!         INSERT INTO users VALUES ('Alice', 42);
-//!         INSERT INTO users VALUES ('Bob', 69);
+//!     CREATE TABLE users (name TEXT, age INTEGER);
+//!     INSERT INTO users VALUES ('Alice', 42);
+//!     INSERT INTO users VALUES ('Bob', 69);
 //! ";
 //! connection.execute(query).unwrap();
 //! ```
@@ -20,16 +20,16 @@
 //! ```
 //! # let connection = sqlite::open(":memory:").unwrap();
 //! # let query = "
-//! #         CREATE TABLE users (name TEXT, age INTEGER);
-//! #         INSERT INTO users VALUES ('Alice', 42);
-//! #         INSERT INTO users VALUES ('Bob', 69);
+//! #     CREATE TABLE users (name TEXT, age INTEGER);
+//! #     INSERT INTO users VALUES ('Alice', 42);
+//! #     INSERT INTO users VALUES ('Bob', 69);
 //! # ";
 //! # connection.execute(query).unwrap();
 //! let query = "SELECT * FROM users WHERE age > 50";
 //! connection
 //!     .iterate(query, |pairs| {
-//!         for &(column, value) in pairs.iter() {
-//!             println!("{} = {}", column, value.unwrap());
+//!         for &(name, value) in pairs.iter() {
+//!             println!("{} = {}", name, value.unwrap());
 //!         }
 //!         true
 //!     })
@@ -43,9 +43,9 @@
 //! use sqlite::State;
 //! # let connection = sqlite::open(":memory:").unwrap();
 //! # let query = "
-//! #         CREATE TABLE users (name TEXT, age INTEGER);
-//! #         INSERT INTO users VALUES ('Alice', 42);
-//! #         INSERT INTO users VALUES ('Bob', 69);
+//! #     CREATE TABLE users (name TEXT, age INTEGER);
+//! #     INSERT INTO users VALUES ('Alice', 42);
+//! #     INSERT INTO users VALUES ('Bob', 69);
 //! # ";
 //! # connection.execute(query).unwrap();
 //!
@@ -64,9 +64,9 @@
 //! ```
 //! # let connection = sqlite::open(":memory:").unwrap();
 //! # let query = "
-//! #         CREATE TABLE users (name TEXT, age INTEGER);
-//! #         INSERT INTO users VALUES ('Alice', 42);
-//! #         INSERT INTO users VALUES ('Bob', 69);
+//! #     CREATE TABLE users (name TEXT, age INTEGER);
+//! #     INSERT INTO users VALUES ('Alice', 42);
+//! #     INSERT INTO users VALUES ('Bob', 69);
 //! # ";
 //! # connection.execute(query).unwrap();
 //!

@@ -23,8 +23,8 @@ not efficient:
 let query = "SELECT * FROM users WHERE age > 50";
 connection
     .iterate(query, |pairs| {
-        for &(column, value) in pairs.iter() {
-            println!("{} = {}", column, value.unwrap());
+        for &(name, value) in pairs.iter() {
+            println!("{} = {}", name, value.unwrap());
         }
         true
     })
