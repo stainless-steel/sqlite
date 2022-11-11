@@ -249,12 +249,14 @@ impl OpenFlags {
 impl Deref for ConnectionWithFullMutex {
     type Target = Connection;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
 impl DerefMut for ConnectionWithFullMutex {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
