@@ -62,8 +62,8 @@ impl<'l> Cursor<'l> {
                 return self.try_next();
             }
         }
-        for (i, value) in self.values.iter_mut().enumerate() {
-            *value = self.statement.read(i)?;
+        for (index, value) in self.values.iter_mut().enumerate() {
+            *value = self.statement.read(index)?;
         }
         self.state = Some(self.statement.next()?);
         Ok(Some(&self.values))
@@ -151,7 +151,7 @@ pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
         .column_names()
         .iter()
         .enumerate()
-        .map(|(i, name)| (name.to_string(), i))
+        .map(|(index, name)| (name.to_string(), index))
         .collect();
     let values = vec![Value::Null; statement.column_count()];
     Cursor {

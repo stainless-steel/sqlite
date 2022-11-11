@@ -17,15 +17,6 @@ pub struct Statement<'l> {
     phantom: PhantomData<(ffi::sqlite3_stmt, &'l ffi::sqlite3)>,
 }
 
-/// A state of a prepared statement.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum State {
-    /// There is a row available for reading.
-    Row,
-    /// The statement has been entirely evaluated.
-    Done,
-}
-
 /// A type suitable for binding to a prepared statement.
 pub trait Bindable {
     /// Bind to a parameter.
@@ -46,6 +37,15 @@ pub trait ReadableAt: Sized {
     ///
     /// The first column has index 0.
     fn read(_: &Statement, _: usize) -> Result<Self>;
+}
+
+/// A state of a prepared statement.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum State {
+    /// There is a row available for reading.
+    Row,
+    /// The statement has been entirely evaluated.
+    Done,
 }
 
 impl<'l> Statement<'l> {
@@ -144,10 +144,10 @@ impl<'l> Statement<'l> {
     ///
     /// The first column has index 0.
     #[inline]
-    pub fn column_name(&self, i: usize) -> &str {
-        debug_assert!(i < self.column_count(), "the index is out of range");
+    pub fn column_name(&self, index: usize) -> &str {
+        debug_assert!(index < self.column_count(), "the index is out of range");
         unsafe {
-            let pointer = ffi::sqlite3_column_name(self.raw.0, i as c_int);
+            let pointer = ffi::sqlite3_column_name(self.raw.0, index as c_int);
             debug_assert!(!pointer.is_null());
             c_str_to_str!(pointer).unwrap()
         }
@@ -157,7 +157,7 @@ impl<'l> Statement<'l> {
     #[inline]
     pub fn column_names(&self) -> Vec<&str> {
         (0..self.column_count())
-            .map(|i| self.column_name(i))
+            .map(|index| self.column_name(index))
             .collect()
     }
 
@@ -165,9 +165,9 @@ impl<'l> Statement<'l> {
     ///
     /// The first column has index 0. The type becomes available after taking a
     /// step.
-    pub fn column_type(&self, i: usize) -> Type {
-        debug_assert!(i < self.column_count(), "the index is out of range");
-        match unsafe { ffi::sqlite3_column_type(self.raw.0, i as c_int) } {
+    pub fn column_type(&self, index: usize) -> Type {
+        debug_assert!(index < self.column_count(), "the index is out of range");
+        match unsafe { ffi::sqlite3_column_type(self.raw.0, index as c_int) } {
             ffi::SQLITE_BLOB => Type::Binary,
             ffi::SQLITE_FLOAT => Type::Float,
             ffi::SQLITE_INTEGER => Type::Integer,
@@ -216,9 +216,9 @@ impl<'l> Statement<'l> {
     ///
     /// The first column has index 0.
     #[inline]
-    pub fn read<T: ReadableAt>(&self, i: usize) -> Result<T> {
-        debug_assert!(i < self.column_count(), "the index is out of range");
-        ReadableAt::read(self, i)
+    pub fn read<T: ReadableAt>(&self, index: usize) -> Result<T> {
+        debug_assert!(index < self.column_count(), "the index is out of range");
+        ReadableAt::read(self, index)
     }
 
     /// Reset the statement.
@@ -263,8 +263,8 @@ where
     T: BindableAt + Clone,
 {
     fn bind(self, statement: &mut Statement) -> Result<()> {
-        for (i, value) in self.iter().enumerate() {
-            value.clone().bind(statement, i + 1)?;
+        for (index, value) in self.iter().enumerate() {
+            value.clone().bind(statement, index + 1)?;
         }
         Ok(())
     }
@@ -275,8 +275,8 @@ where
     T: BindableAt + Clone,
 {
     fn bind(self, statement: &mut Statement) -> Result<()> {
-        for (i, value) in self.iter() {
-            value.clone().bind(statement, *i)?;
+        for (index, value) in self.iter() {
+            value.clone().bind(statement, *index)?;
         }
         Ok(())
     }
@@ -288,8 +288,8 @@ where
 {
     #[inline]
     fn bind(self, statement: &mut Statement) -> Result<()> {
-        if let Some(i) = statement.parameter_index(self.0)? {
-            self.1.bind(statement, i)?;
+        if let Some(index) = statement.parameter_index(self.0)? {
+            self.1.bind(statement, index)?;
         } else {
             raise!("the index is out of range ({})", self.0)
         }
@@ -303,8 +303,8 @@ where
 {
     fn bind(self, statement: &mut Statement) -> Result<()> {
         for (name, value) in self.iter() {
-            if let Some(i) = statement.parameter_index(name)? {
-                value.clone().bind(statement, i)?;
+            if let Some(index) = statement.parameter_index(name)? {
+                value.clone().bind(statement, index)?;
             } else {
                 raise!("the index is out of range ({})", name);
             }
@@ -315,14 +315,14 @@ where
 
 impl BindableAt for &[u8] {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the index is out of range");
+    fn bind(self, statement: &mut Statement, index: usize) -> Result<()> {
+        debug_assert!(index > 0, "the index is out of range");
         unsafe {
             ok!(
                 statement.raw.1,
                 ffi::sqlite3_bind_blob(
                     statement.raw.0,
-                    i as c_int,
+                    index as c_int,
                     self.as_ptr() as *const _,
                     self.len() as c_int,
                     transient!(),
@@ -335,12 +335,12 @@ impl BindableAt for &[u8] {
 
 impl BindableAt for f64 {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the index is out of range");
+    fn bind(self, statement: &mut Statement, index: usize) -> Result<()> {
+        debug_assert!(index > 0, "the index is out of range");
         unsafe {
             ok!(
                 statement.raw.1,
-                ffi::sqlite3_bind_double(statement.raw.0, i as c_int, self as c_double)
+                ffi::sqlite3_bind_double(statement.raw.0, index as c_int, self as c_double)
             );
         }
         Ok(())
@@ -349,12 +349,16 @@ impl BindableAt for f64 {
 
 impl BindableAt for i64 {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the index is out of range");
+    fn bind(self, statement: &mut Statement, index: usize) -> Result<()> {
+        debug_assert!(index > 0, "the index is out of range");
         unsafe {
             ok!(
                 statement.raw.1,
-                ffi::sqlite3_bind_int64(statement.raw.0, i as c_int, self as ffi::sqlite3_int64)
+                ffi::sqlite3_bind_int64(
+                    statement.raw.0,
+                    index as c_int,
+                    self as ffi::sqlite3_int64
+                )
             );
         }
         Ok(())
@@ -363,14 +367,14 @@ impl BindableAt for i64 {
 
 impl BindableAt for &str {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the index is out of range");
+    fn bind(self, statement: &mut Statement, index: usize) -> Result<()> {
+        debug_assert!(index > 0, "the index is out of range");
         unsafe {
             ok!(
                 statement.raw.1,
                 ffi::sqlite3_bind_text(
                     statement.raw.0,
-                    i as c_int,
+                    index as c_int,
                     self.as_ptr() as *const _,
                     self.len() as c_int,
                     transient!(),
@@ -383,12 +387,12 @@ impl BindableAt for &str {
 
 impl BindableAt for () {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        debug_assert!(i > 0, "the index is out of range");
+    fn bind(self, statement: &mut Statement, index: usize) -> Result<()> {
+        debug_assert!(index > 0, "the index is out of range");
         unsafe {
             ok!(
                 statement.raw.1,
-                ffi::sqlite3_bind_null(statement.raw.0, i as c_int)
+                ffi::sqlite3_bind_null(statement.raw.0, index as c_int)
             );
         }
         Ok(())
@@ -397,19 +401,19 @@ impl BindableAt for () {
 
 impl BindableAt for Value {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
-        (i, &self).bind(statement)
+    fn bind(self, statement: &mut Statement, index: usize) -> Result<()> {
+        (index, &self).bind(statement)
     }
 }
 
 impl BindableAt for &Value {
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
+    fn bind(self, statement: &mut Statement, index: usize) -> Result<()> {
         match self {
-            &Value::Binary(ref value) => (value as &[u8]).bind(statement, i),
-            &Value::Float(value) => value.bind(statement, i),
-            &Value::Integer(value) => value.bind(statement, i),
-            &Value::String(ref value) => (value as &str).bind(statement, i),
-            &Value::Null => ().bind(statement, i),
+            &Value::Binary(ref value) => (value as &[u8]).bind(statement, index),
+            &Value::Float(value) => value.bind(statement, index),
+            &Value::Integer(value) => value.bind(statement, index),
+            &Value::String(ref value) => (value as &str).bind(statement, index),
+            &Value::Null => ().bind(statement, index),
         }
     }
 }
@@ -419,10 +423,10 @@ where
     T: BindableAt,
 {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
+    fn bind(self, statement: &mut Statement, index: usize) -> Result<()> {
         match self {
-            Some(value) => value.bind(statement, i),
-            None => ().bind(statement, i),
+            Some(value) => value.bind(statement, index),
+            None => ().bind(statement, index),
         }
     }
 }
@@ -432,21 +436,21 @@ where
     T: BindableAt + Clone,
 {
     #[inline]
-    fn bind(self, statement: &mut Statement, i: usize) -> Result<()> {
+    fn bind(self, statement: &mut Statement, index: usize) -> Result<()> {
         match self {
-            Some(value) => value.clone().bind(statement, i),
-            None => ().bind(statement, i),
+            Some(value) => value.clone().bind(statement, index),
+            None => ().bind(statement, index),
         }
     }
 }
 
 impl ReadableAt for Value {
-    fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(match statement.column_type(i) {
-            Type::Binary => Value::Binary(ReadableAt::read(statement, i)?),
-            Type::Float => Value::Float(ReadableAt::read(statement, i)?),
-            Type::Integer => Value::Integer(ReadableAt::read(statement, i)?),
-            Type::String => Value::String(ReadableAt::read(statement, i)?),
+    fn read(statement: &Statement, index: usize) -> Result<Self> {
+        Ok(match statement.column_type(index) {
+            Type::Binary => Value::Binary(ReadableAt::read(statement, index)?),
+            Type::Float => Value::Float(ReadableAt::read(statement, index)?),
+            Type::Integer => Value::Integer(ReadableAt::read(statement, index)?),
+            Type::String => Value::String(ReadableAt::read(statement, index)?),
             Type::Null => Value::Null,
         })
     }
@@ -454,23 +458,23 @@ impl ReadableAt for Value {
 
 impl ReadableAt for f64 {
     #[inline]
-    fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, i as c_int) as f64 })
+    fn read(statement: &Statement, index: usize) -> Result<Self> {
+        Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, index as c_int) as f64 })
     }
 }
 
 impl ReadableAt for i64 {
     #[inline]
-    fn read(statement: &Statement, i: usize) -> Result<Self> {
-        Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, i as c_int) as i64 })
+    fn read(statement: &Statement, index: usize) -> Result<Self> {
+        Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, index as c_int) as i64 })
     }
 }
 
 impl ReadableAt for String {
     #[inline]
-    fn read(statement: &Statement, i: usize) -> Result<Self> {
+    fn read(statement: &Statement, index: usize) -> Result<Self> {
         unsafe {
-            let pointer = ffi::sqlite3_column_text(statement.raw.0, i as c_int);
+            let pointer = ffi::sqlite3_column_text(statement.raw.0, index as c_int);
             if pointer.is_null() {
                 raise!("cannot read a text column");
             }
@@ -481,14 +485,14 @@ impl ReadableAt for String {
 
 impl ReadableAt for Vec<u8> {
     #[inline]
-    fn read(statement: &Statement, i: usize) -> Result<Self> {
+    fn read(statement: &Statement, index: usize) -> Result<Self> {
         use std::ptr::copy_nonoverlapping as copy;
         unsafe {
-            let pointer = ffi::sqlite3_column_blob(statement.raw.0, i as c_int);
+            let pointer = ffi::sqlite3_column_blob(statement.raw.0, index as c_int);
             if pointer.is_null() {
                 return Ok(vec![]);
             }
-            let count = ffi::sqlite3_column_bytes(statement.raw.0, i as c_int) as usize;
+            let count = ffi::sqlite3_column_bytes(statement.raw.0, index as c_int) as usize;
             let mut buffer = Vec::with_capacity(count);
             buffer.set_len(count);
             copy(pointer as *const u8, buffer.as_mut_ptr(), count);
@@ -499,11 +503,11 @@ impl ReadableAt for Vec<u8> {
 
 impl<T: ReadableAt> ReadableAt for Option<T> {
     #[inline]
-    fn read(statement: &Statement, i: usize) -> Result<Self> {
-        if statement.column_type(i) == Type::Null {
+    fn read(statement: &Statement, index: usize) -> Result<Self> {
+        if statement.column_type(index) == Type::Null {
             Ok(None)
         } else {
-            T::read(statement, i).map(Some)
+            T::read(statement, index).map(Some)
         }
     }
 }
