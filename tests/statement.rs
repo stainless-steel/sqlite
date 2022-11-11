@@ -238,7 +238,10 @@ fn read_with_name() {
 
     assert_eq!(ok!(statement.next()), State::Row);
     assert_eq!(ok!(statement.read::<i64, _>("id")), 1);
-    assert_eq!(ok!(statement.read::<String, _>("name")), String::from("Alice"));
+    assert_eq!(
+        ok!(statement.read::<String, _>("name")),
+        String::from("Alice")
+    );
     assert_eq!(ok!(statement.read::<f64, _>("age")), 42.69);
     assert_eq!(ok!(statement.read::<Vec<u8>, _>("photo")), vec![0x42, 0x69]);
     assert_eq!(ok!(statement.read::<Value, _>("email")), Value::Null);
