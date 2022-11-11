@@ -97,23 +97,23 @@ impl<'l> Iterator for Cursor<'l> {
 }
 
 impl Row {
-    /// Get the value of a column in the row.
+    /// Read the value in a column.
     ///
     /// # Panics
     ///
     /// Panics if the column could not be read.
     #[inline]
-    pub fn get<'l, T, U>(&'l self, column: U) -> T
+    pub fn read<'l, T, U>(&'l self, column: U) -> T
     where
         T: TryFrom<&'l Value, Error = Error>,
         U: RowIndex,
     {
-        self.try_get(column).unwrap()
+        self.try_read(column).unwrap()
     }
 
-    /// Try to get the value of a column in the row.
+    /// Try to read the value in a column.
     #[inline]
-    pub fn try_get<'l, T, U>(&'l self, column: U) -> Result<T>
+    pub fn try_read<'l, T, U>(&'l self, column: U) -> Result<T>
     where
         T: TryFrom<&'l Value, Error = Error>,
         U: RowIndex,

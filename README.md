@@ -59,8 +59,8 @@ let cursor = connection
     .unwrap();
 
 for row in cursor.map(|row| row.unwrap()) {
-    println!("name = {}", row.get::<String, _>("name"));
-    println!("age = {}", row.get::<i64, _>("age"));
+    println!("name = {}", row.read::<String, _>("name"));
+    println!("age = {}", row.read::<i64, _>("age"));
 }
 ```
 

@@ -50,43 +50,17 @@ fn iter() {
 
     let mut count = 0;
     for row in statement.into_cursor().map(|row| ok!(row)) {
-        let id = row.get::<i64, _>("id");
+        let id = row.read::<i64, _>("id");
         if id == 1 {
-            assert_eq!(row.get::<f64, _>("age"), 42.69);
+            assert_eq!(row.read::<f64, _>("age"), 42.69);
         } else if id == 2 {
-            assert_eq!(row.get::<Option<f64>, _>("age"), None);
+            assert_eq!(row.read::<Option<f64>, _>("age"), None);
         } else {
             assert!(false);
         }
         count += 1;
     }
     assert_eq!(count, 2);
-}
-#[test]
-fn next_get_with_name() {
-    let connection = setup_users(":memory:");
-    let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
-
-    let row = ok!(ok!(statement.into_cursor().next()));
-    assert_eq!(row.get::<i64, _>("id"), 1);
-    assert_eq!(row.get::<&str, _>("name"), "Alice");
-    assert_eq!(row.get::<f64, _>("age"), 42.69);
-    assert_eq!(row.get::<&[u8], _>("photo"), &[0x42u8, 0x69u8][..]);
-}
-
-#[test]
-fn next_get_with_name_and_option() {
-    let connection = setup_users(":memory:");
-    let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
-
-    let row = ok!(ok!(statement.into_cursor().next()));
-    assert!(row.get::<Option<i64>, _>("id").is_some());
-    assert!(row.get::<Option<&str>, _>("name").is_some());
-    assert!(row.get::<Option<f64>, _>("age").is_some());
-    assert!(row.get::<Option<&[u8]>, _>("photo").is_some());
-    assert!(row.get::<Option<&str>, _>("email").is_none());
 }
 
 #[test]
@@ -104,65 +78,91 @@ fn next_index() {
     assert_eq!(row["age"], Value::Float(42.69));
 }
 
-
 #[test]
-fn next_try_get_with_index() {
+fn next_read_with_name() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
     let statement = ok!(connection.prepare(query));
 
     let row = ok!(ok!(statement.into_cursor().next()));
-    assert!(row.try_get::<f64, _>(0).is_err());
-    assert!(row.try_get::<i64, _>(0).is_ok());
-    assert!(row.try_get::<&str, _>(1).is_ok());
-    assert!(row.try_get::<f64, _>(2).is_ok());
-    assert!(row.try_get::<&[u8], _>(3).is_ok());
-    assert!(row.try_get::<&str, _>(4).is_err());
+    assert_eq!(row.read::<i64, _>("id"), 1);
+    assert_eq!(row.read::<&str, _>("name"), "Alice");
+    assert_eq!(row.read::<f64, _>("age"), 42.69);
+    assert_eq!(row.read::<&[u8], _>("photo"), &[0x42u8, 0x69u8][..]);
 }
 
 #[test]
-fn next_try_get_with_index_and_option() {
+fn next_read_with_name_and_option() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
     let statement = ok!(connection.prepare(query));
 
     let row = ok!(ok!(statement.into_cursor().next()));
-    assert!(row.try_get::<Option<f64>, _>(0).is_err());
-    assert!(ok!(row.try_get::<Option<i64>, _>(0)).is_some());
-    assert!(ok!(row.try_get::<Option<&str>, _>(1)).is_some());
-    assert!(ok!(row.try_get::<Option<f64>, _>(2)).is_some());
-    assert!(ok!(row.try_get::<Option<&[u8]>, _>(3)).is_some());
-    assert!(ok!(row.try_get::<Option<&str>, _>(4)).is_none());
+    assert!(row.read::<Option<i64>, _>("id").is_some());
+    assert!(row.read::<Option<&str>, _>("name").is_some());
+    assert!(row.read::<Option<f64>, _>("age").is_some());
+    assert!(row.read::<Option<&[u8]>, _>("photo").is_some());
+    assert!(row.read::<Option<&str>, _>("email").is_none());
 }
 
 #[test]
-fn next_try_get_with_name() {
+fn next_try_read_with_index() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
     let statement = ok!(connection.prepare(query));
 
     let row = ok!(ok!(statement.into_cursor().next()));
-    assert!(row.try_get::<f64, _>("id").is_err());
-    assert!(row.try_get::<i64, _>("id").is_ok());
-    assert!(row.try_get::<&str, _>("name").is_ok());
-    assert!(row.try_get::<f64, _>("age").is_ok());
-    assert!(row.try_get::<&[u8], _>("photo").is_ok());
-    assert!(row.try_get::<&str, _>("email").is_err());
+    assert!(row.try_read::<f64, _>(0).is_err());
+    assert!(row.try_read::<i64, _>(0).is_ok());
+    assert!(row.try_read::<&str, _>(1).is_ok());
+    assert!(row.try_read::<f64, _>(2).is_ok());
+    assert!(row.try_read::<&[u8], _>(3).is_ok());
+    assert!(row.try_read::<&str, _>(4).is_err());
 }
 
 #[test]
-fn next_try_get_with_name_and_option() {
+fn next_try_read_with_index_and_option() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
     let statement = ok!(connection.prepare(query));
 
     let row = ok!(ok!(statement.into_cursor().next()));
-    assert!(row.try_get::<Option<f64>, _>("id").is_err());
-    assert!(ok!(row.try_get::<Option<i64>, _>("id")).is_some());
-    assert!(ok!(row.try_get::<Option<&str>, _>("name")).is_some());
-    assert!(ok!(row.try_get::<Option<f64>, _>("age")).is_some());
-    assert!(ok!(row.try_get::<Option<&[u8]>, _>("photo")).is_some());
-    assert!(ok!(row.try_get::<Option<&str>, _>("email")).is_none());
+    assert!(row.try_read::<Option<f64>, _>(0).is_err());
+    assert!(ok!(row.try_read::<Option<i64>, _>(0)).is_some());
+    assert!(ok!(row.try_read::<Option<&str>, _>(1)).is_some());
+    assert!(ok!(row.try_read::<Option<f64>, _>(2)).is_some());
+    assert!(ok!(row.try_read::<Option<&[u8]>, _>(3)).is_some());
+    assert!(ok!(row.try_read::<Option<&str>, _>(4)).is_none());
+}
+
+#[test]
+fn next_try_read_with_name() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let statement = ok!(connection.prepare(query));
+
+    let row = ok!(ok!(statement.into_cursor().next()));
+    assert!(row.try_read::<f64, _>("id").is_err());
+    assert!(row.try_read::<i64, _>("id").is_ok());
+    assert!(row.try_read::<&str, _>("name").is_ok());
+    assert!(row.try_read::<f64, _>("age").is_ok());
+    assert!(row.try_read::<&[u8], _>("photo").is_ok());
+    assert!(row.try_read::<&str, _>("email").is_err());
+}
+
+#[test]
+fn next_try_read_with_name_and_option() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let statement = ok!(connection.prepare(query));
+
+    let row = ok!(ok!(statement.into_cursor().next()));
+    assert!(row.try_read::<Option<f64>, _>("id").is_err());
+    assert!(ok!(row.try_read::<Option<i64>, _>("id")).is_some());
+    assert!(ok!(row.try_read::<Option<&str>, _>("name")).is_some());
+    assert!(ok!(row.try_read::<Option<f64>, _>("age")).is_some());
+    assert!(ok!(row.try_read::<Option<&[u8]>, _>("photo")).is_some());
+    assert!(ok!(row.try_read::<Option<&str>, _>("email")).is_none());
 }
 
 #[test]
@@ -194,8 +194,8 @@ fn workflow() {
     for _ in 0..10 {
         select = ok!(select.bind((1, 1)));
         let row = ok!(ok!(select.next()));
-        assert_eq!(row.get::<i64, _>("id"), 1);
-        assert_eq!(row.get::<&str, _>("name"), "Alice");
+        assert_eq!(row.read::<i64, _>("id"), 1);
+        assert_eq!(row.read::<&str, _>("name"), "Alice");
         assert!(select.next().is_none());
     }
 
@@ -207,7 +207,7 @@ fn workflow() {
 
     let mut select = ok!(select.bind((1, 42)));
     let row = ok!(ok!(select.next()));
-    assert_eq!(row.get::<i64, _>("id"), 42);
-    assert_eq!(row.get::<&str, _>("name"), "Bob");
+    assert_eq!(row.read::<i64, _>("id"), 42);
+    assert_eq!(row.read::<&str, _>("name"), "Bob");
     assert!(select.next().is_none());
 }
