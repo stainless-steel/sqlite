@@ -109,7 +109,7 @@ fn set_busy_handler() {
     let path = directory.path().join("database.sqlite3");
     setup_users(&path);
 
-    let guards = (0..100)
+    let guards = (0..10)
         .map(|_| {
             let path = path.to_path_buf();
             thread::spawn(move || {
