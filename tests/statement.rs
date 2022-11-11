@@ -124,17 +124,17 @@ fn column_type() {
     let query = "SELECT * FROM users";
     let mut statement = ok!(connection.prepare(query));
 
-    assert_eq!(statement.column_type(0), Type::Null);
-    assert_eq!(statement.column_type(1), Type::Null);
-    assert_eq!(statement.column_type(2), Type::Null);
-    assert_eq!(statement.column_type(3), Type::Null);
+    assert_eq!(ok!(statement.column_type(0)), Type::Null);
+    assert_eq!(ok!(statement.column_type(1)), Type::Null);
+    assert_eq!(ok!(statement.column_type(2)), Type::Null);
+    assert_eq!(ok!(statement.column_type(3)), Type::Null);
 
     assert_eq!(ok!(statement.next()), State::Row);
 
-    assert_eq!(statement.column_type(0), Type::Integer);
-    assert_eq!(statement.column_type(1), Type::String);
-    assert_eq!(statement.column_type(2), Type::Float);
-    assert_eq!(statement.column_type(3), Type::Binary);
+    assert_eq!(ok!(statement.column_type(0)), Type::Integer);
+    assert_eq!(ok!(statement.column_type(1)), Type::String);
+    assert_eq!(ok!(statement.column_type(2)), Type::Float);
+    assert_eq!(ok!(statement.column_type(3)), Type::Binary);
 }
 
 #[test]
