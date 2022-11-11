@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::ops::Deref;
+use std::rc::Rc;
 
 use error::{Error, Result};
 use statement::{Bindable, State, Statement};
@@ -9,7 +10,7 @@ use value::Value;
 /// An iterator over rows.
 pub struct Cursor<'l> {
     statement: Statement<'l>,
-    columns: HashMap<String, usize>,
+    columns: Rc<HashMap<String, usize>>,
     values: Option<Vec<Value>>,
     state: Option<State>,
 }
@@ -17,7 +18,7 @@ pub struct Cursor<'l> {
 /// A row.
 #[derive(Debug)]
 pub struct Row {
-    columns: HashMap<String, usize>,
+    columns: Rc<HashMap<String, usize>>,
     values: Vec<Value>,
 }
 
@@ -99,7 +100,7 @@ impl<'l> Iterator for Cursor<'l> {
         self.try_next()
             .map(|row| {
                 row.map(|row| Row {
-                    columns,
+                    columns: columns,
                     values: row.to_vec(),
                 })
             })
@@ -167,7 +168,7 @@ pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
         .collect();
     Cursor {
         statement: statement,
-        columns: columns,
+        columns: Rc::new(columns),
         values: None,
         state: None,
     }
