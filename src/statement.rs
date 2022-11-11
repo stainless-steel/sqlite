@@ -509,22 +509,25 @@ impl<T: ReadableAt> ReadableAt for Option<T> {
 }
 
 #[inline]
-pub fn new<'l, T: AsRef<str>>(raw1: *mut ffi::sqlite3, statement: T) -> Result<Statement<'l>> {
-    let mut raw0 = 0 as *mut _;
+pub fn new<'l, T>(raw_connection: *mut ffi::sqlite3, statement: T) -> Result<Statement<'l>>
+where
+    T: AsRef<str>,
+{
+    let mut raw_statement = 0 as *mut _;
     unsafe {
         ok!(
-            raw1,
+            raw_connection,
             ffi::sqlite3_prepare_v2(
-                raw1,
+                raw_connection,
                 str_to_cstr!(statement.as_ref()).as_ptr(),
                 -1,
-                &mut raw0,
+                &mut raw_statement,
                 0 as *mut _,
             )
         );
     }
     Ok(Statement {
-        raw: (raw0, raw1),
+        raw: (raw_statement, raw_connection),
         phantom: PhantomData,
     })
 }
