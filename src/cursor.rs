@@ -131,6 +131,13 @@ impl Deref for Row {
     }
 }
 
+impl From<Row> for Vec<Value> {
+    #[inline]
+    fn from(row: Row) -> Self {
+        row.values
+    }
+}
+
 impl RowColumnIndex for &str {
     #[inline]
     fn index(self, row: &Row) -> usize {
