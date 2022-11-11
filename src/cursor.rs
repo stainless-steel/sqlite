@@ -1,93 +1,61 @@
-use ffi;
-use statement::{State, Statement};
 use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::ops::{Deref, Index};
+use std::rc::Rc;
 
-use {Result, Value};
+use error::{Error, Result};
+use statement::{Bindable, State, Statement};
+use value::Value;
 
 /// An iterator over rows.
 pub struct Cursor<'l> {
-    state: Option<State>,
-    columns: Option<HashMap<String, usize>>,
-    values: Option<Vec<Value>>,
     statement: Statement<'l>,
+    values: Vec<Value>,
+    state: Option<State>,
 }
 
 /// A row.
 #[derive(Debug)]
 pub struct Row {
-    columns: HashMap<String, usize>,
+    column_mapping: Rc<HashMap<String, usize>>,
     values: Vec<Value>,
 }
 
-/// A type suitable for indexing columns.
-pub trait ColumnIndex: std::fmt::Debug {
-    fn get<'l>(&self, row: &'l Row) -> &'l Value;
-}
-
-/// A type that values can be converted into.
-pub trait ValueInto: Sized {
-    fn into(value: &Value) -> Option<Self>;
+/// A type suitable for indexing columns in a row.
+pub trait RowIndex: std::fmt::Debug {
+    /// Identify the ordinal position.
+    fn index(self, row: &Row) -> usize;
 }
 
 impl<'l> Cursor<'l> {
-    /// Bind values to parameters by index.
+    /// Bind values to parameters.
     ///
-    /// The index of each value is assumed to be the value’s position in the
-    /// array.
-    pub fn bind(mut self, values: &[Value]) -> Result<Self> {
+    /// See `Statement::bind` for further details.
+    pub fn bind<T: Bindable>(mut self, value: T) -> Result<Self> {
         self.state = None;
         self.statement.reset()?;
-        for (i, value) in values.iter().enumerate() {
-            self.statement.bind(i + 1, value)?;
-        }
+        self.statement.bind(value)?;
         Ok(self)
     }
 
-    /// Bind values to parameters by name.
+    /// Bind values to parameters via an iterator.
     ///
-    /// Parameters that are not part of the statement will be ignored.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use sqlite::Value;
-    /// # let connection = sqlite::open(":memory:").unwrap();
-    /// # connection.execute("CREATE TABLE users (id INTEGER, name STRING)");
-    /// let statement = connection.prepare("INSERT INTO users VALUES (:id, :name)")?;
-    /// let mut cursor = statement
-    ///     .into_cursor()
-    ///     .bind_by_name(vec![
-    ///         (":name", Value::String("Bob".to_owned())),
-    ///         (":id", Value::Integer(42)),
-    ///     ])?;
-    /// cursor.try_next()?;
-    /// # Ok::<(), sqlite::Error>(())
-    /// ```
-    pub fn bind_by_name<T, U>(mut self, values: U) -> Result<Self>
+    /// See `Statement::bind_iter` for further details.
+    pub fn bind_iter<T, U>(mut self, value: T) -> Result<Self>
     where
-        T: AsRef<str>,
-        U: IntoIterator<Item = (T, Value)>,
+        T: IntoIterator<Item = U>,
+        U: Bindable,
     {
         self.state = None;
         self.statement.reset()?;
-        for (name, value) in values {
-            if let Some(i) = self.statement.parameter_index(name.as_ref())? {
-                self.statement.bind(i, &value)?;
-            }
-        }
+        self.statement.bind_iter(value)?;
         Ok(self)
     }
 
-    /// Return the number of columns.
+    /// Convert into a prepared statement.
     #[inline]
-    pub fn column_count(&self) -> usize {
-        self.statement.column_count()
-    }
-
-    /// Return column names.
-    #[inline]
-    pub fn column_names(&self) -> Vec<&str> {
-        self.statement.column_names()
+    pub fn into_statement(self) -> Statement<'l> {
+        self.into()
     }
 
     /// Advance to the next row and read all columns.
@@ -100,30 +68,27 @@ impl<'l> Cursor<'l> {
                 return self.try_next();
             }
         }
-        self.values = match self.values.take() {
-            Some(mut values) => {
-                for (i, value) in values.iter_mut().enumerate() {
-                    *value = self.statement.read(i)?;
-                }
-                Some(values)
-            }
-            _ => {
-                let count = self.statement.column_count();
-                let mut values = Vec::with_capacity(count);
-                for i in 0..count {
-                    values.push(self.statement.read(i)?);
-                }
-                Some(values)
-            }
-        };
+        for (index, value) in self.values.iter_mut().enumerate() {
+            *value = self.statement.read(index)?;
+        }
         self.state = Some(self.statement.next()?);
-        Ok(Some(self.values.as_ref().unwrap()))
+        Ok(Some(&self.values))
     }
+}
 
-    /// Return the raw pointer.
+impl<'l> Deref for Cursor<'l> {
+    type Target = Statement<'l>;
+
     #[inline]
-    pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
-        self.statement.as_raw()
+    fn deref(&self) -> &Self::Target {
+        &self.statement
+    }
+}
+
+impl<'l> From<Cursor<'l>> for Statement<'l> {
+    #[inline]
+    fn from(cursor: Cursor<'l>) -> Self {
+        cursor.statement
     }
 }
 
@@ -131,23 +96,11 @@ impl<'l> Iterator for Cursor<'l> {
     type Item = Result<Row>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let columns = match self.columns.clone() {
-            Some(columns) => columns,
-            None => {
-                self.columns = Some(
-                    self.column_names()
-                        .iter()
-                        .enumerate()
-                        .map(|(i, name)| (name.to_string(), i))
-                        .collect(),
-                );
-                self.columns.clone().unwrap()
-            }
-        };
+        let column_mapping = self.statement.column_mapping();
         self.try_next()
             .map(|row| {
                 row.map(|row| Row {
-                    columns,
+                    column_mapping: column_mapping,
                     values: row.to_vec(),
                 })
             })
@@ -156,97 +109,73 @@ impl<'l> Iterator for Cursor<'l> {
 }
 
 impl Row {
-    /// Get the value of a column in the row.
+    /// Read the value in a column.
     ///
     /// # Panics
     ///
     /// Panics if the column could not be read.
-    #[track_caller]
     #[inline]
-    pub fn get<T: ValueInto, U: ColumnIndex>(&self, column: U) -> T {
-        self.try_get(column).unwrap()
+    pub fn read<'l, T, U>(&'l self, column: U) -> T
+    where
+        T: TryFrom<&'l Value, Error = Error>,
+        U: RowIndex,
+    {
+        self.try_read(column).unwrap()
     }
 
-    /// Try to get the value of a column in the row.
-    ///
-    /// It returns an error if the column could not be read.
-    #[track_caller]
+    /// Try to read the value in a column.
     #[inline]
-    pub fn try_get<T: ValueInto, U: ColumnIndex>(&self, column: U) -> Result<T> {
-        match T::into(column.get(self)) {
-            Some(value) => Ok(value),
-            None => raise!("column {:?} could not be read", column),
-        }
-    }
-}
-
-impl ColumnIndex for &str {
-    #[inline]
-    fn get<'l>(&self, row: &'l Row) -> &'l Value {
-        debug_assert!(row.columns.contains_key(*self), "the index is out of range",);
-        &row.values[row.columns[*self]]
+    pub fn try_read<'l, T, U>(&'l self, column: U) -> Result<T>
+    where
+        T: TryFrom<&'l Value, Error = Error>,
+        U: RowIndex,
+    {
+        T::try_from(&self.values[column.index(self)])
     }
 }
 
-impl ColumnIndex for usize {
+impl From<Row> for Vec<Value> {
     #[inline]
-    fn get<'l>(&self, row: &'l Row) -> &'l Value {
-        debug_assert!(*self < row.values.len(), "the index is out of range");
-        &row.values[*self]
+    fn from(row: Row) -> Self {
+        row.values
     }
 }
 
-impl ValueInto for Value {
-    #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        Some(value.clone())
+impl<T> Index<T> for Row
+where
+    T: RowIndex,
+{
+    type Output = Value;
+
+    fn index(&self, index: T) -> &Value {
+        &self.values[index.index(self)]
     }
 }
 
-impl ValueInto for i64 {
+impl RowIndex for &str {
     #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        value.as_integer()
+    fn index(self, row: &Row) -> usize {
+        debug_assert!(
+            row.column_mapping.contains_key(self),
+            "the index is out of range"
+        );
+        row.column_mapping[self]
     }
 }
 
-impl ValueInto for f64 {
+impl RowIndex for usize {
     #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        value.as_float()
+    fn index(self, row: &Row) -> usize {
+        debug_assert!(self < row.values.len(), "the index is out of range");
+        self
     }
 }
 
-impl ValueInto for String {
-    #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        value.as_string().map(|slice| slice.to_string())
-    }
-}
-
-impl ValueInto for Vec<u8> {
-    #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        value.as_binary().map(|bytes| bytes.to_vec())
-    }
-}
-
-impl<T: ValueInto> ValueInto for Option<T> {
-    #[inline]
-    fn into(value: &Value) -> Option<Self> {
-        match value {
-            Value::Null => Some(None),
-            _ => T::into(value).map(Some),
-        }
-    }
-}
-
-#[inline]
 pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
+    let values = vec![Value::Null; statement.column_count()];
     Cursor {
-        state: None,
-        columns: None,
-        values: None,
         statement: statement,
+        values: values,
+        state: None,
     }
 }

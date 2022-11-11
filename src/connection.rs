@@ -4,7 +4,8 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
-use {Result, Statement};
+use error::Result;
+use statement::Statement;
 
 /// A database connection.
 pub struct Connection {
@@ -40,7 +41,7 @@ impl Connection {
             );
             match code {
                 ffi::SQLITE_OK => {}
-                code => match ::last_error(raw) {
+                code => match ::error::last(raw) {
                     Some(error) => {
                         ffi::sqlite3_close(raw);
                         return Err(error);
@@ -287,14 +288,14 @@ where
 {
     unsafe {
         let mut pairs = Vec::with_capacity(count as usize);
-        for i in 0..(count as isize) {
+        for index in 0..(count as isize) {
             let column = {
-                let pointer = *columns.offset(i);
+                let pointer = *columns.offset(index);
                 debug_assert!(!pointer.is_null());
                 c_str_to_str!(pointer).unwrap()
             };
             let value = {
-                let pointer = *values.offset(i);
+                let pointer = *values.offset(index);
                 if pointer.is_null() {
                     None
                 } else {

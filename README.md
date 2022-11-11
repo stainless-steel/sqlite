@@ -8,25 +8,23 @@ Open a connection, create a table, and insert a few rows:
 
 ```rust
 let connection = sqlite::open(":memory:").unwrap();
-
-connection
-    .execute(
-        "
-        CREATE TABLE users (name TEXT, age INTEGER);
-        INSERT INTO users VALUES ('Alice', 42);
-        INSERT INTO users VALUES ('Bob', 69);
-        ",
-    )
-    .unwrap();
+let query = "
+    CREATE TABLE users (name TEXT, age INTEGER);
+    INSERT INTO users VALUES ('Alice', 42);
+    INSERT INTO users VALUES ('Bob', 69);
+";
+connection.execute(query).unwrap();
 ```
 
-Select some rows and process them one by one as plain text:
+Select some rows and process them one by one as plain text, which is generally
+not efficient:
 
 ```rust
+let query = "SELECT * FROM users WHERE age > 50";
 connection
-    .iterate("SELECT * FROM users WHERE age > 50", |pairs| {
-        for &(column, value) in pairs.iter() {
-            println!("{} = {}", column, value.unwrap());
+    .iterate(query, |pairs| {
+        for &(name, value) in pairs.iter() {
+            println!("{} = {}", name, value.unwrap());
         }
         true
     })
@@ -39,31 +37,30 @@ than the previous technique:
 ```rust
 use sqlite::State;
 
-let mut statement = connection.prepare("SELECT * FROM users WHERE age > ?").unwrap();
-statement.bind(1, 50).unwrap();
+let query = "SELECT * FROM users WHERE age > ?";
+let mut statement = connection.prepare(query).unwrap();
+statement.bind((1, 50)).unwrap();
 
 while let Ok(State::Row) = statement.next() {
-    println!("name = {}", statement.read::<String>(0).unwrap());
-    println!("age = {}", statement.read::<i64>(1).unwrap());
+    println!("name = {}", statement.read::<String, _>("name").unwrap());
+    println!("age = {}", statement.read::<i64, _>("age").unwrap());
 }
 ```
 
-Run the same query but using a cursor, which is a wrapper around a prepared
-statement providing the notion of row and featuring all-at-once binding:
+Run the same query but using a cursor, which provides an alternative interface:
 
 ```rust
-use sqlite::Value;
-
+let query = "SELECT * FROM users WHERE age > ?";
 let cursor = connection
-    .prepare("SELECT * FROM users WHERE age > ?")
+    .prepare(query)
     .unwrap()
     .into_cursor()
-    .bind(&[50.into()])
+    .bind((1, 50))
     .unwrap();
 
 for row in cursor.map(|row| row.unwrap()) {
-    println!("name = {}", row.get::<String, _>("name"));
-    println!("age = {}", row.get::<i64, _>("age"));
+    println!("name = {}", row.read::<String, _>("name"));
+    println!("age = {}", row.read::<i64, _>("age"));
 }
 ```
 
