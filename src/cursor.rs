@@ -9,9 +9,9 @@ use value::Value;
 /// An iterator over rows.
 pub struct Cursor<'l> {
     statement: Statement<'l>,
-    state: Option<State>,
-    columns: Option<HashMap<String, usize>>,
+    columns: HashMap<String, usize>,
     values: Option<Vec<Value>>,
+    state: Option<State>,
 }
 
 /// A row.
@@ -95,19 +95,7 @@ impl<'l> Iterator for Cursor<'l> {
     type Item = Result<Row>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let columns = match self.columns.clone() {
-            Some(columns) => columns,
-            None => {
-                self.columns = Some(
-                    self.column_names()
-                        .iter()
-                        .enumerate()
-                        .map(|(i, name)| (name.to_string(), i))
-                        .collect(),
-                );
-                self.columns.clone().unwrap()
-            }
-        };
+        let columns = self.columns.clone();
         self.try_next()
             .map(|row| {
                 row.map(|row| Row {
@@ -170,12 +158,17 @@ impl RowIndex for usize {
     }
 }
 
-#[inline]
 pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
+    let columns = statement
+        .column_names()
+        .iter()
+        .enumerate()
+        .map(|(i, name)| (name.to_string(), i))
+        .collect();
     Cursor {
         statement: statement,
-        state: None,
-        columns: None,
+        columns: columns,
         values: None,
+        state: None,
     }
 }
