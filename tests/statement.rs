@@ -180,11 +180,11 @@ fn read() {
     let mut statement = ok!(connection.prepare(query));
 
     assert_eq!(ok!(statement.next()), State::Row);
-    assert_eq!(ok!(statement.read::<i64>(0)), 1);
-    assert_eq!(ok!(statement.read::<String>(1)), String::from("Alice"));
-    assert_eq!(ok!(statement.read::<f64>(2)), 42.69);
-    assert_eq!(ok!(statement.read::<Vec<u8>>(3)), vec![0x42, 0x69]);
-    assert_eq!(ok!(statement.read::<Value>(4)), Value::Null);
+    assert_eq!(ok!(statement.read::<i64, _>(0)), 1);
+    assert_eq!(ok!(statement.read::<String, _>(1)), String::from("Alice"));
+    assert_eq!(ok!(statement.read::<f64, _>(2)), 42.69);
+    assert_eq!(ok!(statement.read::<Vec<u8>, _>(3)), vec![0x42, 0x69]);
+    assert_eq!(ok!(statement.read::<Value, _>(4)), Value::Null);
     assert_eq!(ok!(statement.next()), State::Done);
 }
 
@@ -195,17 +195,17 @@ fn read_with_option() {
     let mut statement = ok!(connection.prepare(query));
 
     assert_eq!(ok!(statement.next()), State::Row);
-    assert_eq!(ok!(statement.read::<Option<i64>>(0)), Some(1));
+    assert_eq!(ok!(statement.read::<Option<i64>, _>(0)), Some(1));
     assert_eq!(
-        ok!(statement.read::<Option<String>>(1)),
+        ok!(statement.read::<Option<String>, _>(1)),
         Some(String::from("Alice"))
     );
-    assert_eq!(ok!(statement.read::<Option<f64>>(2)), Some(42.69));
+    assert_eq!(ok!(statement.read::<Option<f64>, _>(2)), Some(42.69));
     assert_eq!(
-        ok!(statement.read::<Option<Vec<u8>>>(3)),
+        ok!(statement.read::<Option<Vec<u8>>, _>(3)),
         Some(vec![0x42, 0x69])
     );
-    assert_eq!(ok!(statement.read::<Option<String>>(4)), None);
+    assert_eq!(ok!(statement.read::<Option<String>, _>(4)), None);
     assert_eq!(ok!(statement.next()), State::Done);
 }
 

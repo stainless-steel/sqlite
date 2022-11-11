@@ -25,8 +25,8 @@ fn read(bencher: &mut Bencher) {
         ok!(statement.bind((2, 42.0)));
         let mut count = 0;
         while let State::Row = ok!(statement.next()) {
-            assert!(ok!(statement.read::<i64>(0)) > 42);
-            assert!(ok!(statement.read::<f64>(1)) > 42.0);
+            assert!(ok!(statement.read::<i64, _>(0)) > 42);
+            assert!(ok!(statement.read::<f64, _>(1)) > 42.0);
             count += 1;
         }
         assert_eq!(count, 100 - 42);

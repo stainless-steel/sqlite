@@ -54,8 +54,8 @@
 //! statement.bind((1, 50)).unwrap();
 //!
 //! while let Ok(State::Row) = statement.next() {
-//!     println!("name = {}", statement.read::<String>(0).unwrap());
-//!     println!("age = {}", statement.read::<i64>(1).unwrap());
+//!     println!("name = {}", statement.read::<String, _>(0).unwrap());
+//!     println!("age = {}", statement.read::<i64, _>(1).unwrap());
 //! }
 //! ```
 //!
@@ -134,8 +134,8 @@ pub use error::{Error, Result};
 pub use value::{Type, Value};
 
 pub use connection::{Connection, ConnectionWithFullMutex, OpenFlags};
-pub use cursor::{Cursor, Row, RowIndex};
-pub use statement::{Bindable, BindableAt, ReadableAt, State, Statement};
+pub use cursor::{Cursor, Row, RowColumnIndex};
+pub use statement::{Bindable, BindableAt, ColumnIndex, ReadableAt, State, Statement};
 
 /// Open a read-write connection to a new or existing database.
 #[inline]

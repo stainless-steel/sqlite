@@ -31,12 +31,16 @@ pub trait BindableAt {
     fn bind(self, _: &mut Statement, _: usize) -> Result<()>;
 }
 
+/// A type suitable for indexing columns in a prepared statement.
+pub trait ColumnIndex: Copy + std::fmt::Debug {
+    /// Identify the ordinal position.
+    fn index(self, statement: &Statement) -> usize;
+}
+
 /// A type suitable for reading from a prepared statement by index.
 pub trait ReadableAt: Sized {
     /// Read from a column.
-    ///
-    /// The first column has index 0.
-    fn read(_: &Statement, _: usize) -> Result<Self>;
+    fn read<T: ColumnIndex>(_: &Statement, _: T) -> Result<Self>;
 }
 
 /// A state of a prepared statement.
@@ -163,11 +167,9 @@ impl<'l> Statement<'l> {
 
     /// Return the type of a column.
     ///
-    /// The first column has index 0. The type becomes available after taking a
-    /// step.
-    pub fn column_type(&self, index: usize) -> Type {
-        debug_assert!(index < self.column_count(), "the index is out of range");
-        match unsafe { ffi::sqlite3_column_type(self.raw.0, index as c_int) } {
+    /// The type becomes available after taking a step.
+    pub fn column_type<T: ColumnIndex>(&self, index: T) -> Type {
+        match unsafe { ffi::sqlite3_column_type(self.raw.0, index.index(self) as c_int) } {
             ffi::SQLITE_BLOB => Type::Binary,
             ffi::SQLITE_FLOAT => Type::Float,
             ffi::SQLITE_INTEGER => Type::Integer,
@@ -213,11 +215,12 @@ impl<'l> Statement<'l> {
     }
 
     /// Read a value from a column.
-    ///
-    /// The first column has index 0.
     #[inline]
-    pub fn read<T: ReadableAt>(&self, index: usize) -> Result<T> {
-        debug_assert!(index < self.column_count(), "the index is out of range");
+    pub fn read<T, U>(&self, index: U) -> Result<T>
+    where
+        T: ReadableAt,
+        U: ColumnIndex,
+    {
         ReadableAt::read(self, index)
     }
 
@@ -444,8 +447,16 @@ where
     }
 }
 
+impl ColumnIndex for usize {
+    #[inline]
+    fn index(self, statement: &Statement) -> usize {
+        debug_assert!(self < statement.column_count(), "the index is out of range");
+        self
+    }
+}
+
 impl ReadableAt for Value {
-    fn read(statement: &Statement, index: usize) -> Result<Self> {
+    fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         Ok(match statement.column_type(index) {
             Type::Binary => Value::Binary(ReadableAt::read(statement, index)?),
             Type::Float => Value::Float(ReadableAt::read(statement, index)?),
@@ -458,23 +469,28 @@ impl ReadableAt for Value {
 
 impl ReadableAt for f64 {
     #[inline]
-    fn read(statement: &Statement, index: usize) -> Result<Self> {
-        Ok(unsafe { ffi::sqlite3_column_double(statement.raw.0, index as c_int) as f64 })
+    fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
+        Ok(unsafe {
+            ffi::sqlite3_column_double(statement.raw.0, index.index(statement) as c_int) as f64
+        })
     }
 }
 
 impl ReadableAt for i64 {
     #[inline]
-    fn read(statement: &Statement, index: usize) -> Result<Self> {
-        Ok(unsafe { ffi::sqlite3_column_int64(statement.raw.0, index as c_int) as i64 })
+    fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
+        Ok(unsafe {
+            ffi::sqlite3_column_int64(statement.raw.0, index.index(statement) as c_int) as i64
+        })
     }
 }
 
 impl ReadableAt for String {
     #[inline]
-    fn read(statement: &Statement, index: usize) -> Result<Self> {
+    fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         unsafe {
-            let pointer = ffi::sqlite3_column_text(statement.raw.0, index as c_int);
+            let pointer =
+                ffi::sqlite3_column_text(statement.raw.0, index.index(statement) as c_int);
             if pointer.is_null() {
                 raise!("cannot read a text column");
             }
@@ -485,14 +501,16 @@ impl ReadableAt for String {
 
 impl ReadableAt for Vec<u8> {
     #[inline]
-    fn read(statement: &Statement, index: usize) -> Result<Self> {
+    fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         use std::ptr::copy_nonoverlapping as copy;
         unsafe {
-            let pointer = ffi::sqlite3_column_blob(statement.raw.0, index as c_int);
+            let pointer =
+                ffi::sqlite3_column_blob(statement.raw.0, index.index(statement) as c_int);
             if pointer.is_null() {
                 return Ok(vec![]);
             }
-            let count = ffi::sqlite3_column_bytes(statement.raw.0, index as c_int) as usize;
+            let count = ffi::sqlite3_column_bytes(statement.raw.0, index.index(statement) as c_int)
+                as usize;
             let mut buffer = Vec::with_capacity(count);
             buffer.set_len(count);
             copy(pointer as *const u8, buffer.as_mut_ptr(), count);
@@ -503,7 +521,7 @@ impl ReadableAt for Vec<u8> {
 
 impl<T: ReadableAt> ReadableAt for Option<T> {
     #[inline]
-    fn read(statement: &Statement, index: usize) -> Result<Self> {
+    fn read<U: ColumnIndex>(statement: &Statement, index: U) -> Result<Self> {
         if statement.column_type(index) == Type::Null {
             Ok(None)
         } else {
