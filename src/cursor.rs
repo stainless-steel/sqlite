@@ -7,7 +7,7 @@ use error::{Error, Result};
 use statement::{Bindable, State, Statement};
 use value::Value;
 
-/// An iterator of a prepared statement.
+/// An iterator for a prepared statement.
 pub struct Cursor<'l, 'm> {
     statement: &'m mut Statement<'l>,
     values: Vec<Value>,

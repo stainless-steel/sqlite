@@ -190,7 +190,7 @@ impl<'l> Statement<'l> {
         )
     }
 
-    /// Convert into a cursor.
+    /// Create a cursor.
     #[inline]
     pub fn iter(&mut self) -> Cursor<'l, '_> {
         ::cursor::new(self)
