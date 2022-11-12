@@ -215,7 +215,8 @@ impl<'l> Statement<'l> {
     /// ```
     /// # let connection = sqlite::open(":memory:").unwrap();
     /// # connection.execute("CREATE TABLE users (name STRING)");
-    /// let statement = connection.prepare("SELECT * FROM users WHERE name = :name")?;
+    /// let query = "SELECT * FROM users WHERE name = :name";
+    /// let statement = connection.prepare(query)?;
     /// assert_eq!(statement.parameter_index(":name")?.unwrap(), 1);
     /// assert_eq!(statement.parameter_index(":asdf")?, None);
     /// # Ok::<(), sqlite::Error>(())
