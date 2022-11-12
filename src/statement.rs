@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use cursor::Cursor;
+use cursor::{Cursor, CursorOwned, Row};
 use error::Result;
 use value::{Type, Value};
 
@@ -193,7 +193,7 @@ impl<'l> Statement<'l> {
     /// Create a cursor.
     #[inline]
     pub fn iter(&mut self) -> Cursor<'l, '_> {
-        ::cursor::new(self)
+        self.into()
     }
 
     /// Advance to the next state.
@@ -260,6 +260,23 @@ impl<'l> Drop for Statement<'l> {
     #[inline]
     fn drop(&mut self) {
         unsafe { ffi::sqlite3_finalize(self.raw.0) };
+    }
+}
+
+impl<'l, 'm> From<&'m mut Statement<'l>> for Cursor<'l, 'm> {
+    #[inline]
+    fn from(statement: &'m mut Statement<'l>) -> Self {
+        ::cursor::new(statement)
+    }
+}
+
+impl<'l> IntoIterator for Statement<'l> {
+    type Item = Result<Row>;
+    type IntoIter = CursorOwned<'l>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        ::cursor::new_owned(self)
     }
 }
 

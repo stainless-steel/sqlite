@@ -71,10 +71,11 @@
 //! # connection.execute(query).unwrap();
 //!
 //! let query = "SELECT * FROM users WHERE age > ?";
-//! let mut statement = connection.prepare(query).unwrap();
 //!
-//! for row in statement
-//!     .iter()
+//! for row in connection
+//!     .prepare(query)
+//!     .unwrap()
+//!     .into_iter()
 //!     .bind((1, 50))
 //!     .unwrap()
 //!     .map(|row| row.unwrap())
@@ -135,7 +136,7 @@ pub use error::{Error, Result};
 pub use value::{Type, Value};
 
 pub use connection::{Connection, ConnectionWithFullMutex, OpenFlags};
-pub use cursor::{Cursor, Row, RowIndex};
+pub use cursor::{Cursor, CursorOwned, Row, RowIndex};
 pub use statement::{
     Bindable, BindableWithIndex, ColumnIndex, ParameterIndex, ReadableWithIndex, State, Statement,
 };
