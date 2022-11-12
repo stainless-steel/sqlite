@@ -7,9 +7,9 @@ use error::{Error, Result};
 use statement::{Bindable, State, Statement};
 use value::Value;
 
-/// An iterator over rows.
-pub struct Cursor<'l> {
-    statement: Statement<'l>,
+/// An iterator of a prepared statement.
+pub struct Cursor<'l, 'm> {
+    statement: &'m mut Statement<'l>,
     values: Vec<Value>,
     state: Option<State>,
 }
@@ -29,35 +29,34 @@ pub trait RowIndex: std::fmt::Debug {
     fn index(self, row: &Row) -> usize;
 }
 
-impl<'l> Cursor<'l> {
+impl<'l, 'm> Cursor<'l, 'm> {
     /// Bind values to parameters.
     ///
     /// See `Statement::bind` for further details.
-    pub fn bind<T: Bindable>(mut self, value: T) -> Result<Self> {
-        self.state = None;
-        self.statement.reset()?;
-        self.statement.bind(value)?;
-        Ok(self)
+    pub fn bind<T: Bindable>(self, value: T) -> Result<Self> {
+        let cursor = self.reset()?;
+        cursor.statement.bind(value)?;
+        Ok(cursor)
     }
 
     /// Bind values to parameters via an iterator.
     ///
     /// See `Statement::bind_iter` for further details.
-    pub fn bind_iter<T, U>(mut self, value: T) -> Result<Self>
+    pub fn bind_iter<T, U>(self, value: T) -> Result<Self>
     where
         T: IntoIterator<Item = U>,
         U: Bindable,
     {
-        self.state = None;
-        self.statement.reset()?;
-        self.statement.bind_iter(value)?;
-        Ok(self)
+        let cursor = self.reset()?;
+        cursor.statement.bind_iter(value)?;
+        Ok(cursor)
     }
 
-    /// Convert into a prepared statement.
-    #[inline]
-    pub fn into_statement(self) -> Statement<'l> {
-        self.into()
+    /// Reset the internal state.
+    pub fn reset(mut self) -> Result<Self> {
+        self.state = None;
+        self.statement.reset()?;
+        Ok(self)
     }
 
     /// Advance to the next row and read all columns.
@@ -78,7 +77,7 @@ impl<'l> Cursor<'l> {
     }
 }
 
-impl<'l> Deref for Cursor<'l> {
+impl<'l, 'm> Deref for Cursor<'l, 'm> {
     type Target = Statement<'l>;
 
     #[inline]
@@ -87,14 +86,7 @@ impl<'l> Deref for Cursor<'l> {
     }
 }
 
-impl<'l> From<Cursor<'l>> for Statement<'l> {
-    #[inline]
-    fn from(cursor: Cursor<'l>) -> Self {
-        cursor.statement
-    }
-}
-
-impl<'l> Iterator for Cursor<'l> {
+impl<'l, 'm> Iterator for Cursor<'l, 'm> {
     type Item = Result<Row>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -173,7 +165,7 @@ impl RowIndex for usize {
     }
 }
 
-pub fn new<'l>(statement: Statement<'l>) -> Cursor<'l> {
+pub fn new<'l, 'm>(statement: &'m mut Statement<'l>) -> Cursor<'l, 'm> {
     let values = vec![Value::Null; statement.column_count()];
     Cursor {
         statement: statement,

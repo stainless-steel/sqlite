@@ -192,8 +192,8 @@ impl<'l> Statement<'l> {
 
     /// Convert into a cursor.
     #[inline]
-    pub fn into_cursor(self) -> Cursor<'l> {
-        self.into()
+    pub fn iter(&mut self) -> Cursor<'l, '_> {
+        ::cursor::new(self)
     }
 
     /// Advance to the next state.
@@ -241,14 +241,14 @@ impl<'l> Statement<'l> {
         ReadableWithIndex::read(self, index)
     }
 
-    /// Reset the statement.
+    /// Reset the internal state.
     #[inline]
     pub fn reset(&mut self) -> Result<()> {
         unsafe { ok!(self.raw.1, ffi::sqlite3_reset(self.raw.0)) };
         Ok(())
     }
 
-    /// Return the raw pointer.
+    #[doc(hidden)]
     #[inline]
     pub fn as_raw(&self) -> *mut ffi::sqlite3_stmt {
         self.raw.0
@@ -259,13 +259,6 @@ impl<'l> Drop for Statement<'l> {
     #[inline]
     fn drop(&mut self) {
         unsafe { ffi::sqlite3_finalize(self.raw.0) };
-    }
-}
-
-impl<'l> From<Statement<'l>> for Cursor<'l> {
-    #[inline]
-    fn from(statement: Statement<'l>) -> Self {
-        ::cursor::new(statement)
     }
 }
 

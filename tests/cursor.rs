@@ -13,13 +13,13 @@ macro_rules! ok(($result:expr) => ($result.unwrap()));
 fn bind_iter() {
     let connection = ok!(sqlite::open(":memory:"));
     ok!(connection.execute("CREATE TABLE users (id INTEGER, name STRING)"));
-    let statement = ok!(connection.prepare("INSERT INTO users VALUES (:id, :name)"));
+    let mut statement = ok!(connection.prepare("INSERT INTO users VALUES (:id, :name)"));
 
     let mut map = HashMap::<_, Value>::new();
     map.insert(":name", "Bob".to_string().into());
     map.insert(":id", 42.into());
 
-    let mut cursor = ok!(statement.into_cursor().bind_iter(map));
+    let mut cursor = ok!(statement.iter().bind_iter(map));
     assert!(cursor.next().is_none());
 }
 
@@ -27,18 +27,18 @@ fn bind_iter() {
 fn count() {
     let connection = setup_english(":memory:");
     let query = "SELECT value FROM english WHERE value LIKE '%type'";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
-    assert_eq!(statement.into_cursor().filter(|row| row.is_ok()).count(), 6);
+    assert_eq!(statement.iter().filter(|row| row.is_ok()).count(), 6);
 }
 
 #[test]
 fn deref() {
     let connection = setup_english(":memory:");
     let query = "SELECT value FROM english WHERE value LIKE '%type'";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
-    assert_eq!(statement.into_cursor().column_count(), 1);
+    assert_eq!(statement.iter().column_count(), 1);
 }
 
 #[test]
@@ -46,10 +46,10 @@ fn iter() {
     let connection = setup_users(":memory:");
     ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
     let query = "SELECT id, age FROM users ORDER BY 1 DESC";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
     let mut count = 0;
-    for row in statement.into_cursor().map(|row| ok!(row)) {
+    for row in statement.iter().map(|row| ok!(row)) {
         let id = row.read::<i64, _>("id");
         if id == 1 {
             assert_eq!(row.read::<f64, _>("age"), 42.69);
@@ -67,9 +67,9 @@ fn iter() {
 fn next_index() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
-    let row = ok!(ok!(statement.into_cursor().next()));
+    let row = ok!(ok!(statement.iter().next()));
 
     assert_eq!(row[0], Value::Integer(1));
     assert_eq!(row[2], Value::Float(42.69));
@@ -82,9 +82,9 @@ fn next_index() {
 fn next_read_with_name() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
-    let row = ok!(ok!(statement.into_cursor().next()));
+    let row = ok!(ok!(statement.iter().next()));
     assert_eq!(row.read::<i64, _>("id"), 1);
     assert_eq!(row.read::<&str, _>("name"), "Alice");
     assert_eq!(row.read::<f64, _>("age"), 42.69);
@@ -95,9 +95,9 @@ fn next_read_with_name() {
 fn next_read_with_name_and_option() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
-    let row = ok!(ok!(statement.into_cursor().next()));
+    let row = ok!(ok!(statement.iter().next()));
     assert!(row.read::<Option<i64>, _>("id").is_some());
     assert!(row.read::<Option<&str>, _>("name").is_some());
     assert!(row.read::<Option<f64>, _>("age").is_some());
@@ -109,9 +109,9 @@ fn next_read_with_name_and_option() {
 fn next_try_read_with_index() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
-    let row = ok!(ok!(statement.into_cursor().next()));
+    let row = ok!(ok!(statement.iter().next()));
     assert!(row.try_read::<f64, _>(0).is_err());
     assert!(row.try_read::<i64, _>(0).is_ok());
     assert!(row.try_read::<&str, _>(1).is_ok());
@@ -124,9 +124,9 @@ fn next_try_read_with_index() {
 fn next_try_read_with_index_and_option() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
-    let row = ok!(ok!(statement.into_cursor().next()));
+    let row = ok!(ok!(statement.iter().next()));
     assert!(row.try_read::<Option<f64>, _>(0).is_err());
     assert!(ok!(row.try_read::<Option<i64>, _>(0)).is_some());
     assert!(ok!(row.try_read::<Option<&str>, _>(1)).is_some());
@@ -139,9 +139,9 @@ fn next_try_read_with_index_and_option() {
 fn next_try_read_with_name() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
-    let row = ok!(ok!(statement.into_cursor().next()));
+    let row = ok!(ok!(statement.iter().next()));
     assert!(row.try_read::<f64, _>("id").is_err());
     assert!(row.try_read::<i64, _>("id").is_ok());
     assert!(row.try_read::<&str, _>("name").is_ok());
@@ -154,9 +154,9 @@ fn next_try_read_with_name() {
 fn next_try_read_with_name_and_option() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
-    let row = ok!(ok!(statement.into_cursor().next()));
+    let row = ok!(ok!(statement.iter().next()));
     assert!(row.try_read::<Option<f64>, _>("id").is_err());
     assert!(ok!(row.try_read::<Option<i64>, _>("id")).is_some());
     assert!(ok!(row.try_read::<Option<&str>, _>("name")).is_some());
@@ -169,9 +169,9 @@ fn next_try_read_with_name_and_option() {
 fn try_next_try_into() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";
-    let statement = ok!(connection.prepare(query));
+    let mut statement = ok!(connection.prepare(query));
 
-    let mut cursor = statement.into_cursor();
+    let mut cursor = statement.iter();
     let row = ok!(ok!(cursor.try_next()));
     assert!(row[0].try_into::<f64>().is_err());
     assert!(row[0].try_into::<i64>().is_ok());
@@ -186,10 +186,12 @@ fn workflow() {
     let connection = setup_users(":memory:");
 
     let select = "SELECT id, name FROM users WHERE id = ?";
-    let mut select = ok!(connection.prepare(select)).into_cursor();
+    let mut select = ok!(connection.prepare(select));
+    let mut select = select.iter();
 
     let insert = "INSERT INTO users (id, name) VALUES (?, ?)";
-    let insert = ok!(connection.prepare(insert)).into_cursor();
+    let mut insert = ok!(connection.prepare(insert));
+    let insert = insert.iter();
 
     for _ in 0..10 {
         select = ok!(select.bind((1, 1)));

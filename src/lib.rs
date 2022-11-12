@@ -59,7 +59,7 @@
 //! }
 //! ```
 //!
-//! Run the same query but using a cursor, which provides an alternative interface:
+//! Run the same query but using a cursor, which is iterable:
 //!
 //! ```
 //! # let connection = sqlite::open(":memory:").unwrap();
@@ -70,14 +70,15 @@
 //! # ";
 //! # connection.execute(query).unwrap();
 //!
-//! let cursor = connection
-//!     .prepare("SELECT * FROM users WHERE age > ?")
-//!     .unwrap()
-//!     .into_cursor()
-//!     .bind((1, 50))
-//!     .unwrap();
+//! let query = "SELECT * FROM users WHERE age > ?";
+//! let mut statement = connection.prepare(query).unwrap();
 //!
-//! for row in cursor.map(|row| row.unwrap()) {
+//! for row in statement
+//!     .iter()
+//!     .bind((1, 50))
+//!     .unwrap()
+//!     .map(|row| row.unwrap())
+//! {
 //!     println!("name = {}", row.read::<&str, _>("name"));
 //!     println!("age = {}", row.read::<i64, _>("age"));
 //! }

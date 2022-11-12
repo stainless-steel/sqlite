@@ -188,7 +188,7 @@ impl Connection {
         Ok(())
     }
 
-    /// Return the raw pointer.
+    #[doc(hidden)]
     #[inline]
     pub fn as_raw(&self) -> *mut ffi::sqlite3 {
         self.raw.0
