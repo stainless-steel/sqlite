@@ -51,10 +51,11 @@ Run the same query but using a cursor, which is iterable:
 
 ```rust
 let query = "SELECT * FROM users WHERE age > ?";
-let mut statement = connection.prepare(query).unwrap();
 
-for row in statement
-    .iter()
+for row in connection
+    .prepare(query)
+    .unwrap()
+    .into_iter()
     .bind((1, 50))
     .unwrap()
     .map(|row| row.unwrap())
