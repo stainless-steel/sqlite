@@ -17,22 +17,21 @@ fn read_next(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
     let query = "SELECT * FROM data WHERE a > ? AND b > ?";
-    let mut cursor = Some(ok!(connection.prepare(query)).into_cursor());
+    let mut statement = ok!(connection.prepare(query));
 
     bencher.iter(|| {
-        let mut cursor_ = cursor
-            .take()
-            .unwrap()
-            .bind::<&[Value]>(&[42.into(), 42.0.into()][..])
-            .unwrap();
         let mut count = 0;
-        while let Some(Ok(row)) = cursor_.next() {
+        for row in statement
+            .iter()
+            .bind::<&[Value]>(&[42.into(), 42.0.into()][..])
+            .unwrap()
+            .map(|row| row.unwrap())
+        {
             assert!(row.read::<i64, _>(0) > 42);
             assert!(row.read::<f64, _>(1) > 42.0);
             count += 1;
         }
         assert_eq!(count, 100 - 42);
-        cursor = Some(cursor_);
     })
 }
 
@@ -41,22 +40,20 @@ fn read_try_next(bencher: &mut Bencher) {
     let connection = create();
     populate(&connection, 100);
     let query = "SELECT * FROM data WHERE a > ? AND b > ?";
-    let mut cursor = Some(ok!(connection.prepare(query)).into_cursor());
+    let mut statement = ok!(connection.prepare(query));
 
     bencher.iter(|| {
-        let mut cursor_ = cursor
-            .take()
-            .unwrap()
+        let mut cursor = statement
+            .iter()
             .bind::<&[Value]>(&[42.into(), 42.0.into()][..])
             .unwrap();
         let mut count = 0;
-        while let Ok(Some(row)) = cursor_.try_next() {
+        while let Ok(Some(row)) = cursor.try_next() {
             assert!(ok!(row[0].try_into::<i64>()) > 42);
             assert!(ok!(row[1].try_into::<f64>()) > 42.0);
             count += 1;
         }
         assert_eq!(count, 100 - 42);
-        cursor = Some(cursor_);
     })
 }
 
@@ -64,18 +61,16 @@ fn read_try_next(bencher: &mut Bencher) {
 fn write(bencher: &mut Bencher) {
     let connection = create();
     let query = "INSERT INTO data (a, b, c, d) VALUES (?, ?, ?, ?)";
-    let mut cursor = Some(ok!(connection.prepare(query)).into_cursor());
+    let mut statement = ok!(connection.prepare(query));
 
     bencher.iter(|| {
-        let mut cursor_ = cursor
-            .take()
-            .unwrap()
+        let mut cursor = statement
+            .iter()
             .bind::<&[Value]>(&[42.into(), 42.0.into(), 42.0.into(), 42.0.into()][..])
             .unwrap();
-        match cursor_.next() {
+        match cursor.next() {
             None => {}
             _ => unreachable!(),
         }
-        cursor = Some(cursor_);
     })
 }
