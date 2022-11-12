@@ -15,7 +15,7 @@ pub struct Cursor<'l, 'm> {
 }
 
 /// An iterator for a prepared statement with ownership.
-pub struct CursorOwned<'l> {
+pub struct CursorWithOwnership<'l> {
     statement: Statement<'l>,
     values: Vec<Value>,
     state: Option<State>,
@@ -116,11 +116,11 @@ macro_rules! implement(
 );
 
 implement!(Cursor<'l, 'm>);
-implement!(CursorOwned<'l>);
+implement!(CursorWithOwnership<'l>);
 
-impl<'l> From<CursorOwned<'l>> for Statement<'l> {
+impl<'l> From<CursorWithOwnership<'l>> for Statement<'l> {
     #[inline]
-    fn from(cursor: CursorOwned<'l>) -> Self {
+    fn from(cursor: CursorWithOwnership<'l>) -> Self {
         cursor.statement
     }
 }
@@ -197,9 +197,9 @@ pub fn new<'l, 'm>(statement: &'m mut Statement<'l>) -> Cursor<'l, 'm> {
     }
 }
 
-pub fn new_owned<'l>(statement: Statement<'l>) -> CursorOwned<'l> {
+pub fn new_with_ownership<'l>(statement: Statement<'l>) -> CursorWithOwnership<'l> {
     let values = vec![Value::Null; statement.column_count()];
-    CursorOwned {
+    CursorWithOwnership {
         statement: statement,
         values: values,
         state: None,

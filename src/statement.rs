@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use cursor::{Cursor, CursorOwned, Row};
+use cursor::{Cursor, CursorWithOwnership, Row};
 use error::Result;
 use value::{Type, Value};
 
@@ -272,11 +272,11 @@ impl<'l, 'm> From<&'m mut Statement<'l>> for Cursor<'l, 'm> {
 
 impl<'l> IntoIterator for Statement<'l> {
     type Item = Result<Row>;
-    type IntoIter = CursorOwned<'l>;
+    type IntoIter = CursorWithOwnership<'l>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        ::cursor::new_owned(self)
+        ::cursor::new_with_ownership(self)
     }
 }
 
