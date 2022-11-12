@@ -8,6 +8,7 @@ Open a connection, create a table, and insert a few rows:
 
 ```rust
 let connection = sqlite::open(":memory:").unwrap();
+
 let query = "
     CREATE TABLE users (name TEXT, age INTEGER);
     INSERT INTO users VALUES ('Alice', 42);
@@ -21,6 +22,7 @@ not efficient:
 
 ```rust
 let query = "SELECT * FROM users WHERE age > 50";
+
 connection
     .iterate(query, |pairs| {
         for &(name, value) in pairs.iter() {
