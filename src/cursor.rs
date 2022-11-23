@@ -11,14 +11,12 @@ use value::Value;
 pub struct Cursor<'l, 'm> {
     statement: &'m mut Statement<'l>,
     values: Vec<Value>,
-    state: Option<State>,
 }
 
 /// An iterator for a prepared statement with ownership.
 pub struct CursorWithOwnership<'l> {
     statement: Statement<'l>,
     values: Vec<Value>,
-    state: Option<State>,
 }
 
 /// A row.
@@ -52,38 +50,32 @@ macro_rules! implement(
             /// Bind values to parameters via an iterator.
             ///
             /// See `Statement::bind_iter` for further details.
+            #[allow(unused_mut)]
             pub fn bind_iter<T, U>(self, value: T) -> Result<Self>
             where
                 T: IntoIterator<Item = U>,
                 U: Bindable,
             {
-                #[allow(unused_mut)]
                 let mut cursor = self.reset()?;
                 cursor.statement.bind_iter(value)?;
                 Ok(cursor)
             }
 
             /// Reset the internal state.
+            #[allow(unused_mut)]
             pub fn reset(mut self) -> Result<Self> {
-                self.state = None;
                 self.statement.reset()?;
                 Ok(self)
             }
 
             /// Advance to the next row and read all columns.
             pub fn try_next(&mut self) -> Result<Option<&[Value]>> {
-                match self.state {
-                    Some(State::Row) => {}
-                    Some(State::Done) => return Ok(None),
-                    _ => {
-                        self.state = Some(self.statement.next()?);
-                        return self.try_next();
-                    }
+                if self.statement.next()? == State::Done {
+                    return Ok(None);
                 }
                 for (index, value) in self.values.iter_mut().enumerate() {
                     *value = self.statement.read(index)?;
                 }
-                self.state = Some(self.statement.next()?);
                 Ok(Some(&self.values))
             }
         }
@@ -193,7 +185,6 @@ pub fn new<'l, 'm>(statement: &'m mut Statement<'l>) -> Cursor<'l, 'm> {
     Cursor {
         statement: statement,
         values: values,
-        state: None,
     }
 }
 
@@ -202,6 +193,5 @@ pub fn new_with_ownership<'l>(statement: Statement<'l>) -> CursorWithOwnership<'
     CursorWithOwnership {
         statement: statement,
         values: values,
-        state: None,
     }
 }
