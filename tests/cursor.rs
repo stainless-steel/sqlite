@@ -47,6 +47,15 @@ fn column_type() {
     ok!(cursor.try_next());
     assert_eq!(ok!(cursor.column_type(0)), Type::String);
     assert_eq!(ok!(cursor.column_type("value")), Type::String);
+
+    let mut count = 0;
+    let mut cursor = statement.iter();
+    while let Ok(Some(_)) = cursor.try_next() {
+        assert_eq!(ok!(cursor.column_type(0)), Type::String, "index {}", count);
+        assert_eq!(ok!(cursor.column_type("value")), Type::String, "index {}", count);
+        count += 1;
+    }
+    assert_eq!(count, 6);
 }
 
 #[test]
