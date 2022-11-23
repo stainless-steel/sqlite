@@ -1,6 +1,6 @@
 extern crate sqlite;
 
-use sqlite::Value;
+use sqlite::{Type, Value};
 use std::collections::HashMap;
 
 mod common;
@@ -24,21 +24,38 @@ fn bind_iter() {
 }
 
 #[test]
+fn column_count() {
+    let connection = setup_english(":memory:");
+    let query = "SELECT value FROM english WHERE value LIKE '%type'";
+    let mut statement = ok!(connection.prepare(query));
+
+    let cursor = statement.iter();
+    assert_eq!(cursor.column_count(), 1);
+}
+
+#[test]
+fn column_type() {
+    let connection = setup_english(":memory:");
+    let query = "SELECT value FROM english WHERE value LIKE '%type'";
+    let mut statement = ok!(connection.prepare(query));
+
+    let cursor = statement.iter();
+    assert_eq!(ok!(cursor.column_type(0)), Type::Null);
+    assert_eq!(ok!(cursor.column_type("value")), Type::Null);
+
+    let mut cursor = statement.iter();
+    ok!(cursor.try_next());
+    assert_eq!(ok!(cursor.column_type(0)), Type::String);
+    assert_eq!(ok!(cursor.column_type("value")), Type::String);
+}
+
+#[test]
 fn count() {
     let connection = setup_english(":memory:");
     let query = "SELECT value FROM english WHERE value LIKE '%type'";
     let mut statement = ok!(connection.prepare(query));
 
     assert_eq!(statement.iter().filter(|row| row.is_ok()).count(), 6);
-}
-
-#[test]
-fn deref() {
-    let connection = setup_english(":memory:");
-    let query = "SELECT value FROM english WHERE value LIKE '%type'";
-    let mut statement = ok!(connection.prepare(query));
-
-    assert_eq!(statement.iter().column_count(), 1);
 }
 
 #[test]
