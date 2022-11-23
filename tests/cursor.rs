@@ -53,14 +53,9 @@ fn column_type() {
     let mut count = 0;
     let mut cursor = statement.iter();
     while let Ok(Some(_)) = cursor.try_next() {
+        assert_eq!(ok!(cursor.column_type(0)), Type::String);
+        assert_eq!(ok!(cursor.column_type("value")), Type::String);
         count += 1;
-        if count < 6 {
-            assert_eq!(ok!(cursor.column_type(0)), Type::String);
-            assert_eq!(ok!(cursor.column_type("value")), Type::String);
-        } else {
-            assert_eq!(ok!(cursor.column_type(0)), Type::Null);
-            assert_eq!(ok!(cursor.column_type("value")), Type::Null);
-        }
     }
     assert_eq!(count, 6);
 }
