@@ -120,6 +120,8 @@ impl<'l> From<CursorWithOwnership<'l>> for Statement<'l> {
 impl Row {
     /// Read the value in a column.
     ///
+    /// In case of integer indices, the first column has index 0.
+    ///
     /// # Panics
     ///
     /// Panics if the column could not be read.
@@ -133,6 +135,8 @@ impl Row {
     }
 
     /// Try to read the value in a column.
+    ///
+    /// In case of integer indices, the first column has index 0.
     #[inline]
     pub fn try_read<'l, T, U>(&'l self, column: U) -> Result<T>
     where
