@@ -52,6 +52,8 @@ pub trait ParameterIndex: Copy + std::fmt::Debug {
 /// A type suitable for reading from a prepared statement given a column index.
 pub trait ReadableWithIndex: Sized {
     /// Read from a column.
+    ///
+    /// In case of integer indices, the first column has index 0.
     fn read<T: ColumnIndex>(_: &Statement, _: T) -> Result<Self>;
 }
 
@@ -163,6 +165,8 @@ impl<'l> Statement<'l> {
     }
 
     /// Return the name of a column.
+    ///
+    /// In case of integer indices, the first column has index 0.
     #[inline]
     pub fn column_name<T: ColumnIndex>(&self, index: T) -> Result<&str> {
         Ok(&self.column_names[index.index(self)?])
@@ -176,7 +180,8 @@ impl<'l> Statement<'l> {
 
     /// Return the type of a column.
     ///
-    /// The type becomes available after taking a step.
+    /// The type becomes available after taking a step. In case of integer
+    /// indices, the first column has index 0.
     pub fn column_type<T: ColumnIndex>(&self, index: T) -> Result<Type> {
         Ok(
             match unsafe { ffi::sqlite3_column_type(self.raw.0, index.index(self)? as c_int) } {
@@ -233,6 +238,8 @@ impl<'l> Statement<'l> {
     }
 
     /// Read a value from a column.
+    ///
+    /// In case of integer indices, the first column has index 0.
     #[inline]
     pub fn read<T, U>(&self, index: U) -> Result<T>
     where
