@@ -4,6 +4,7 @@ version = "0.30.2"
 license = "Apache-2.0/MIT"
 authors = [
     "Alec Moskvin <alecm@gmx.com>",
+    "Angel Leon <gubatron@gmail.com>",
     "Cecile Tonglet <cecile.tonglet@cecton.com>",
     "Daniel Dulaney <ddy@vitronic.com>",
     "Ivan Stankovic <pokemon@fly.srk.fer.hr>",
