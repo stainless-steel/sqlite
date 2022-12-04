@@ -118,7 +118,9 @@ impl<'l> From<CursorWithOwnership<'l>> for Statement<'l> {
 }
 
 impl Row {
-    /// Read the value in a column. The first column is 0, the second is 1, ...
+    /// Read the value in a column.
+    ///
+    /// In case of integer indices, the first column has index 0.
     ///
     /// # Panics
     ///
@@ -132,7 +134,9 @@ impl Row {
         self.try_read(column).unwrap()
     }
 
-    /// Try to read the value in a column. The first column is 0, the second is 1, ...
+    /// Try to read the value in a column.
+    ///
+    /// In case of integer indices, the first column has index 0.
     #[inline]
     pub fn try_read<'l, T, U>(&'l self, column: U) -> Result<T>
     where
