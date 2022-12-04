@@ -39,7 +39,8 @@ macro_rules! implement(
         impl<$($lifetime),+> $type<$($lifetime),+> {
             /// Bind values to parameters.
             ///
-            /// See `Statement::bind` for further details.
+            /// In case of integer indices, the first parameter has index 1. See
+            /// `Statement::bind` for further details.
             pub fn bind<T: Bindable>(self, value: T) -> Result<Self> {
                 #[allow(unused_mut)]
                 let mut cursor = self.reset()?;

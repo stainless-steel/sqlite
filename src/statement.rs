@@ -30,6 +30,8 @@ pub trait Bindable {
 /// A type suitable for binding to a prepared statement given a parameter index.
 pub trait BindableWithIndex {
     /// Bind to a parameter.
+    ///
+    /// In case of integer indices, the first parameter has index 1.
     fn bind<T: ParameterIndex>(self, _: &mut Statement, _: T) -> Result<()>;
 }
 
@@ -68,6 +70,8 @@ pub enum State {
 
 impl<'l> Statement<'l> {
     /// Bind values to parameters.
+    ///
+    /// In case of integer indices, the first parameter has index 1.
     ///
     /// # Examples
     ///
