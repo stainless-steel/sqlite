@@ -77,6 +77,7 @@ implement!(Vec<u8>, Binary);
 implement!(&[u8], Binary);
 implement!(f64, Float);
 implement!(i64, Integer);
+implement!(bool, Integer);
 implement!(String, String);
 implement!(&str, String);
 implement!((), Null);
@@ -167,3 +168,17 @@ implement!(@reference-lifetime &'l str, String);
 implement!(@reference f64, Float);
 implement!(@reference i64, Integer);
 implement!(@reference (), Null);
+
+impl<'l> TryFrom<&'l Value> for bool {
+	type Error = Error;
+
+	#[inline]
+	fn try_from(value: &'l Value) -> Result<Self> {
+		if let Value::Integer(int) = value {
+			Ok(*int >= 1)
+		}
+        else {
+            raise!("failed to convert")
+        }
+	}
+}
