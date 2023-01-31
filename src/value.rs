@@ -170,15 +170,14 @@ implement!(@reference i64, Integer);
 implement!(@reference (), Null);
 
 impl<'l> TryFrom<&'l Value> for bool {
-	type Error = Error;
+    type Error = Error;
 
-	#[inline]
-	fn try_from(value: &'l Value) -> Result<Self> {
-		if let Value::Integer(int) = value {
-			Ok(*int >= 1)
-		}
-        else {
+    #[inline]
+    fn try_from(value: &'l Value) -> Result<Self> {
+        if let Value::Integer(int) = value {
+            Ok(*int >= 1)
+        } else {
             raise!("failed to convert")
         }
-	}
+    }
 }
