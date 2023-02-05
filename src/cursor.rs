@@ -190,7 +190,7 @@ pub fn new<'l, 'm>(statement: &'m mut Statement<'l>) -> Cursor<'l, 'm> {
     Cursor { statement, values }
 }
 
-pub fn new_with_ownership<'l>(statement: Statement<'l>) -> CursorWithOwnership<'l> {
+pub fn new_with_ownership(statement: Statement<'_>) -> CursorWithOwnership<'_> {
     let values = vec![Value::Null; statement.column_count()];
     CursorWithOwnership { statement, values }
 }

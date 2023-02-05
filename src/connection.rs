@@ -121,7 +121,7 @@ impl Connection {
 
     /// Create a prepared statement.
     #[inline]
-    pub fn prepare<'l, T: AsRef<str>>(&'l self, statement: T) -> Result<Statement<'l>> {
+    pub fn prepare<T: AsRef<str>>(&self, statement: T) -> Result<Statement<'_>> {
         ::statement::new(self.raw.0, statement)
     }
 
