@@ -54,9 +54,9 @@ macro_rules! raise(
 impl fmt::Display for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match (self.code, &self.message) {
-            (Some(code), &Some(ref message)) => write!(formatter, "{} (code {})", message, code),
-            (Some(code), _) => write!(formatter, "an SQLite error (code {})", code),
-            (_, &Some(ref message)) => message.fmt(formatter),
+            (Some(code), Some(message)) => write!(formatter, "{message} (code {code})"),
+            (Some(code), _) => write!(formatter, "an SQLite error (code {code})"),
+            (_, Some(message)) => message.fmt(formatter),
             _ => write!(formatter, "an SQLite error"),
         }
     }
