@@ -209,6 +209,7 @@ impl<'l> Statement<'l> {
     ///
     /// The function should be called multiple times until `State::Done` is
     /// reached in order to evaluate the statement entirely.
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> Result<State> {
         Ok(match unsafe { ffi::sqlite3_step(self.raw.0) } {
             ffi::SQLITE_ROW => State::Row,
@@ -514,6 +515,7 @@ impl ReadableWithIndex for Value {
 
 impl ReadableWithIndex for f64 {
     #[inline]
+    #[allow(clippy::unnecessary_cast)]
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         Ok(unsafe {
             ffi::sqlite3_column_double(statement.raw.0, index.index(statement)? as c_int) as f64
@@ -523,6 +525,7 @@ impl ReadableWithIndex for f64 {
 
 impl ReadableWithIndex for i64 {
     #[inline]
+    #[allow(clippy::unnecessary_cast)]
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         Ok(unsafe {
             ffi::sqlite3_column_int64(statement.raw.0, index.index(statement)? as c_int) as i64
