@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
-        with: {toolchain: nightly}
+        with: {toolchain: nightly, override: true}
       - run: cargo bench
 
   test:
