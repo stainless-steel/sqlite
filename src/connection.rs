@@ -31,13 +31,13 @@ impl Connection {
 
     /// Open a connection with specific flags.
     pub fn open_with_flags<T: AsRef<Path>>(path: T, flags: OpenFlags) -> Result<Connection> {
-        let mut raw = 0 as *mut _;
+        let mut raw = std::ptr::null_mut();
         unsafe {
             let code = ffi::sqlite3_open_v2(
                 path_to_cstr!(path.as_ref()).as_ptr(),
                 &mut raw,
                 flags.0,
-                0 as *const _,
+                std::ptr::null(),
             );
             match code {
                 ffi::SQLITE_OK => {}
@@ -85,8 +85,8 @@ impl Connection {
                     self.raw.0,
                     str_to_cstr!(statement.as_ref()).as_ptr(),
                     None,
-                    0 as *mut _,
-                    0 as *mut _,
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
                 )
             );
         }
@@ -112,7 +112,7 @@ impl Connection {
                     str_to_cstr!(statement.as_ref()).as_ptr(),
                     Some(process_callback::<F>),
                     &*callback as *const F as *mut F as *mut _,
-                    0 as *mut _,
+                    std::ptr::null_mut(),
                 )
             );
         }
@@ -182,7 +182,7 @@ impl Connection {
         unsafe {
             ok!(
                 self.raw.0,
-                ffi::sqlite3_busy_handler(self.raw.0, None, 0 as *mut _)
+                ffi::sqlite3_busy_handler(self.raw.0, None, std::ptr::null_mut())
             );
         }
         Ok(())

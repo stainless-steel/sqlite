@@ -580,7 +580,7 @@ pub fn new<'l, T>(raw_connection: *mut ffi::sqlite3, statement: T) -> Result<Sta
 where
     T: AsRef<str>,
 {
-    let mut raw_statement = 0 as *mut _;
+    let mut raw_statement = std::ptr::null_mut();
     unsafe {
         ok!(
             raw_connection,
@@ -589,7 +589,7 @@ where
                 str_to_cstr!(statement.as_ref()).as_ptr(),
                 -1,
                 &mut raw_statement,
-                0 as *mut _,
+                std::ptr::null_mut(),
             )
         );
     }
