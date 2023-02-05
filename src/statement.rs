@@ -422,11 +422,11 @@ impl BindableWithIndex for Value {
 impl BindableWithIndex for &Value {
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         match self {
-            &Value::Binary(ref value) => (value as &[u8]).bind(statement, index),
-            &Value::Float(value) => value.bind(statement, index),
-            &Value::Integer(value) => value.bind(statement, index),
-            &Value::String(ref value) => (value as &str).bind(statement, index),
-            &Value::Null => ().bind(statement, index),
+            Value::Binary(ref value) => (value as &[u8]).bind(statement, index),
+            Value::Float(value) => value.bind(statement, index),
+            Value::Integer(value) => value.bind(statement, index),
+            Value::String(ref value) => (value as &str).bind(statement, index),
+            Value::Null => ().bind(statement, index),
         }
     }
 }
@@ -483,7 +483,7 @@ impl ParameterIndex for &str {
     #[inline]
     fn index(self, statement: &Statement) -> Result<usize> {
         match statement.parameter_index(self)? {
-            Some(index) => return Ok(index),
+            Some(index) => Ok(index),
             _ => raise!("the index is out of range ({})", self),
         }
     }

@@ -277,13 +277,7 @@ extern "C" fn busy_callback<F>(callback: *mut c_void, attempts: c_int) -> c_int
 where
     F: FnMut(usize) -> bool,
 {
-    unsafe {
-        if (*(callback as *mut F))(attempts as usize) {
-            1
-        } else {
-            0
-        }
-    }
+    unsafe { c_int::from((*(callback as *mut F))(attempts as usize)) }
 }
 
 extern "C" fn process_callback<F>(
@@ -313,10 +307,6 @@ where
             };
             pairs.push((column, value));
         }
-        if (*(callback as *mut F))(&pairs) {
-            0
-        } else {
-            1
-        }
+        c_int::from(!(*(callback as *mut F))(&pairs))
     }
 }
