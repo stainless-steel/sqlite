@@ -10,29 +10,32 @@ on:
   workflow_dispatch:
 
 jobs:
-  agnostic:
+  check:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: actions-rs/cargo@v1
-        with: {command: fmt, args: --all -- --check}
+      - uses: actions-rs/toolchain@v1
+        with: {components: clippy, rustfmt}
+      - run: cargo clippy -- -D warnings
+      - run: cargo fmt --all -- --check
 
-  macos:
-    runs-on: macos-latest
+  bench:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
-      - uses: actions-rs/cargo@v1
-        with: {command: test}
       - uses: actions-rs/toolchain@v1
         with: {toolchain: nightly}
-      - run: cargo +nightly bench
+      - run: cargo bench
 
-  ubuntu:
-    runs-on: ubuntu-latest
+  test:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
-      - uses: actions-rs/cargo@v1
-        with: {command: test}
       - uses: actions-rs/toolchain@v1
-        with: {toolchain: nightly}
-      - run: cargo +nightly bench
+      - run: cargo test
