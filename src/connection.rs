@@ -246,6 +246,13 @@ impl OpenFlags {
     }
 }
 
+impl Default for OpenFlags {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Deref for ConnectionWithFullMutex {
     type Target = Connection;
 
