@@ -98,7 +98,7 @@ macro_rules! implement(
                 self.try_next()
                     .map(|row| {
                         row.map(|row| Row {
-                            column_mapping: column_mapping,
+                            column_mapping,
                             values: row.to_vec(),
                         })
                     })
@@ -187,16 +187,10 @@ impl RowIndex for usize {
 
 pub fn new<'l, 'm>(statement: &'m mut Statement<'l>) -> Cursor<'l, 'm> {
     let values = vec![Value::Null; statement.column_count()];
-    Cursor {
-        statement: statement,
-        values: values,
-    }
+    Cursor { statement, values }
 }
 
 pub fn new_with_ownership<'l>(statement: Statement<'l>) -> CursorWithOwnership<'l> {
     let values = vec![Value::Null; statement.column_count()];
-    CursorWithOwnership {
-        statement: statement,
-        values: values,
-    }
+    CursorWithOwnership { statement, values }
 }

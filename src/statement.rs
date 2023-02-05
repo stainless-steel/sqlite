@@ -608,7 +608,7 @@ where
         .collect();
     Ok(Statement {
         raw: (raw_statement, raw_connection),
-        column_names: column_names,
+        column_names,
         column_mapping: Rc::new(column_mapping),
         phantom: PhantomData,
     })
