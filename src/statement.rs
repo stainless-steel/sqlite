@@ -557,8 +557,8 @@ impl ReadableWithIndex for Vec<u8> {
             let count = ffi::sqlite3_column_bytes(statement.raw.0, index.index(statement)? as c_int)
                 as usize;
             let mut buffer = Vec::with_capacity(count);
-            buffer.set_len(count);
             copy(pointer as *const u8, buffer.as_mut_ptr(), count);
+            buffer.set_len(count);
             Ok(buffer)
         }
     }
