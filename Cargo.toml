@@ -27,14 +27,11 @@ keywords = ["database"]
 
 [features]
 default = ["linkage"]
-linkage = ["sqlite3-sys/linkage"]
+linkage = ["libsqlite3-sys/bundled"]
 
 [dependencies]
 libc = "0.2"
-
-[dependencies.sqlite3-sys]
-version = "0.14"
-default-features = false
+libsqlite3-sys = "0.26"
 
 [dev-dependencies]
 temporary = "0.6"
