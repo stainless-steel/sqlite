@@ -1,6 +1,6 @@
 [package]
 name = "sqlite"
-version = "0.30.4"
+version = "0.30.5"
 license = "Apache-2.0/MIT"
 authors = [
     "Alec Moskvin <alecm@gmx.com>",
@@ -33,7 +33,7 @@ linkage = ["sqlite3-sys/linkage"]
 libc = "0.2"
 
 [dependencies.sqlite3-sys]
-version = "0.14"
+version = "0.15"
 default-features = false
 
 [dev-dependencies]
