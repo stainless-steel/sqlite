@@ -249,7 +249,7 @@ fn read_with_name() {
 }
 
 #[test]
-fn workflow() {
+fn workflow_1() {
     struct Database<'l> {
         #[allow(dead_code)]
         connection: &'l Connection,
@@ -277,4 +277,26 @@ fn workflow() {
     for _ in 0..5 {
         assert!(database.run_once().is_ok());
     }
+}
+
+#[test]
+fn workflow_2() {
+    let connection = ok!(Connection::open(":memory:"));
+    ok!(connection.execute("CREATE TABLE users (name TEXT, age INTEGER, PRIMARY KEY (name))"));
+
+    let mut statement = ok!(connection.prepare(
+        "INSERT INTO users (name, age) VALUES ('jean', 49) ON CONFLICT DO UPDATE SET age = 49"
+    ));
+    ok!(statement.next());
+
+    let mut statement = ok!(connection.prepare(
+        "INSERT INTO users (name, age) VALUES ('jean', 50) ON CONFLICT DO UPDATE SET age = 50"
+    ));
+    ok!(statement.next());
+
+    let mut statement = ok!(connection.prepare("SELECT * FROM users WHERE name = 'jean'"));
+    ok!(statement.next());
+
+    let age = ok!(statement.read::<i64, _>("age"));
+    assert_eq!(age, 50);
 }
