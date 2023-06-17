@@ -1,12 +1,11 @@
 #![feature(test)]
 
-extern crate sqlite;
 extern crate test;
+
+mod common;
 
 use sqlite::Value;
 use test::Bencher;
-
-mod common;
 
 use common::{create, populate};
 
@@ -49,8 +48,8 @@ fn read_try_next(bencher: &mut Bencher) {
             .unwrap();
         let mut count = 0;
         while let Ok(Some(row)) = cursor.try_next() {
-            assert!(ok!(row[0].try_into::<i64>()) > 42);
-            assert!(ok!(row[1].try_into::<f64>()) > 42.0);
+            assert!(ok!((&row[0]).try_into::<i64>()) > 42);
+            assert!(ok!((&row[1]).try_into::<f64>()) > 42.0);
             count += 1;
         }
         assert_eq!(count, 100 - 42);

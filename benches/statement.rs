@@ -1,12 +1,11 @@
 #![feature(test)]
 
-extern crate sqlite;
 extern crate test;
+
+mod common;
 
 use sqlite::State;
 use test::Bencher;
-
-mod common;
 
 use common::{create, populate};
 
