@@ -201,12 +201,12 @@ fn try_next_try_into() {
 
     let mut cursor = statement.iter();
     let row = ok!(ok!(cursor.try_next()));
-    assert!(row[0].try_into::<f64>().is_err());
-    assert!(row[0].try_into::<i64>().is_ok());
-    assert!(row[1].try_into::<&str>().is_ok());
-    assert!(row[2].try_into::<f64>().is_ok());
-    assert!(row[3].try_into::<&[u8]>().is_ok());
-    assert!(row[4].try_into::<&str>().is_err());
+    assert!((&row[0]).try_into::<f64>().is_err());
+    assert!((&row[0]).try_into::<i64>().is_ok());
+    assert!((&row[1]).try_into::<&str>().is_ok());
+    assert!((&row[2]).try_into::<f64>().is_ok());
+    assert!((&row[3]).try_into::<&[u8]>().is_ok());
+    assert!((&row[4]).try_into::<&str>().is_err());
 }
 
 #[test]

@@ -14,9 +14,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 macro_rules! error(
     ($connection:expr, $code:expr) => (
-        match ::error::last($connection) {
+        match crate::error::last($connection) {
             Some(error) => return Err(error),
-            _ => return Err(::Error {
+            _ => return Err(crate::error::Error {
                 code: Some($code as isize),
                 message: None,
             }),
@@ -27,14 +27,14 @@ macro_rules! error(
 macro_rules! ok(
     ($connection:expr, $result:expr) => (
         match $result {
-            ::ffi::SQLITE_OK => {}
+            crate::ffi::SQLITE_OK => {}
             code => error!($connection, code),
         }
     );
     ($result:expr) => (
         match $result {
-            ::ffi::SQLITE_OK => {}
-            code => return Err(::Error {
+            crate::ffi::SQLITE_OK => {}
+            code => return Err(crate::error::Error {
                 code: Some(code as isize),
                 message: None,
             }),
@@ -44,7 +44,7 @@ macro_rules! ok(
 
 macro_rules! raise(
     ($message:expr $(, $($token:tt)* )?) => (
-        return Err(::Error {
+        return Err(crate::error::Error {
             code: None,
             message: Some(format!($message $(, $($token)* )*)),
         })

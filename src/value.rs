@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use {Error, Result};
+use crate::error::{Error, Result};
 
 /// A value.
 #[derive(Clone, Debug, PartialEq)]

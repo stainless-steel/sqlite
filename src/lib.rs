@@ -89,16 +89,15 @@
 //!
 //! [1]: https://www.sqlite.org
 
-extern crate libc;
 extern crate sqlite3_sys as ffi;
 
 macro_rules! c_str_to_str(
-    ($string:expr) => (::std::str::from_utf8(::std::ffi::CStr::from_ptr($string).to_bytes()));
+    ($string:expr) => (std::str::from_utf8(std::ffi::CStr::from_ptr($string).to_bytes()));
 );
 
 macro_rules! c_str_to_string(
     ($string:expr) => (
-        String::from_utf8_lossy(::std::ffi::CStr::from_ptr($string as *const _).to_bytes())
+        String::from_utf8_lossy(std::ffi::CStr::from_ptr($string as *const _).to_bytes())
                .into_owned()
     );
 );
@@ -107,7 +106,7 @@ macro_rules! path_to_cstr(
     ($path:expr) => (
         match $path.to_str() {
             Some(path) => {
-                match ::std::ffi::CString::new(path) {
+                match std::ffi::CString::new(path) {
                     Ok(string) => string,
                     _ => raise!("failed to process a path"),
                 }
@@ -119,7 +118,7 @@ macro_rules! path_to_cstr(
 
 macro_rules! str_to_cstr(
     ($string:expr) => (
-        match ::std::ffi::CString::new($string) {
+        match std::ffi::CString::new($string) {
             Ok(string) => string,
             _ => raise!("failed to process a string"),
         }

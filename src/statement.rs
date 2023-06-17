@@ -1,16 +1,16 @@
-use ffi;
-use libc::{c_double, c_int};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use cursor::{Cursor, CursorWithOwnership, Row};
-use error::Result;
-use value::{Type, Value};
+use libc::{c_double, c_int};
+
+use crate::cursor::{Cursor, CursorWithOwnership, Row};
+use crate::error::Result;
+use crate::value::{Type, Value};
 
 // https://sqlite.org/c3ref/c_static.html
 macro_rules! transient(
-    () => (::std::mem::transmute(!0 as *const ::libc::c_void));
+    () => (::std::mem::transmute(!0 as *const libc::c_void));
 );
 
 /// A prepared statement.
@@ -278,7 +278,7 @@ impl<'l> Drop for Statement<'l> {
 impl<'l, 'm> From<&'m mut Statement<'l>> for Cursor<'l, 'm> {
     #[inline]
     fn from(statement: &'m mut Statement<'l>) -> Self {
-        ::cursor::new(statement)
+        crate::cursor::new(statement)
     }
 }
 
@@ -288,7 +288,7 @@ impl<'l> IntoIterator for Statement<'l> {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        ::cursor::new_with_ownership(self)
+        crate::cursor::new_with_ownership(self)
     }
 }
 

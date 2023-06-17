@@ -3,9 +3,9 @@ use std::convert::TryFrom;
 use std::ops::{Deref, Index};
 use std::rc::Rc;
 
-use error::{Error, Result};
-use statement::{Bindable, State, Statement};
-use value::Value;
+use crate::error::{Error, Result};
+use crate::statement::{Bindable, State, Statement};
+use crate::value::Value;
 
 /// An iterator for a prepared statement.
 pub struct Cursor<'l, 'm> {

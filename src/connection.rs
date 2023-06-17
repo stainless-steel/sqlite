@@ -1,11 +1,11 @@
-use ffi;
-use libc::{c_char, c_int, c_void};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
-use error::Result;
-use statement::Statement;
+use libc::{c_char, c_int, c_void};
+
+use crate::error::Result;
+use crate::statement::Statement;
 
 /// A database connection.
 pub struct Connection {
@@ -41,14 +41,14 @@ impl Connection {
             );
             match code {
                 ffi::SQLITE_OK => {}
-                code => match ::error::last(raw) {
+                code => match crate::error::last(raw) {
                     Some(error) => {
                         ffi::sqlite3_close(raw);
                         return Err(error);
                     }
                     _ => {
                         ffi::sqlite3_close(raw);
-                        return Err(::Error {
+                        return Err(crate::error::Error {
                             code: Some(code as isize),
                             message: None,
                         });
@@ -122,7 +122,7 @@ impl Connection {
     /// Create a prepared statement.
     #[inline]
     pub fn prepare<T: AsRef<str>>(&self, statement: T) -> Result<Statement<'_>> {
-        ::statement::new(self.raw.0, statement)
+        crate::statement::new(self.raw.0, statement)
     }
 
     /// Return the number of rows inserted, updated, or deleted by the most
