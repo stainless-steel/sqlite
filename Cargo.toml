@@ -28,6 +28,7 @@ keywords = ["database"]
 
 [features]
 default = ["linkage"]
+bundled = ["sqlite3-sys/bundled"]
 linkage = ["sqlite3-sys/linkage"]
 
 [dependencies]
