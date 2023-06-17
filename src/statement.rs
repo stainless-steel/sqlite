@@ -10,7 +10,7 @@ use crate::value::{Type, Value};
 
 // https://sqlite.org/c3ref/c_static.html
 macro_rules! transient(
-    () => (::std::mem::transmute(!0 as *const libc::c_void));
+    () => (std::mem::transmute(!0 as *const libc::c_void));
 );
 
 /// A prepared statement.
