@@ -16,6 +16,7 @@ authors = [
     "Sean Klein <seanmarionklein@gmail.com>",
     "Sophie Tauchert <999eagle@999eagle.moe>",
     "Tomoki Aonuma <uasi@uasi.jp>",
+    "Vincenzo Palazzo <vincenzopalazzodev@gmail.com>",
     "Yorhel <git@yorhel.nl>",
 ]
 description = "The package provides an interface to SQLite."
