@@ -81,19 +81,6 @@ implement!(String, String);
 implement!(&str, String);
 implement!((), Null);
 
-impl<T> From<Option<T>> for Value
-where
-    T: Into<Value>,
-    Value: From<T>,
-{
-    fn from(value: Option<T>) -> Self {
-        match value {
-            Some(data) => Value::from(data),
-            None => Self::Null,
-        }
-    }
-}
-
 macro_rules! implement(
     (@value $type:ty, $value:ident) => {
         impl TryFrom<Value> for $type {
@@ -180,3 +167,17 @@ implement!(@reference-lifetime &'l str, String);
 implement!(@reference f64, Float);
 implement!(@reference i64, Integer);
 implement!(@reference (), Null);
+
+impl<T> From<Option<T>> for Value
+where
+    T: Into<Value>,
+    Value: From<T>,
+{
+    #[inline]
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Some(value) => Value::from(value),
+            _ => Self::Null,
+        }
+    }
+}
