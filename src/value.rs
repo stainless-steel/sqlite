@@ -162,10 +162,10 @@ macro_rules! implement(
 
 implement!(@value Vec<u8>, Binary);
 implement!(@reference-lifetime &'l [u8], Binary);
-implement!(@value String, String);
-implement!(@reference-lifetime &'l str, String);
 implement!(@reference f64, Float);
 implement!(@reference i64, Integer);
+implement!(@value String, String);
+implement!(@reference-lifetime &'l str, String);
 implement!(@reference (), Null);
 
 impl<T> From<Option<T>> for Value

@@ -495,15 +495,22 @@ impl ParameterIndex for usize {
     }
 }
 
-impl ReadableWithIndex for Value {
+impl ReadableWithIndex for Vec<u8> {
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
-        Ok(match statement.column_type(index)? {
-            Type::Binary => Value::Binary(ReadableWithIndex::read(statement, index)?),
-            Type::Float => Value::Float(ReadableWithIndex::read(statement, index)?),
-            Type::Integer => Value::Integer(ReadableWithIndex::read(statement, index)?),
-            Type::String => Value::String(ReadableWithIndex::read(statement, index)?),
-            Type::Null => Value::Null,
-        })
+        use std::ptr::copy_nonoverlapping as copy;
+        unsafe {
+            let pointer =
+                ffi::sqlite3_column_blob(statement.raw.0, index.index(statement)? as c_int);
+            if pointer.is_null() {
+                return Ok(vec![]);
+            }
+            let count = ffi::sqlite3_column_bytes(statement.raw.0, index.index(statement)? as c_int)
+                as usize;
+            let mut buffer = Vec::with_capacity(count);
+            copy(pointer as *const u8, buffer.as_mut_ptr(), count);
+            buffer.set_len(count);
+            Ok(buffer)
+        }
     }
 }
 
@@ -538,23 +545,15 @@ impl ReadableWithIndex for String {
     }
 }
 
-impl ReadableWithIndex for Vec<u8> {
-    #[inline]
+impl ReadableWithIndex for Value {
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
-        use std::ptr::copy_nonoverlapping as copy;
-        unsafe {
-            let pointer =
-                ffi::sqlite3_column_blob(statement.raw.0, index.index(statement)? as c_int);
-            if pointer.is_null() {
-                return Ok(vec![]);
-            }
-            let count = ffi::sqlite3_column_bytes(statement.raw.0, index.index(statement)? as c_int)
-                as usize;
-            let mut buffer = Vec::with_capacity(count);
-            copy(pointer as *const u8, buffer.as_mut_ptr(), count);
-            buffer.set_len(count);
-            Ok(buffer)
-        }
+        Ok(match statement.column_type(index)? {
+            Type::Binary => Value::Binary(ReadableWithIndex::read(statement, index)?),
+            Type::Float => Value::Float(ReadableWithIndex::read(statement, index)?),
+            Type::Integer => Value::Integer(ReadableWithIndex::read(statement, index)?),
+            Type::String => Value::String(ReadableWithIndex::read(statement, index)?),
+            Type::Null => Value::Null,
+        })
     }
 }
 
