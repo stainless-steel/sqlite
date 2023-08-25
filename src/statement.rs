@@ -231,7 +231,6 @@ impl<'l> Statement<'l> {
     /// assert_eq!(statement.parameter_index(":asdf")?, None);
     /// # Ok::<(), sqlite::Error>(())
     /// ```
-    #[inline]
     pub fn parameter_index(&self, parameter: &str) -> Result<Option<usize>> {
         let index = unsafe {
             ffi::sqlite3_bind_parameter_index(self.raw.0, str_to_cstr!(parameter).as_ptr())
@@ -329,7 +328,6 @@ where
 }
 
 impl BindableWithIndex for &[u8] {
-    #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         unsafe {
             ok!(
@@ -348,7 +346,6 @@ impl BindableWithIndex for &[u8] {
 }
 
 impl BindableWithIndex for f64 {
-    #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         unsafe {
             ok!(
@@ -365,7 +362,6 @@ impl BindableWithIndex for f64 {
 }
 
 impl BindableWithIndex for i64 {
-    #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         unsafe {
             ok!(
@@ -382,7 +378,6 @@ impl BindableWithIndex for i64 {
 }
 
 impl BindableWithIndex for &str {
-    #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         unsafe {
             ok!(
@@ -401,7 +396,6 @@ impl BindableWithIndex for &str {
 }
 
 impl BindableWithIndex for () {
-    #[inline]
     fn bind<T: ParameterIndex>(self, statement: &mut Statement, index: T) -> Result<()> {
         unsafe {
             ok!(
@@ -514,7 +508,6 @@ impl ReadableWithIndex for Value {
 }
 
 impl ReadableWithIndex for f64 {
-    #[inline]
     #[allow(clippy::unnecessary_cast)]
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         Ok(unsafe {
@@ -524,7 +517,6 @@ impl ReadableWithIndex for f64 {
 }
 
 impl ReadableWithIndex for i64 {
-    #[inline]
     #[allow(clippy::unnecessary_cast)]
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         Ok(unsafe {
@@ -534,7 +526,6 @@ impl ReadableWithIndex for i64 {
 }
 
 impl ReadableWithIndex for String {
-    #[inline]
     fn read<T: ColumnIndex>(statement: &Statement, index: T) -> Result<Self> {
         unsafe {
             let pointer =
@@ -568,7 +559,6 @@ impl ReadableWithIndex for Vec<u8> {
 }
 
 impl<T: ReadableWithIndex> ReadableWithIndex for Option<T> {
-    #[inline]
     fn read<U: ColumnIndex>(statement: &Statement, index: U) -> Result<Self> {
         if statement.column_type(index)? == Type::Null {
             Ok(None)
@@ -578,7 +568,6 @@ impl<T: ReadableWithIndex> ReadableWithIndex for Option<T> {
     }
 }
 
-#[inline]
 pub fn new<'l, T>(raw_connection: *mut ffi::sqlite3, statement: T) -> Result<Statement<'l>>
 where
     T: AsRef<str>,
