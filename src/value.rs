@@ -94,9 +94,21 @@ macro_rules! implement(
                 raise!("failed to convert");
             }
         }
+
+        impl TryFrom<Value> for Option<$type> {
+            type Error = Error;
+
+            #[inline]
+            fn try_from(value: Value) -> Result<Self> {
+                if let Value::Null = value {
+                    return Ok(None);
+                }
+                <$type>::try_from(value).and_then(|value| Ok(Some(value)))
+            }
+        }
     };
-    (@reference $type:ty, Null) => {
-        impl TryFrom<&Value> for $type {
+    (@reference (), Null) => {
+        impl TryFrom<&Value> for () {
             type Error = Error;
 
             #[inline]
