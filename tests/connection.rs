@@ -10,12 +10,11 @@ use common::setup_users;
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 
-#[cfg(windows)]
 #[test]
 fn load_extension() {
     let connection = ok!(Connection::open(":memory:"));
     ok!(connection.enable_load_extension());
-    assert!(connection.load_extension("libsqlitefunctions.dll").is_err());
+    assert!(connection.load_extension("libsqlitefunctions").is_err());
 }
 
 #[test]
