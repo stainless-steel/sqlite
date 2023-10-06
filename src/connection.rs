@@ -93,71 +93,6 @@ impl Connection {
         Ok(())
     }
 
-    ///Enable loading extension
-    ///
-    ///Docs refs about loading extension available at https://www.sqlite.org/c3ref/enable_load_extension.html
-    #[inline]
-    pub fn enable_load_extension(&self) -> Result<()> {
-        unsafe {
-            ok!(
-                self.raw.0,
-                ffi::sqlite3_enable_load_extension(
-                    self.raw.0,
-                    1 as c_int
-                )
-            );
-        }
-        Ok(())
-    }
-
-    ///Disable loading extension
-    ///
-    ///Docs refs about loading extension available at https://www.sqlite.org/c3ref/enable_load_extension.html
-    #[inline]
-    pub fn disable_load_extension(&self) -> Result<()> {
-        unsafe {
-            ok!(
-                self.raw.0,
-                ffi::sqlite3_enable_load_extension(
-                    self.raw.0,
-                    0 as c_int
-                )
-            );
-        }
-        Ok(())
-    }
-
-
-    ///Load extension
-    ///
-    ///Docs refs about loading extension available at https://www.sqlite.org/c3ref/enable_load_extension.html
-    #[inline]
-    pub fn load_extension<T: AsRef<str>>(&self, name: T) -> Result<()> {
-        unsafe {
-            let mut s: *mut c_char = std::ptr::null_mut();
-            let res = ffi::sqlite3_load_extension(
-                self.raw.0,
-                str_to_cstr!(name.as_ref()).as_ptr() as *const c_char,
-                std::ptr::null_mut(),
-                &mut s,
-            );
-
-            if res == ffi::SQLITE_ERROR {
-                let message_error = std::ffi::CStr::from_ptr(s).to_str().unwrap();
-                return Err(crate::error::Error {
-                    code: Some(res as isize),
-                    message: Some(format!("Extension {} could not be loaded. Err {}", name.as_ref(), message_error)),
-                });
-            }
-
-            ok!(
-                 self.raw.0,
-                res
-            );
-        }
-        Ok(())
-    }
-
     /// Execute a statement and process the resulting rows as plain text.
     ///
     /// The callback is triggered for each row. If the callback returns `false`,
@@ -248,6 +183,47 @@ impl Connection {
             ok!(
                 self.raw.0,
                 ffi::sqlite3_busy_handler(self.raw.0, None, std::ptr::null_mut())
+            );
+        }
+        Ok(())
+    }
+
+    /// Enable loading extensions.
+    #[inline]
+    pub fn enable_extension(&self) -> Result<()> {
+        unsafe {
+            ok!(
+                self.raw.0,
+                ffi::sqlite3_enable_load_extension(self.raw.0, 1 as c_int)
+            );
+        }
+        Ok(())
+    }
+
+    /// Load an extension.
+    #[inline]
+    pub fn extend<T: AsRef<str>>(&self, name: T) -> Result<()> {
+        unsafe {
+            ok!(
+                self.raw.0,
+                ffi::sqlite3_load_extension(
+                    self.raw.0,
+                    str_to_cstr!(name.as_ref()).as_ptr() as *const c_char,
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                )
+            );
+        }
+        Ok(())
+    }
+
+    /// Disable loading extensions.
+    #[inline]
+    pub fn disable_extension(&self) -> Result<()> {
+        unsafe {
+            ok!(
+                self.raw.0,
+                ffi::sqlite3_enable_load_extension(self.raw.0, 0 as c_int)
             );
         }
         Ok(())

@@ -9,24 +9,23 @@ use common::setup_users;
 
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
-
 #[test]
-fn load_extension() {
+fn enable_extension() {
     let connection = ok!(Connection::open(":memory:"));
-    ok!(connection.enable_load_extension());
-    assert!(connection.load_extension("libsqlitefunctions").is_err());
+    ok!(connection.enable_extension());
 }
 
 #[test]
-fn enable_load_extension() {
+fn extend() {
     let connection = ok!(Connection::open(":memory:"));
-    ok!(connection.enable_load_extension());
+    ok!(connection.enable_extension());
+    assert!(connection.extend("libsqlitefunctions").is_err());
 }
 
 #[test]
-fn disable_load_extension() {
+fn disable_extension() {
     let connection = ok!(Connection::open(":memory:"));
-    ok!(connection.disable_load_extension());
+    ok!(connection.disable_extension());
 }
 
 #[test]
