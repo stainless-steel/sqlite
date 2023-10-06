@@ -188,6 +188,47 @@ impl Connection {
         Ok(())
     }
 
+    /// Enable loading extensions.
+    #[inline]
+    pub fn enable_extension(&self) -> Result<()> {
+        unsafe {
+            ok!(
+                self.raw.0,
+                ffi::sqlite3_enable_load_extension(self.raw.0, 1 as c_int)
+            );
+        }
+        Ok(())
+    }
+
+    /// Load an extension.
+    #[inline]
+    pub fn extend<T: AsRef<str>>(&self, name: T) -> Result<()> {
+        unsafe {
+            ok!(
+                self.raw.0,
+                ffi::sqlite3_load_extension(
+                    self.raw.0,
+                    str_to_cstr!(name.as_ref()).as_ptr() as *const c_char,
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                )
+            );
+        }
+        Ok(())
+    }
+
+    /// Disable loading extensions.
+    #[inline]
+    pub fn disable_extension(&self) -> Result<()> {
+        unsafe {
+            ok!(
+                self.raw.0,
+                ffi::sqlite3_enable_load_extension(self.raw.0, 0 as c_int)
+            );
+        }
+        Ok(())
+    }
+
     #[doc(hidden)]
     #[inline]
     pub fn as_raw(&self) -> *mut ffi::sqlite3 {

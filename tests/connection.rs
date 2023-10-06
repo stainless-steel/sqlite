@@ -10,6 +10,25 @@ use common::setup_users;
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[test]
+fn enable_extension() {
+    let connection = ok!(Connection::open(":memory:"));
+    ok!(connection.enable_extension());
+}
+
+#[test]
+fn extend() {
+    let connection = ok!(Connection::open(":memory:"));
+    ok!(connection.enable_extension());
+    assert!(connection.extend("libsqlitefunctions").is_err());
+}
+
+#[test]
+fn disable_extension() {
+    let connection = ok!(Connection::open(":memory:"));
+    ok!(connection.disable_extension());
+}
+
+#[test]
 fn change_count() {
     let connection = setup_users(":memory:");
     assert_eq!(connection.change_count(), 1);
