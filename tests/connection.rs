@@ -10,41 +10,40 @@ use common::setup_users;
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[test]
-fn enable_extension() {
-    let connection = ok!(Connection::open(":memory:"));
-    ok!(connection.enable_extension());
+fn open_with_flags() {
+    use temporary::Directory;
+
+    let directory = ok!(Directory::new("sqlite"));
+    let path = directory.path().join("database.sqlite3");
+    setup_users(&path);
+
+    let flags = OpenFlags::new().set_read_only();
+    let connection = ok!(Connection::open_with_flags(path, flags));
+    match connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)") {
+        Err(_) => {}
+        _ => unreachable!(),
+    }
 }
 
 #[test]
-fn extend() {
-    let connection = ok!(Connection::open(":memory:"));
-    ok!(connection.enable_extension());
-    assert!(connection.extend("libsqlitefunctions").is_err());
-}
+fn open_with_full_mutex() {
+    use std::sync::Arc;
+    use std::thread;
 
-#[test]
-fn disable_extension() {
-    let connection = ok!(Connection::open(":memory:"));
-    ok!(connection.disable_extension());
-}
+    let connection = ok!(Connection::open_with_full_mutex(":memory:"));
+    let connection = Arc::new(connection);
 
-#[test]
-fn change_count() {
-    let connection = setup_users(":memory:");
-    assert_eq!(connection.change_count(), 1);
-    assert_eq!(connection.total_change_count(), 1);
-
-    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
-    assert_eq!(connection.change_count(), 1);
-    assert_eq!(connection.total_change_count(), 2);
-
-    ok!(connection.execute("UPDATE users SET name = 'Bob' WHERE id = 1"));
-    assert_eq!(connection.change_count(), 1);
-    assert_eq!(connection.total_change_count(), 3);
-
-    ok!(connection.execute("DELETE FROM users"));
-    assert_eq!(connection.change_count(), 2);
-    assert_eq!(connection.total_change_count(), 5);
+    let mut threads = Vec::new();
+    for _ in 0..5 {
+        let connection_ = connection.clone();
+        let thread = thread::spawn(move || {
+            ok!(connection_.execute("SELECT 1"));
+        });
+        threads.push(thread);
+    }
+    for thread in threads {
+        ok!(thread.join());
+    }
 }
 
 #[test]
@@ -83,43 +82,6 @@ fn iterate() {
 }
 
 #[test]
-fn open_with_flags() {
-    use temporary::Directory;
-
-    let directory = ok!(Directory::new("sqlite"));
-    let path = directory.path().join("database.sqlite3");
-    setup_users(&path);
-
-    let flags = OpenFlags::new().set_read_only();
-    let connection = ok!(Connection::open_with_flags(path, flags));
-    match connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)") {
-        Err(_) => {}
-        _ => unreachable!(),
-    }
-}
-
-#[test]
-fn open_with_full_mutex() {
-    use std::sync::Arc;
-    use std::thread;
-
-    let connection = ok!(Connection::open_with_full_mutex(":memory:"));
-    let connection = Arc::new(connection);
-
-    let mut threads = Vec::new();
-    for _ in 0..5 {
-        let connection_ = connection.clone();
-        let thread = thread::spawn(move || {
-            ok!(connection_.execute("SELECT 1"));
-        });
-        threads.push(thread);
-    }
-    for thread in threads {
-        ok!(thread.join());
-    }
-}
-
-#[test]
 fn set_busy_handler() {
     use std::thread;
     use temporary::Directory;
@@ -150,4 +112,42 @@ fn set_busy_handler() {
     for guard in guards {
         assert!(ok!(guard.join()));
     }
+}
+
+#[test]
+fn enable_extension() {
+    let connection = ok!(Connection::open(":memory:"));
+    ok!(connection.enable_extension());
+}
+
+#[test]
+fn disable_extension() {
+    let connection = ok!(Connection::open(":memory:"));
+    ok!(connection.disable_extension());
+}
+
+#[test]
+fn load_extension() {
+    let connection = ok!(Connection::open(":memory:"));
+    ok!(connection.enable_extension());
+    assert!(connection.load_extension("libsqlitefunctions").is_err());
+}
+
+#[test]
+fn change_count() {
+    let connection = setup_users(":memory:");
+    assert_eq!(connection.change_count(), 1);
+    assert_eq!(connection.total_change_count(), 1);
+
+    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
+    assert_eq!(connection.change_count(), 1);
+    assert_eq!(connection.total_change_count(), 2);
+
+    ok!(connection.execute("UPDATE users SET name = 'Bob' WHERE id = 1"));
+    assert_eq!(connection.change_count(), 1);
+    assert_eq!(connection.total_change_count(), 3);
+
+    ok!(connection.execute("DELETE FROM users"));
+    assert_eq!(connection.change_count(), 2);
+    assert_eq!(connection.total_change_count(), 5);
 }

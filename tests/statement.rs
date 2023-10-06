@@ -98,46 +98,6 @@ fn bind_with_name() {
 }
 
 #[test]
-fn column_count() {
-    let connection = setup_users(":memory:");
-    let query = "SELECT * FROM users";
-    let mut statement = ok!(connection.prepare(query));
-
-    assert_eq!(ok!(statement.next()), State::Row);
-    assert_eq!(statement.column_count(), 5);
-}
-
-#[test]
-fn column_name() {
-    let connection = setup_users(":memory:");
-    let query = "SELECT id, name, age, photo AS user_photo FROM users";
-    let statement = ok!(connection.prepare(query));
-
-    let names = statement.column_names();
-    assert_eq!(names, vec!["id", "name", "age", "user_photo"]);
-    assert_eq!("user_photo", ok!(statement.column_name(3)));
-}
-
-#[test]
-fn column_type() {
-    let connection = setup_users(":memory:");
-    let query = "SELECT * FROM users";
-    let mut statement = ok!(connection.prepare(query));
-
-    assert_eq!(ok!(statement.column_type(0)), Type::Null);
-    assert_eq!(ok!(statement.column_type(1)), Type::Null);
-    assert_eq!(ok!(statement.column_type(2)), Type::Null);
-    assert_eq!(ok!(statement.column_type(3)), Type::Null);
-
-    assert_eq!(ok!(statement.next()), State::Row);
-
-    assert_eq!(ok!(statement.column_type(0)), Type::Integer);
-    assert_eq!(ok!(statement.column_type(1)), Type::String);
-    assert_eq!(ok!(statement.column_type(2)), Type::Float);
-    assert_eq!(ok!(statement.column_type(3)), Type::Binary);
-}
-
-#[test]
 fn count() {
     let connection = setup_english(":memory:");
 
@@ -157,20 +117,6 @@ fn count() {
         count += 1;
     }
     assert_eq!(count, 6);
-}
-
-#[test]
-fn parameter_index() {
-    let connection = setup_users(":memory:");
-    let query = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
-    let mut statement = ok!(connection.prepare(query));
-    ok!(statement.bind((":id", 2i64)));
-    ok!(statement.bind((":name", "Bob")));
-    ok!(statement.bind((":age", 69.42)));
-    ok!(statement.bind((":photo", &[0x69u8, 0x42u8][..])));
-    ok!(statement.bind((":email", ())));
-    assert_eq!(ok!(statement.parameter_index(":missing")), None);
-    assert_eq!(ok!(statement.next()), State::Done);
 }
 
 #[test]
@@ -245,6 +191,60 @@ fn read_with_name() {
     assert_eq!(ok!(statement.read::<f64, _>("age")), 42.69);
     assert_eq!(ok!(statement.read::<Vec<u8>, _>("photo")), vec![0x42, 0x69]);
     assert_eq!(ok!(statement.read::<Value, _>("email")), Value::Null);
+    assert_eq!(ok!(statement.next()), State::Done);
+}
+
+#[test]
+fn column_count() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+
+    assert_eq!(ok!(statement.next()), State::Row);
+    assert_eq!(statement.column_count(), 5);
+}
+
+#[test]
+fn column_name() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT id, name, age, photo AS user_photo FROM users";
+    let statement = ok!(connection.prepare(query));
+
+    let names = statement.column_names();
+    assert_eq!(names, vec!["id", "name", "age", "user_photo"]);
+    assert_eq!("user_photo", ok!(statement.column_name(3)));
+}
+
+#[test]
+fn column_type() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+
+    assert_eq!(ok!(statement.column_type(0)), Type::Null);
+    assert_eq!(ok!(statement.column_type(1)), Type::Null);
+    assert_eq!(ok!(statement.column_type(2)), Type::Null);
+    assert_eq!(ok!(statement.column_type(3)), Type::Null);
+
+    assert_eq!(ok!(statement.next()), State::Row);
+
+    assert_eq!(ok!(statement.column_type(0)), Type::Integer);
+    assert_eq!(ok!(statement.column_type(1)), Type::String);
+    assert_eq!(ok!(statement.column_type(2)), Type::Float);
+    assert_eq!(ok!(statement.column_type(3)), Type::Binary);
+}
+
+#[test]
+fn parameter_index() {
+    let connection = setup_users(":memory:");
+    let query = "INSERT INTO users VALUES (:id, :name, :age, :photo, :email)";
+    let mut statement = ok!(connection.prepare(query));
+    ok!(statement.bind((":id", 2i64)));
+    ok!(statement.bind((":name", "Bob")));
+    ok!(statement.bind((":age", 69.42)));
+    ok!(statement.bind((":photo", &[0x69u8, 0x42u8][..])));
+    ok!(statement.bind((":email", ())));
+    assert_eq!(ok!(statement.parameter_index(":missing")), None);
     assert_eq!(ok!(statement.next()), State::Done);
 }
 

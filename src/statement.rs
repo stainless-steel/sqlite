@@ -156,6 +156,37 @@ impl<'l> Statement<'l> {
         Ok(())
     }
 
+    /// Create a cursor.
+    #[inline]
+    pub fn iter(&mut self) -> Cursor<'l, '_> {
+        self.into()
+    }
+
+    /// Advance to the next state.
+    ///
+    /// The function should be called multiple times until `State::Done` is
+    /// reached in order to evaluate the statement entirely.
+    #[allow(clippy::should_implement_trait)]
+    pub fn next(&mut self) -> Result<State> {
+        Ok(match unsafe { ffi::sqlite3_step(self.raw.0) } {
+            ffi::SQLITE_ROW => State::Row,
+            ffi::SQLITE_DONE => State::Done,
+            code => error!(self.raw.1, code),
+        })
+    }
+
+    /// Read a value from a column.
+    ///
+    /// In case of integer indices, the first column has index 0.
+    #[inline]
+    pub fn read<T, U>(&self, index: U) -> Result<T>
+    where
+        T: ReadableWithIndex,
+        U: ColumnIndex,
+    {
+        ReadableWithIndex::read(self, index)
+    }
+
     /// Return the number of columns.
     #[inline]
     pub fn column_count(&self) -> usize {
@@ -199,25 +230,6 @@ impl<'l> Statement<'l> {
         )
     }
 
-    /// Create a cursor.
-    #[inline]
-    pub fn iter(&mut self) -> Cursor<'l, '_> {
-        self.into()
-    }
-
-    /// Advance to the next state.
-    ///
-    /// The function should be called multiple times until `State::Done` is
-    /// reached in order to evaluate the statement entirely.
-    #[allow(clippy::should_implement_trait)]
-    pub fn next(&mut self) -> Result<State> {
-        Ok(match unsafe { ffi::sqlite3_step(self.raw.0) } {
-            ffi::SQLITE_ROW => State::Row,
-            ffi::SQLITE_DONE => State::Done,
-            code => error!(self.raw.1, code),
-        })
-    }
-
     /// Return the index for a named parameter if exists.
     ///
     /// # Examples
@@ -239,18 +251,6 @@ impl<'l> Statement<'l> {
             0 => Ok(None),
             _ => Ok(Some(index as usize)),
         }
-    }
-
-    /// Read a value from a column.
-    ///
-    /// In case of integer indices, the first column has index 0.
-    #[inline]
-    pub fn read<T, U>(&self, index: U) -> Result<T>
-    where
-        T: ReadableWithIndex,
-        U: ColumnIndex,
-    {
-        ReadableWithIndex::read(self, index)
     }
 
     /// Reset the internal state.

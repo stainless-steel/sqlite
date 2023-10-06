@@ -24,7 +24,29 @@ fn bind_iter() {
 }
 
 #[test]
-fn column_count() {
+fn iter() {
+    let connection = setup_users(":memory:");
+    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
+    let query = "SELECT id, age FROM users ORDER BY 1 DESC";
+    let mut statement = ok!(connection.prepare(query));
+
+    let mut count = 0;
+    for row in statement.iter().map(|row| ok!(row)) {
+        let id = row.read::<i64, _>("id");
+        if id == 1 {
+            assert_eq!(row.read::<f64, _>("age"), 42.69);
+        } else if id == 2 {
+            assert_eq!(row.read::<Option<f64>, _>("age"), None);
+        } else {
+            assert!(false);
+        }
+        count += 1;
+    }
+    assert_eq!(count, 2);
+}
+
+#[test]
+fn iter_column_count() {
     let connection = setup_english(":memory:");
     let query = "SELECT value FROM english WHERE value LIKE '%type'";
     let mut statement = ok!(connection.prepare(query));
@@ -34,7 +56,7 @@ fn column_count() {
 }
 
 #[test]
-fn column_type() {
+fn iter_column_type() {
     let connection = setup_english(":memory:");
     let query = "SELECT value FROM english WHERE value LIKE '%type'";
     let mut statement = ok!(connection.prepare(query));
@@ -61,34 +83,12 @@ fn column_type() {
 }
 
 #[test]
-fn count() {
+fn iter_count() {
     let connection = setup_english(":memory:");
     let query = "SELECT value FROM english WHERE value LIKE '%type'";
     let mut statement = ok!(connection.prepare(query));
 
     assert_eq!(statement.iter().filter(|row| row.is_ok()).count(), 6);
-}
-
-#[test]
-fn iter() {
-    let connection = setup_users(":memory:");
-    ok!(connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL, NULL)"));
-    let query = "SELECT id, age FROM users ORDER BY 1 DESC";
-    let mut statement = ok!(connection.prepare(query));
-
-    let mut count = 0;
-    for row in statement.iter().map(|row| ok!(row)) {
-        let id = row.read::<i64, _>("id");
-        if id == 1 {
-            assert_eq!(row.read::<f64, _>("age"), 42.69);
-        } else if id == 2 {
-            assert_eq!(row.read::<Option<f64>, _>("age"), None);
-        } else {
-            assert!(false);
-        }
-        count += 1;
-    }
-    assert_eq!(count, 2);
 }
 
 #[test]

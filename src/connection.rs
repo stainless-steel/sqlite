@@ -125,20 +125,6 @@ impl Connection {
         crate::statement::new(self.raw.0, statement)
     }
 
-    /// Return the number of rows inserted, updated, or deleted by the most
-    /// recent INSERT, UPDATE, or DELETE statement.
-    #[inline]
-    pub fn change_count(&self) -> usize {
-        unsafe { ffi::sqlite3_changes(self.raw.0) as usize }
-    }
-
-    /// Return the total number of rows inserted, updated, and deleted by all
-    /// INSERT, UPDATE, and DELETE statements since the connection was opened.
-    #[inline]
-    pub fn total_change_count(&self) -> usize {
-        unsafe { ffi::sqlite3_total_changes(self.raw.0) as usize }
-    }
-
     /// Set a callback for handling busy events.
     ///
     /// The callback is triggered when the database cannot perform an operation
@@ -200,9 +186,21 @@ impl Connection {
         Ok(())
     }
 
+    /// Disable loading extensions.
+    #[inline]
+    pub fn disable_extension(&self) -> Result<()> {
+        unsafe {
+            ok!(
+                self.raw.0,
+                ffi::sqlite3_enable_load_extension(self.raw.0, 0 as c_int)
+            );
+        }
+        Ok(())
+    }
+
     /// Load an extension.
     #[inline]
-    pub fn extend<T: AsRef<str>>(&self, name: T) -> Result<()> {
+    pub fn load_extension<T: AsRef<str>>(&self, name: T) -> Result<()> {
         unsafe {
             ok!(
                 self.raw.0,
@@ -217,16 +215,18 @@ impl Connection {
         Ok(())
     }
 
-    /// Disable loading extensions.
+    /// Return the number of rows inserted, updated, or deleted by the most
+    /// recent INSERT, UPDATE, or DELETE statement.
     #[inline]
-    pub fn disable_extension(&self) -> Result<()> {
-        unsafe {
-            ok!(
-                self.raw.0,
-                ffi::sqlite3_enable_load_extension(self.raw.0, 0 as c_int)
-            );
-        }
-        Ok(())
+    pub fn change_count(&self) -> usize {
+        unsafe { ffi::sqlite3_changes(self.raw.0) as usize }
+    }
+
+    /// Return the total number of rows inserted, updated, and deleted by all
+    /// INSERT, UPDATE, and DELETE statements since the connection was opened.
+    #[inline]
+    pub fn total_change_count(&self) -> usize {
+        unsafe { ffi::sqlite3_total_changes(self.raw.0) as usize }
     }
 
     #[doc(hidden)]
