@@ -17,7 +17,7 @@ fn open_with_flags() {
     let path = directory.path().join("database.sqlite3");
     setup_users(&path);
 
-    let flags = OpenFlags::new().set_read_only();
+    let flags = OpenFlags::new().with_read_only();
     let connection = ok!(Connection::open_with_flags(path, flags));
     match connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)") {
         Err(_) => {}

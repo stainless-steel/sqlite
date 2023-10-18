@@ -26,7 +26,7 @@ struct Raw(*mut ffi::sqlite3);
 impl Connection {
     /// Open a read-write connection to a new or existing database.
     pub fn open<T: AsRef<Path>>(path: T) -> Result<Connection> {
-        Connection::open_with_flags(path, OpenFlags::new().set_create().set_read_write())
+        Connection::open_with_flags(path, OpenFlags::new().with_create().with_read_write())
     }
 
     /// Open a connection with specific flags.
@@ -68,9 +68,9 @@ impl Connection {
         Connection::open_with_flags(
             path,
             OpenFlags::new()
-                .set_create()
-                .set_read_write()
-                .set_full_mutex(),
+                .with_create()
+                .with_read_write()
+                .with_full_mutex(),
         )
         .map(ConnectionWithFullMutex)
     }
@@ -253,7 +253,7 @@ impl OpenFlags {
     }
 
     /// Create the database if it does not already exist.
-    pub fn set_create(mut self) -> Self {
+    pub fn with_create(mut self) -> Self {
         self.0 |= ffi::SQLITE_OPEN_CREATE;
         self
     }
@@ -261,7 +261,7 @@ impl OpenFlags {
     /// Open the database in the serialized [threading mode][1].
     ///
     /// [1]: https://www.sqlite.org/threadsafe.html
-    pub fn set_full_mutex(mut self) -> Self {
+    pub fn with_full_mutex(mut self) -> Self {
         self.0 |= ffi::SQLITE_OPEN_FULLMUTEX;
         self
     }
@@ -269,19 +269,19 @@ impl OpenFlags {
     /// Opens the database in the multi-thread [threading mode][1].
     ///
     /// [1]: https://www.sqlite.org/threadsafe.html
-    pub fn set_no_mutex(mut self) -> Self {
+    pub fn with_no_mutex(mut self) -> Self {
         self.0 |= ffi::SQLITE_OPEN_NOMUTEX;
         self
     }
 
     /// Open the database for reading only.
-    pub fn set_read_only(mut self) -> Self {
+    pub fn with_read_only(mut self) -> Self {
         self.0 |= ffi::SQLITE_OPEN_READONLY;
         self
     }
 
     /// Open the database for reading and writing.
-    pub fn set_read_write(mut self) -> Self {
+    pub fn with_read_write(mut self) -> Self {
         self.0 |= ffi::SQLITE_OPEN_READWRITE;
         self
     }
