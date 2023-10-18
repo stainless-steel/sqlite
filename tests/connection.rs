@@ -26,11 +26,11 @@ fn open_with_flags() {
 }
 
 #[test]
-fn open_with_full_mutex() {
+fn open_thread_safe() {
     use std::sync::Arc;
     use std::thread;
 
-    let connection = ok!(Connection::open_with_full_mutex(":memory:"));
+    let connection = ok!(Connection::open_thread_safe(":memory:"));
     let connection = Arc::new(connection);
 
     let mut threads = Vec::new();

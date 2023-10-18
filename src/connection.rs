@@ -7,17 +7,17 @@ use libc::{c_char, c_int, c_void};
 use crate::error::Result;
 use crate::statement::Statement;
 
-/// A database connection.
+/// A connection.
 pub struct Connection {
     raw: Raw,
     busy_callback: Option<Box<dyn FnMut(usize) -> bool + Send>>,
     phantom: PhantomData<ffi::sqlite3>,
 }
 
-/// A thread-safe database connection.
-pub struct ConnectionWithFullMutex(Connection);
+/// A thread-safe connection.
+pub struct ConnectionThreadSafe(Connection);
 
-/// Flags for opening a database connection.
+/// Flags for opening a connection.
 #[derive(Clone, Copy, Debug)]
 pub struct OpenFlags(c_int);
 
@@ -64,7 +64,7 @@ impl Connection {
     }
 
     /// Open a thread-safe read-write connection to a new or existing database.
-    pub fn open_with_full_mutex<T: AsRef<Path>>(path: T) -> Result<ConnectionWithFullMutex> {
+    pub fn open_thread_safe<T: AsRef<Path>>(path: T) -> Result<ConnectionThreadSafe> {
         Connection::open_with_flags(
             path,
             OpenFlags::new()
@@ -72,7 +72,15 @@ impl Connection {
                 .with_read_write()
                 .with_full_mutex(),
         )
-        .map(ConnectionWithFullMutex)
+        .map(ConnectionThreadSafe)
+    }
+
+    /// Open a thread-safe connection with specific flags.
+    pub fn open_thread_safe_with_flags<T: AsRef<Path>>(
+        path: T,
+        flags: OpenFlags,
+    ) -> Result<ConnectionThreadSafe> {
+        Connection::open_with_flags(path, flags.with_full_mutex()).map(ConnectionThreadSafe)
     }
 
     /// Execute a statement without processing the resulting rows if any.
@@ -300,7 +308,7 @@ impl Default for OpenFlags {
     }
 }
 
-impl Deref for ConnectionWithFullMutex {
+impl Deref for ConnectionThreadSafe {
     type Target = Connection;
 
     #[inline]
@@ -309,14 +317,14 @@ impl Deref for ConnectionWithFullMutex {
     }
 }
 
-impl DerefMut for ConnectionWithFullMutex {
+impl DerefMut for ConnectionThreadSafe {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-unsafe impl Sync for ConnectionWithFullMutex {}
+unsafe impl Sync for ConnectionThreadSafe {}
 
 unsafe impl Send for Raw {}
 

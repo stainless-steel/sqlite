@@ -136,7 +136,7 @@ mod statement;
 pub use error::{Error, Result};
 pub use value::{Type, Value};
 
-pub use connection::{Connection, ConnectionWithFullMutex, OpenFlags};
+pub use connection::{Connection, ConnectionThreadSafe, OpenFlags};
 pub use cursor::{Cursor, CursorWithOwnership, Row, RowIndex};
 pub use statement::{
     Bindable, BindableWithIndex, ColumnIndex, ParameterIndex, ReadableWithIndex, State, Statement,
