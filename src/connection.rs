@@ -285,6 +285,12 @@ impl OpenFlags {
         self.0 |= ffi::SQLITE_OPEN_READWRITE;
         self
     }
+
+    /// Allow the path to be interpreted as a URI.
+    pub fn with_uri(mut self) -> Self {
+        self.0 |= ffi::SQLITE_OPEN_URI;
+        self
+    }
 }
 
 impl Default for OpenFlags {
