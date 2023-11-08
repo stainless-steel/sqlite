@@ -134,6 +134,17 @@ fn next_read_with_name_and_option() {
 }
 
 #[test]
+fn next_take() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+
+    let mut row = ok!(ok!(statement.iter().next()));
+    assert_eq!(row.take("name"), Value::String("Alice".into()));
+    assert_eq!(row.take("name"), Value::Null);
+}
+
+#[test]
 fn next_try_read_with_index() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";

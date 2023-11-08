@@ -136,6 +136,19 @@ impl Row {
         self.try_read(column).unwrap()
     }
 
+    /// Take the value from a column.
+    ///
+    /// In case of integer indices, the first column has index 0. Any subsequent invocation will
+    /// result in `Value::Null`.
+    #[inline]
+    pub fn take<U>(&mut self, column: U) -> Value
+    where
+        U: RowIndex,
+    {
+        let index = column.index(self);
+        std::mem::take(&mut self.values[index])
+    }
+
     /// Try to read the value in a column.
     ///
     /// In case of integer indices, the first column has index 0.
