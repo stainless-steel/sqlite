@@ -15,8 +15,7 @@
 //! connection.execute(query).unwrap();
 //! ```
 //!
-//! Select some rows and process them one by one as plain text, which is generally
-//! not efficient:
+//! Select some rows and process them one by one as plain text, which is generally not efficient:
 //!
 //! ```
 //! # let connection = sqlite::open(":memory:").unwrap();
@@ -38,8 +37,8 @@
 //!     .unwrap();
 //! ```
 //!
-//! Run the same query but using a prepared statement, which is much more efficient
-//! than the previous technique:
+//! Run the same query but using a prepared statement, which is much more efficient than the
+//! previous technique:
 //!
 //! ```
 //! use sqlite::State;

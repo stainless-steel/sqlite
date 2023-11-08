@@ -164,8 +164,8 @@ impl<'l> Statement<'l> {
 
     /// Advance to the next state.
     ///
-    /// The function should be called multiple times until `State::Done` is
-    /// reached in order to evaluate the statement entirely.
+    /// The function should be called multiple times until `State::Done` is reached in order to
+    /// evaluate the statement entirely.
     #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> Result<State> {
         Ok(match unsafe { ffi::sqlite3_step(self.raw.0) } {
@@ -215,8 +215,8 @@ impl<'l> Statement<'l> {
 
     /// Return the type of a column.
     ///
-    /// The type becomes available after taking a step. In case of integer
-    /// indices, the first column has index 0.
+    /// The type becomes available after taking a step. In case of integer indices, the first
+    /// column has index 0.
     pub fn column_type<T: ColumnIndex>(&self, index: T) -> Result<Type> {
         Ok(
             match unsafe { ffi::sqlite3_column_type(self.raw.0, index.index(self)? as c_int) } {

@@ -103,9 +103,9 @@ impl Connection {
 
     /// Execute a statement and process the resulting rows as plain text.
     ///
-    /// The callback is triggered for each row. If the callback returns `false`,
-    /// no more rows will be processed. For large queries and non-string data
-    /// types, prepared statement are highly preferable; see `prepare`.
+    /// The callback is triggered for each row. If the callback returns `false`, no more rows will
+    /// be processed. For large queries and non-string data types, prepared statement are highly
+    /// preferable; see `prepare`.
     #[inline]
     pub fn iterate<T: AsRef<str>, F>(&self, statement: T, callback: F) -> Result<()>
     where
@@ -135,9 +135,8 @@ impl Connection {
 
     /// Set a callback for handling busy events.
     ///
-    /// The callback is triggered when the database cannot perform an operation
-    /// due to processing of some other request. If the callback returns `true`,
-    /// the operation will be repeated.
+    /// The callback is triggered when the database cannot perform an operation due to processing
+    /// of some other request. If the callback returns `true`, the operation will be repeated.
     pub fn set_busy_handler<F>(&mut self, callback: F) -> Result<()>
     where
         F: FnMut(usize) -> bool + Send + 'static,
@@ -156,8 +155,8 @@ impl Connection {
         Ok(())
     }
 
-    /// Set an implicit callback for handling busy events that tries to repeat
-    /// rejected operations until a timeout expires.
+    /// Set an implicit callback for handling busy events that tries to repeat rejected operations
+    /// until a timeout expires.
     #[inline]
     pub fn set_busy_timeout(&mut self, milliseconds: usize) -> Result<()> {
         unsafe {
@@ -226,15 +225,15 @@ impl Connection {
         Ok(())
     }
 
-    /// Return the number of rows inserted, updated, or deleted by the most
-    /// recent INSERT, UPDATE, or DELETE statement.
+    /// Return the number of rows inserted, updated, or deleted by the most recent INSERT, UPDATE,
+    /// or DELETE statement.
     #[inline]
     pub fn change_count(&self) -> usize {
         unsafe { ffi::sqlite3_changes(self.raw.0) as usize }
     }
 
-    /// Return the total number of rows inserted, updated, and deleted by all
-    /// INSERT, UPDATE, and DELETE statements since the connection was opened.
+    /// Return the total number of rows inserted, updated, and deleted by all INSERT, UPDATE, and
+    /// DELETE statements since the connection was opened.
     #[inline]
     pub fn total_change_count(&self) -> usize {
         unsafe { ffi::sqlite3_total_changes(self.raw.0) as usize }
