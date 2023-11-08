@@ -9,14 +9,14 @@ use crate::value::Value;
 
 /// An iterator for a prepared statement.
 pub struct Cursor<'l, 'm> {
+    column_count: usize,
     statement: &'m mut Statement<'l>,
-    values: Vec<Value>,
 }
 
 /// An iterator for a prepared statement with ownership.
 pub struct CursorWithOwnership<'l> {
+    column_count: usize,
     statement: Statement<'l>,
-    values: Vec<Value>,
 }
 
 /// A row.
@@ -70,14 +70,15 @@ macro_rules! implement(
             }
 
             /// Advance to the next row and read all columns.
-            pub fn try_next(&mut self) -> Result<Option<&[Value]>> {
+            pub fn try_next(&mut self) -> Result<Option<Vec<Value>>> {
                 if self.statement.next()? == State::Done {
                     return Ok(None);
                 }
-                for (index, value) in self.values.iter_mut().enumerate() {
-                    *value = self.statement.read(index)?;
+                let mut values = Vec::with_capacity(self.column_count);
+                for index in 0..self.column_count {
+                    values.push(self.statement.read(index)?);
                 }
-                Ok(Some(&self.values))
+                Ok(Some(values))
             }
         }
 
@@ -96,10 +97,10 @@ macro_rules! implement(
             fn next(&mut self) -> Option<Self::Item> {
                 let column_mapping = self.statement.column_mapping();
                 self.try_next()
-                    .map(|row| {
-                        row.map(|row| Row {
+                    .map(|values| {
+                        values.map(|values| Row {
                             column_mapping,
-                            values: row.to_vec(),
+                            values,
                         })
                     })
                     .transpose()
@@ -125,7 +126,7 @@ impl Row {
     ///
     /// # Panics
     ///
-    /// Panics if the column could not be read.
+    /// Panics if the column can not be read.
     #[inline]
     pub fn read<'l, T, U>(&'l self, column: U) -> T
     where
@@ -171,7 +172,7 @@ impl RowIndex for &str {
     fn index(self, row: &Row) -> usize {
         debug_assert!(
             row.column_mapping.contains_key(self),
-            "the index is out of range"
+            "the index is out of range",
         );
         row.column_mapping[self]
     }
@@ -186,11 +187,15 @@ impl RowIndex for usize {
 }
 
 pub fn new<'l, 'm>(statement: &'m mut Statement<'l>) -> Cursor<'l, 'm> {
-    let values = vec![Value::Null; statement.column_count()];
-    Cursor { statement, values }
+    Cursor {
+        column_count: statement.column_count(),
+        statement,
+    }
 }
 
 pub fn new_with_ownership(statement: Statement<'_>) -> CursorWithOwnership<'_> {
-    let values = vec![Value::Null; statement.column_count()];
-    CursorWithOwnership { statement, values }
+    CursorWithOwnership {
+        column_count: statement.column_count(),
+        statement,
+    }
 }
