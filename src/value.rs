@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use crate::error::{Error, Result};
 
 /// A value.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum Value {
     /// Binary data.
     Binary(Vec<u8>),
@@ -14,6 +14,7 @@ pub enum Value {
     /// A string.
     String(String),
     /// A null value.
+    #[default]
     Null,
 }
 
