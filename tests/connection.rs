@@ -114,18 +114,21 @@ fn set_busy_handler() {
     }
 }
 
+#[cfg(feature = "extension")]
 #[test]
 fn enable_extension() {
     let connection = ok!(Connection::open(":memory:"));
     ok!(connection.enable_extension());
 }
 
+#[cfg(feature = "extension")]
 #[test]
 fn disable_extension() {
     let connection = ok!(Connection::open(":memory:"));
     ok!(connection.disable_extension());
 }
 
+#[cfg(feature = "extension")]
 #[test]
 fn load_extension() {
     let connection = ok!(Connection::open(":memory:"));

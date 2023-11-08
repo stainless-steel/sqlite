@@ -183,6 +183,7 @@ impl Connection {
     }
 
     /// Enable loading extensions.
+    #[cfg(feature = "extension")]
     #[inline]
     pub fn enable_extension(&self) -> Result<()> {
         unsafe {
@@ -195,6 +196,7 @@ impl Connection {
     }
 
     /// Disable loading extensions.
+    #[cfg(feature = "extension")]
     #[inline]
     pub fn disable_extension(&self) -> Result<()> {
         unsafe {
@@ -207,6 +209,7 @@ impl Connection {
     }
 
     /// Load an extension.
+    #[cfg(feature = "extension")]
     #[inline]
     pub fn load_extension<T: AsRef<str>>(&self, name: T) -> Result<()> {
         unsafe {
