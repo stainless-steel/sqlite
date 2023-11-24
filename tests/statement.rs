@@ -4,13 +4,16 @@ use sqlite::{Connection, State, Statement, Type, Value};
 
 mod common;
 
-use common::{setup_english, setup_users};
+use common::{check_user, count_users, setup_english, setup_users};
 
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[test]
 fn bind_with_index() {
     let connection = setup_users(":memory:");
+    assert_eq!(count_users(&connection), 1);
+    check_user(&connection, 1i64, "Alice", 42.69, vec![0x42u8, 0x69u8]);
+
     let query = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
     let mut statement = ok!(connection.prepare(query));
 
@@ -20,7 +23,10 @@ fn bind_with_index() {
     ok!(statement.bind((3, 69.42)));
     ok!(statement.bind((4, &[0x69u8, 0x42u8][..])));
     ok!(statement.bind((5, ())));
+    assert_eq!(count_users(&connection), 1);
     assert_eq!(ok!(statement.next()), State::Done);
+    assert_eq!(count_users(&connection), 2);
+    check_user(&connection, 2i64, "Bob", 69.42, vec![0x69u8, 0x42u8]);
 
     ok!(statement.reset());
     ok!(statement.bind((1, Some(2i64))));
@@ -29,6 +35,7 @@ fn bind_with_index() {
     ok!(statement.bind((4, Some(&[0x69u8, 0x42u8][..]))));
     ok!(statement.bind((5, None::<&str>)));
     assert_eq!(ok!(statement.next()), State::Done);
+    assert_eq!(count_users(&connection), 3);
 
     ok!(statement.reset());
     ok!(statement.bind(
