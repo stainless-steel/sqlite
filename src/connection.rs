@@ -239,6 +239,11 @@ impl Connection {
         unsafe { ffi::sqlite3_total_changes(self.raw.0) as usize }
     }
 
+    #[inline]
+    pub fn last_insert_rowid(&self) -> i64 {
+        unsafe { ffi::sqlite3_last_insert_rowid(self.raw.0) }
+    }
+
     #[doc(hidden)]
     #[inline]
     pub fn as_raw(&self) -> *mut ffi::sqlite3 {

@@ -154,3 +154,15 @@ fn change_count() {
     assert_eq!(connection.change_count(), 2);
     assert_eq!(connection.total_change_count(), 5);
 }
+
+#[test]
+fn last_insert_rowid() {
+    let connection = ok!(Connection::open(":memory:"));
+    ok!(connection.execute("CREATE TABLE foo (value TEXT);"));
+
+    ok!(connection.execute("INSERT INTO foo VALUES ('bar');"));
+    assert_eq!(connection.last_insert_rowid(), 1);
+
+    ok!(connection.execute("INSERT INTO foo VALUES ('baz');"));
+    assert_eq!(connection.last_insert_rowid(), 2);
+}
