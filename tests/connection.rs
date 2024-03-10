@@ -1,6 +1,3 @@
-extern crate sqlite;
-extern crate temporary;
-
 use sqlite::{Connection, OpenFlags, State};
 
 mod common;

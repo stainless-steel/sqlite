@@ -1,7 +1,6 @@
-extern crate sqlite;
-
-use sqlite::{Type, Value};
 use std::collections::HashMap;
+
+use sqlite::{Result, Type, Value};
 
 mod common;
 
@@ -89,6 +88,16 @@ fn iter_count() {
     let mut statement = ok!(connection.prepare(query));
 
     assert_eq!(statement.iter().filter(|row| row.is_ok()).count(), 6);
+}
+
+#[test]
+fn iter_count_with_exception() {
+    let connection = ok!(sqlite::open(":memory:"));
+    ok!(connection.execute("CREATE TABLE foo(x)"));
+    ok!(connection
+        .execute("CREATE TRIGGER bar BEFORE INSERT ON foo BEGIN SELECT RAISE(FAIL, 'buz'); END"));
+    let mut statement = ok!(connection.prepare("INSERT INTO foo VALUES (0) RETURNING rowid;"));
+    assert!(statement.iter().collect::<Result<Vec<_>>>().is_err());
 }
 
 #[test]

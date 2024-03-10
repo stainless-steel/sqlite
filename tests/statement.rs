@@ -1,5 +1,3 @@
-extern crate sqlite;
-
 use sqlite::{Connection, State, Statement, Type, Value};
 
 mod common;
