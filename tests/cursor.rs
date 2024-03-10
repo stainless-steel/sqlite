@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use sqlite::{Result, Type, Value};
+use sqlite::{Type, Value};
 
 mod common;
 
@@ -97,7 +97,9 @@ fn iter_count_with_exception() {
     ok!(connection
         .execute("CREATE TRIGGER bar BEFORE INSERT ON foo BEGIN SELECT RAISE(FAIL, 'buz'); END"));
     let mut statement = ok!(connection.prepare("INSERT INTO foo VALUES (0) RETURNING rowid;"));
-    assert!(statement.iter().collect::<Result<Vec<_>>>().is_err());
+    let results = statement.iter().collect::<Vec<_>>();
+    assert_eq!(results.len(), 1);
+    assert!(matches!(results[0], Err(_)));
 }
 
 #[test]

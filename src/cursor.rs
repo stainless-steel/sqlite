@@ -11,12 +11,14 @@ use crate::value::Value;
 pub struct Cursor<'l, 'm> {
     column_count: usize,
     statement: &'m mut Statement<'l>,
+    poisoned: bool,
 }
 
 /// An iterator for a prepared statement with ownership.
 pub struct CursorWithOwnership<'l> {
     column_count: usize,
     statement: Statement<'l>,
+    poisoned: bool,
 }
 
 /// A row.
@@ -66,6 +68,7 @@ macro_rules! implement(
             #[allow(unused_mut)]
             pub fn reset(mut self) -> Result<Self> {
                 self.statement.reset()?;
+                self.poisoned = false;
                 Ok(self)
             }
 
@@ -95,15 +98,21 @@ macro_rules! implement(
             type Item = Result<Row>;
 
             fn next(&mut self) -> Option<Self::Item> {
-                let column_mapping = self.statement.column_mapping();
-                self.try_next()
-                    .map(|values| {
-                        values.map(|values| Row {
-                            column_mapping,
+                if self.poisoned {
+                    return None;
+                }
+                match self.try_next() {
+                    Ok(value) => {
+                        value.map(|values| Ok(Row {
+                            column_mapping: self.statement.column_mapping(),
                             values,
-                        })
-                    })
-                    .transpose()
+                        }))
+                    }
+                    Err(error) => {
+                        self.poisoned = true;
+                        Some(Err(error))
+                    }
+                }
             }
         }
     }
@@ -203,6 +212,7 @@ pub fn new<'l, 'm>(statement: &'m mut Statement<'l>) -> Cursor<'l, 'm> {
     Cursor {
         column_count: statement.column_count(),
         statement,
+        poisoned: false,
     }
 }
 
@@ -210,5 +220,6 @@ pub fn new_with_ownership(statement: Statement<'_>) -> CursorWithOwnership<'_> {
     CursorWithOwnership {
         column_count: statement.column_count(),
         statement,
+        poisoned: false,
     }
 }
