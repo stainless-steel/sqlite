@@ -91,7 +91,7 @@ fn iter_count() {
 }
 
 #[test]
-fn iter_count_with_exception() {
+fn iter_with_exception() {
     let connection = ok!(sqlite::open(":memory:"));
     ok!(connection.execute("CREATE TABLE foo(x)"));
     ok!(connection
