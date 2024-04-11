@@ -2,7 +2,7 @@
 name = "sqlite"
 version = "0.34.0"
 edition = "2021"
-license = "Apache-2.0/MIT"
+license = "Apache-2.0 OR MIT"
 authors = [
     "Alec Moskvin <alecm@gmx.com>",
     "Angel Leon <gubatron@gmail.com>",
