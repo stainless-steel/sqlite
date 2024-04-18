@@ -225,6 +225,44 @@ impl Connection {
         Ok(())
     }
 
+
+    #[cfg(feature = "encryption")]
+    #[inline]
+    pub fn encryption_key<T: AsRef<str>>(&self, data: T) -> Result<()> {
+        unsafe {
+            ok!(
+                self.raw.0,
+                ffi::sqlite3_key(
+                    self.raw.0,
+                    str_to_cstr!(data.as_ref()).as_ptr() as *const c_void,
+                    data.len() as c_int,
+                )
+            );
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "encryption")]
+    #[inline]
+    pub fn encryption_rekey<T: AsRef<str>>(&self, data: T) -> Result<()> {
+        unsafe {
+            ok!(
+                self.raw.0,
+                ffi::sqlite3_key(
+                    self.raw.0,
+                    str_to_cstr!(data.as_ref()).as_ptr() as *const c_void,
+                    data.len() as c_int,
+                )
+            );
+        }
+        Ok(())
+    }
+
+
+// int sqlite3_key(sqlite3 *db, const void *pKey, int nKey);
+// sqlite3_rekey(sqlite3 *db, const void *pKey, int nKey);
+
+
     /// Return the number of rows inserted, updated, or deleted by the most recent INSERT, UPDATE,
     /// or DELETE statement.
     #[inline]
