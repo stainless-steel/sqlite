@@ -34,6 +34,7 @@ pub trait RowIndex: std::fmt::Debug {
     ///
     /// The first column has index 0.
     fn index(self, row: &Row) -> usize;
+    fn contains(&self, row: &Row) -> bool;
 }
 
 macro_rules! implement(
@@ -154,6 +155,10 @@ impl Row {
     where
         U: RowIndex,
     {
+        if !column.contains(self) {
+            panic!("No value to take from at index");
+        }
+
         let index = column.index(self);
         std::mem::take(&mut self.values[index])
     }
@@ -167,7 +172,11 @@ impl Row {
         T: TryFrom<&'l Value, Error = Error>,
         U: RowIndex,
     {
-        T::try_from(&self.values[column.index(self)])
+        if column.contains(self) {
+            T::try_from(&self.values[column.index(self)])
+        } else {
+            Err(Error{ message: Some(String::from("No such column")), code: None })
+        }
     }
 }
 
@@ -185,26 +194,33 @@ where
     type Output = Value;
 
     fn index(&self, index: T) -> &Value {
-        &self.values[index.index(self)]
+        if index.contains(self) {
+            &self.values[index.index(self)]
+        } else {
+            panic!("Index does not exist in given Row");
+        }
     }
 }
 
 impl RowIndex for &str {
     #[inline]
     fn index(self, row: &Row) -> usize {
-        debug_assert!(
-            row.column_mapping.contains_key(self),
-            "the index is out of range",
-        );
         row.column_mapping[self]
+    }
+
+    fn contains(&self, row: &Row) -> bool {
+      row.column_mapping.contains_key(*self)
     }
 }
 
 impl RowIndex for usize {
     #[inline]
     fn index(self, row: &Row) -> usize {
-        debug_assert!(self < row.values.len(), "the index is out of range");
         self
+    }
+
+    fn contains(&self, row: &Row) -> bool {
+        self < &row.values.len()
     }
 }
 
