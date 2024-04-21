@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: rustup toolchain install nightly --profile=minimal
-      - run: cargo bench
+      - run: cargo +nightly bench
 
   test:
     strategy:
