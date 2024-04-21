@@ -1,8 +1,7 @@
+use core::ffi::{c_double, c_int};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::rc::Rc;
-
-use libc::{c_double, c_int};
 
 use crate::cursor::{Cursor, CursorWithOwnership, Row};
 use crate::error::Result;
@@ -10,7 +9,7 @@ use crate::value::{Type, Value};
 
 // https://sqlite.org/c3ref/c_static.html
 macro_rules! transient(
-    () => (std::mem::transmute(!0 as *const libc::c_void));
+    () => (std::mem::transmute(!0 as *const core::ffi::c_void));
 );
 
 /// A prepared statement.

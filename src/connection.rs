@@ -1,8 +1,7 @@
+use core::ffi::{c_char, c_int, c_void};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
-
-use libc::{c_char, c_int, c_void};
 
 use crate::error::Result;
 use crate::statement::Statement;
