@@ -224,42 +224,6 @@ impl Connection {
         Ok(())
     }
 
-    /// Set the encryption key.
-    #[cfg(feature = "encryption")]
-    #[inline]
-    pub fn set_encryption_key<T: AsRef<str>>(&self, key: T) -> Result<()> {
-        unsafe {
-            ok!(
-                self.raw.0,
-                ffi::sqlite3_key_v2(
-                    self.raw.0,
-                    std::ptr::null() as *const c_char,
-                    str_to_cstr!(key.as_ref()).as_ptr() as *const c_void,
-                    key.as_ref().len() as c_int,
-                )
-            );
-        }
-        Ok(())
-    }
-
-    /// Change the encryption key.
-    #[cfg(feature = "encryption")]
-    #[inline]
-    pub fn reset_encryption_key<T: AsRef<str>>(&self, new_key: T) -> Result<()> {
-        unsafe {
-            ok!(
-                self.raw.0,
-                ffi::sqlite3_rekey_v2(
-                    self.raw.0,
-                    std::ptr::null() as *const c_char,
-                    str_to_cstr!(new_key.as_ref()).as_ptr() as *const c_void,
-                    new_key.as_ref().len() as c_int,
-                )
-            );
-        }
-        Ok(())
-    }
-
     /// Return the number of rows inserted, updated, or deleted by the most recent INSERT, UPDATE,
     /// or DELETE statement.
     #[inline]
