@@ -171,6 +171,16 @@ fn next_try_read_with_index() {
 }
 
 #[test]
+fn next_try_read_with_index_out_of_range() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+
+    let row = ok!(ok!(statement.iter().next()));
+    assert!(row.try_read::<&str, _>(5).is_err());
+}
+
+#[test]
 fn next_try_read_with_index_and_option() {
     let connection = setup_users(":memory:");
     let query = "SELECT * FROM users";

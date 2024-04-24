@@ -29,7 +29,7 @@ pub struct Row {
 }
 
 /// A type suitable for indexing columns in a row.
-pub trait RowIndex: std::fmt::Debug {
+pub trait RowIndex: std::fmt::Debug + std::fmt::Display {
     /// Check if the index is present in a row.
     fn contains(&self, row: &Row) -> bool;
 
@@ -181,6 +181,9 @@ impl Row {
         T: TryFrom<&'l Value, Error = Error>,
         U: RowIndex,
     {
+        if !column.contains(self) {
+            raise!("the index is out of range ({column})");
+        }
         T::try_from(&self.values[column.index(self)])
     }
 }
@@ -205,28 +208,27 @@ where
 
 impl RowIndex for &str {
     #[inline]
-    fn index(self, row: &Row) -> usize {
-        debug_assert!(
-            row.column_mapping.contains_key(self),
-            "the index is out of range",
-        );
-        row.column_mapping[self]
-    }
-
     fn contains(&self, row: &Row) -> bool {
         row.column_mapping.contains_key(*self)
+    }
+
+    #[inline]
+    fn index(self, row: &Row) -> usize {
+        debug_assert!(RowIndex::contains(&self, row), "the index is out of range");
+        row.column_mapping[self]
     }
 }
 
 impl RowIndex for usize {
     #[inline]
-    fn index(self, row: &Row) -> usize {
-        debug_assert!(self < row.values.len(), "the index is out of range");
-        self
-    }
-
     fn contains(&self, row: &Row) -> bool {
         self < &row.values.len()
+    }
+
+    #[inline]
+    fn index(self, row: &Row) -> usize {
+        debug_assert!(RowIndex::contains(&self, row), "the index is out of range");
+        self
     }
 }
 
