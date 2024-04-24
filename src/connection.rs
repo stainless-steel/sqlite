@@ -82,6 +82,14 @@ impl Connection {
         Connection::open_with_flags(path, flags.with_full_mutex()).map(ConnectionThreadSafe)
     }
 
+    #[doc(hidden)]
+    #[inline]
+    pub fn as_raw(&self) -> *mut ffi::sqlite3 {
+        self.raw.0
+    }
+}
+
+impl Connection {
     /// Execute a statement without processing the resulting rows if any.
     #[inline]
     pub fn execute<T: AsRef<str>>(&self, statement: T) -> Result<()> {
@@ -132,6 +140,22 @@ impl Connection {
         crate::statement::new(self.raw.0, statement)
     }
 
+    /// Return the number of rows inserted, updated, or deleted by the most recent INSERT, UPDATE,
+    /// or DELETE statement.
+    #[inline]
+    pub fn change_count(&self) -> usize {
+        unsafe { ffi::sqlite3_changes(self.raw.0) as usize }
+    }
+
+    /// Return the total number of rows inserted, updated, and deleted by all INSERT, UPDATE, and
+    /// DELETE statements since the connection was opened.
+    #[inline]
+    pub fn total_change_count(&self) -> usize {
+        unsafe { ffi::sqlite3_total_changes(self.raw.0) as usize }
+    }
+}
+
+impl Connection {
     /// Set a callback for handling busy events.
     ///
     /// The callback is triggered when the database cannot perform an operation due to processing
@@ -179,7 +203,9 @@ impl Connection {
         }
         Ok(())
     }
+}
 
+impl Connection {
     /// Enable loading extensions.
     #[cfg(feature = "extension")]
     #[inline]
@@ -223,7 +249,9 @@ impl Connection {
         }
         Ok(())
     }
+}
 
+impl Connection {
     /// Set the encryption key.
     #[cfg(feature = "encryption")]
     #[inline]
@@ -245,7 +273,7 @@ impl Connection {
     /// Change the encryption key.
     #[cfg(feature = "encryption")]
     #[inline]
-    pub fn reset_encryption_key<T: AsRef<str>>(&self, new_key: T) -> Result<()> {
+    pub fn change_encryption_key<T: AsRef<str>>(&self, new_key: T) -> Result<()> {
         unsafe {
             ok!(
                 self.raw.0,
@@ -258,26 +286,6 @@ impl Connection {
             );
         }
         Ok(())
-    }
-
-    /// Return the number of rows inserted, updated, or deleted by the most recent INSERT, UPDATE,
-    /// or DELETE statement.
-    #[inline]
-    pub fn change_count(&self) -> usize {
-        unsafe { ffi::sqlite3_changes(self.raw.0) as usize }
-    }
-
-    /// Return the total number of rows inserted, updated, and deleted by all INSERT, UPDATE, and
-    /// DELETE statements since the connection was opened.
-    #[inline]
-    pub fn total_change_count(&self) -> usize {
-        unsafe { ffi::sqlite3_total_changes(self.raw.0) as usize }
-    }
-
-    #[doc(hidden)]
-    #[inline]
-    pub fn as_raw(&self) -> *mut ffi::sqlite3 {
-        self.raw.0
     }
 }
 
