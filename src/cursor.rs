@@ -30,7 +30,7 @@ pub struct Row {
 
 /// A type suitable for indexing columns in a row.
 pub trait RowIndex: std::fmt::Debug {
-    /// Check to see if the row contains a Column
+    /// Check if the row contains a column.
     fn contains(&self, row: &Row) -> bool;
 
     /// Identify the ordinal position.
@@ -171,6 +171,17 @@ impl Row {
         U: RowIndex,
     {
         T::try_from(&self.values[column.index(self)])
+    }
+
+    /// Check to see if a given column exists within the row.
+    ///
+    /// In case of integer indices, the first column has index 0.
+    #[inline]
+    pub fn contains<U>(&self, column: U) -> bool
+    where
+        U: RowIndex,
+    {
+        column.contains(self)
     }
 }
 
