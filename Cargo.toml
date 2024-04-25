@@ -20,6 +20,7 @@ authors = [
     "Tomoki Aonuma <uasi@uasi.jp>",
     "Vincenzo Palazzo <vincenzopalazzodev@gmail.com>",
     "Yorhel <git@yorhel.nl>",
+    "kodeschreiber",
 ]
 description = "The package provides an interface to SQLite."
 documentation = "https://docs.rs/sqlite"
