@@ -88,7 +88,7 @@
 //!
 //! [1]: https://www.sqlite.org
 
-extern crate sqlite3_sys as ffi;
+pub extern crate sqlite3_sys as ffi;
 
 macro_rules! c_str_to_str(
     ($string:expr) => (std::str::from_utf8(std::ffi::CStr::from_ptr($string).to_bytes()));
