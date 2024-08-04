@@ -1,6 +1,6 @@
 [package]
 name = "sqlite"
-version = "0.36.0"
+version = "0.36.1"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 authors = [
@@ -14,6 +14,7 @@ authors = [
     "James Haywood <jameshaywood@fastmail.com>",
     "Jayson Reis <santosdosreis@gmail.com>",
     "Jonatan Lemes <jlemes@lenovo.com>",
+    "Luna Lux <l.lux@magenta.de>",
     "Pierre Krieger <pierre.krieger1708@gmail.com>",
     "Sean Klein <seanmarionklein@gmail.com>",
     "Sophie Tauchert <999eagle@999eagle.moe>",
