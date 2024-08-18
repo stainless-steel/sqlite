@@ -22,21 +22,40 @@ fn open_with_flags() {
     }
 }
 
-#[test]
-fn open_thread_safe() {
+#[tokio::test]
+async fn open_thread_safe_async() {
     use std::sync::Arc;
-    use std::thread;
 
-    let connection = ok!(Connection::open_thread_safe(":memory:"));
-    let connection = Arc::new(connection);
+    use tokio::task::spawn_blocking as spawn;
+
+    let connection = Arc::new(ok!(ok!(
+        spawn(|| Connection::open_thread_safe(":memory:")).await
+    )));
+
+    {
+        let connection = connection.clone();
+        ok!(ok!(spawn(move || connection.execute("SELECT 1")).await));
+    }
+
+    {
+        let connection = connection.clone();
+        ok!(ok!(spawn(move || connection.execute("SELECT 1")).await));
+    }
+}
+
+#[test]
+fn open_thread_safe_sync() {
+    use std::sync::Arc;
+    use std::thread::spawn;
+
+    let connection = Arc::new(ok!(Connection::open_thread_safe(":memory:")));
 
     let mut threads = Vec::new();
     for _ in 0..5 {
-        let connection_ = connection.clone();
-        let thread = thread::spawn(move || {
-            ok!(connection_.execute("SELECT 1"));
-        });
-        threads.push(thread);
+        let connection = connection.clone();
+        threads.push(spawn(move || {
+            ok!(connection.execute("SELECT 1"));
+        }));
     }
     for thread in threads {
         ok!(thread.join());
@@ -80,7 +99,7 @@ fn iterate() {
 
 #[test]
 fn set_busy_handler() {
-    use std::thread;
+    use std::thread::spawn;
     use temporary::Directory;
 
     let directory = ok!(Directory::new("sqlite"));
@@ -90,7 +109,7 @@ fn set_busy_handler() {
     let guards = (0..10)
         .map(|_| {
             let path = path.to_path_buf();
-            thread::spawn(move || {
+            spawn(move || {
                 let mut connection = ok!(sqlite::open(&path));
                 ok!(connection.set_busy_handler(|_| true));
                 let query = "INSERT INTO users VALUES (?, ?, ?, ?, ?)";
