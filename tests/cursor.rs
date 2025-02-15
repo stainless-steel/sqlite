@@ -242,6 +242,16 @@ fn try_next_try_into() {
 }
 
 #[test]
+fn row_can_be_iterated() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+    let mut cursor = statement.iter();
+    let row = ok!(ok!(cursor.next()));
+    let _ = row.iter();
+}
+
+#[test]
 fn workflow() {
     let connection = setup_users(":memory:");
 

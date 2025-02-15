@@ -28,6 +28,14 @@ pub struct Row {
     values: Vec<Value>,
 }
 
+impl Row {
+    pub fn iter(&self) -> impl Iterator + use<'_> {
+        self.column_mapping
+            .iter()
+            .map(|x| (x.0.as_str(), &self.values[*x.1]))
+    }
+}
+
 /// A type suitable for indexing columns in a row.
 pub trait RowIndex: std::fmt::Debug + std::fmt::Display {
     /// Check if the index is present in a row.
