@@ -252,6 +252,19 @@ fn row_can_be_iterated() {
 }
 
 #[test]
+fn iterating_row_yields_all_items() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+    let mut cursor = statement.iter();
+    let row = ok!(ok!(cursor.next()));
+    let row = row.iter();
+    // Since fields are not always returned in the same order,
+    // I won't test the items order.
+    assert_eq!(5, row.count());
+}
+
+#[test]
 fn workflow() {
     let connection = setup_users(":memory:");
 

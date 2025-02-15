@@ -29,7 +29,7 @@ pub struct Row {
 }
 
 impl Row {
-    pub fn iter(&self) -> impl Iterator + use<'_> {
+    pub fn iter(&self) -> impl Iterator<Item = (&'_ str, &'_ Value)> + use<'_> {
         self.column_mapping
             .iter()
             .map(|x| (x.0.as_str(), &self.values[*x.1]))
