@@ -28,14 +28,6 @@ pub struct Row {
     values: Vec<Value>,
 }
 
-impl Row {
-    pub fn iter(&self) -> impl Iterator<Item = (&'_ str, &'_ Value)> + use<'_> {
-        self.column_mapping
-            .iter()
-            .map(|x| (x.0.as_str(), &self.values[*x.1]))
-    }
-}
-
 /// A type suitable for indexing columns in a row.
 pub trait RowIndex: std::fmt::Debug + std::fmt::Display {
     /// Check if the index is present in a row.
@@ -193,6 +185,12 @@ impl Row {
             raise!("the index is out of range ({column})");
         }
         T::try_from(&self.values[column.index(self)])
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&'_ str, &'_ Value)> + use<'_> {
+        self.column_mapping
+            .iter()
+            .map(|x| (x.0.as_str(), &self.values[*x.1]))
     }
 }
 
