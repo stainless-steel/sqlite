@@ -20,7 +20,7 @@ macro_rules! transient(
 /// A prepared statement.
 pub struct Statement<'l> {
     raw: (*mut ffi::sqlite3_stmt, *mut ffi::sqlite3),
-    column_names: Vec<String>,
+    column_names: Rc<Vec<String>>,
     column_mapping: Rc<HashMap<String, usize>>,
     phantom: PhantomData<(ffi::sqlite3_stmt, &'l ffi::sqlite3)>,
 }
@@ -215,6 +215,12 @@ impl<'l> Statement<'l> {
     #[inline]
     pub fn column_names(&self) -> &[String] {
         &self.column_names
+    }
+
+    /// Return column names (wrapped in Rc).
+    #[inline]
+    pub(crate) fn column_names_rc(&self) -> Rc<Vec<String>> {
+        self.column_names.clone()
     }
 
     /// Return the type of a column.
@@ -603,7 +609,7 @@ where
         .collect();
     Ok(Statement {
         raw: (raw_statement, raw_connection),
-        column_names,
+        column_names: Rc::new(column_names),
         column_mapping: Rc::new(column_mapping),
         phantom: PhantomData,
     })
