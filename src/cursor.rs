@@ -24,8 +24,8 @@ pub struct CursorWithOwnership<'l> {
 /// A row.
 #[derive(Debug)]
 pub struct Row {
-    column_mapping: Rc<HashMap<String, usize>>,
     column_names: Rc<Vec<String>>,
+    column_mapping: Rc<HashMap<String, usize>>,
     values: Vec<Value>,
 }
 
@@ -108,8 +108,8 @@ macro_rules! implement(
                 match self.try_next() {
                     Ok(value) => {
                         value.map(|values| Ok(Row {
+                            column_names: self.statement.column_names.clone(),
                             column_mapping: self.statement.column_mapping(),
-                            column_names: self.statement.column_names_rc(),
                             values,
                         }))
                     }
