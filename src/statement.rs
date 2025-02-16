@@ -277,7 +277,7 @@ impl<'l> Statement<'l> {
     }
 }
 
-impl<'l> Drop for Statement<'l> {
+impl Drop for Statement<'_> {
     #[inline]
     fn drop(&mut self) {
         unsafe { ffi::sqlite3_finalize(self.raw.0) };
