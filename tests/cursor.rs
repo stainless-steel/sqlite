@@ -242,6 +242,46 @@ fn try_next_try_into() {
 }
 
 #[test]
+fn row_can_be_iterated() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+    let mut cursor = statement.iter();
+    let row = ok!(ok!(cursor.next()));
+    let _ = row.iter();
+}
+
+#[test]
+fn iterating_row_yields_all_items() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+    let mut cursor = statement.iter();
+    let row = ok!(ok!(cursor.next()));
+    let row = row.iter();
+    assert_eq!(5, row.count());
+}
+
+#[test]
+fn iterating_row_yields_all_items_in_correct_order() {
+    let connection = setup_users(":memory:");
+    let query = "SELECT * FROM users";
+    let mut statement = ok!(connection.prepare(query));
+    let mut cursor = statement.iter();
+    let row = ok!(ok!(cursor.next()));
+    let mut row = row.iter();
+    assert_eq!(Some(("id", &Value::Integer(1))), row.next());
+    assert_eq!(
+        Some(("name", &Value::String("Alice".to_owned()))),
+        row.next()
+    );
+    assert_eq!(Some(("age", &Value::Float(42.69))), row.next());
+    assert_eq!(Some(("photo", &Value::Binary(vec![66, 105]))), row.next());
+    assert_eq!(Some(("email", &Value::Null)), row.next());
+    assert_eq!(None, row.next());
+}
+
+#[test]
 fn workflow() {
     let connection = setup_users(":memory:");
 

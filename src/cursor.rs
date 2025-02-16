@@ -24,6 +24,7 @@ pub struct CursorWithOwnership<'l> {
 /// A row.
 #[derive(Debug)]
 pub struct Row {
+    column_names: Rc<Vec<String>>,
     column_mapping: Rc<HashMap<String, usize>>,
     values: Vec<Value>,
 }
@@ -107,6 +108,7 @@ macro_rules! implement(
                 match self.try_next() {
                     Ok(value) => {
                         value.map(|values| Ok(Row {
+                            column_names: self.statement.column_names.clone(),
                             column_mapping: self.statement.column_mapping(),
                             values,
                         }))
@@ -185,6 +187,15 @@ impl Row {
             raise!("the index is out of range ({column})");
         }
         T::try_from(&self.values[column.index(self)])
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&'_ str, &'_ Value)> + use<'_> {
+        self.column_names.iter().map(|column_name| {
+            (
+                column_name.as_str(),
+                &self.values[self.column_mapping[column_name]],
+            )
+        })
     }
 }
 

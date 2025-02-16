@@ -20,7 +20,7 @@ macro_rules! transient(
 /// A prepared statement.
 pub struct Statement<'l> {
     raw: (*mut ffi::sqlite3_stmt, *mut ffi::sqlite3),
-    column_names: Vec<String>,
+    pub(crate) column_names: Rc<Vec<String>>,
     column_mapping: Rc<HashMap<String, usize>>,
     phantom: PhantomData<(ffi::sqlite3_stmt, &'l ffi::sqlite3)>,
 }
@@ -271,7 +271,7 @@ impl<'l> Statement<'l> {
     }
 }
 
-impl<'l> Drop for Statement<'l> {
+impl Drop for Statement<'_> {
     #[inline]
     fn drop(&mut self) {
         unsafe { ffi::sqlite3_finalize(self.raw.0) };
@@ -603,7 +603,7 @@ where
         .collect();
     Ok(Statement {
         raw: (raw_statement, raw_connection),
-        column_names,
+        column_names: Rc::new(column_names),
         column_mapping: Rc::new(column_mapping),
         phantom: PhantomData,
     })

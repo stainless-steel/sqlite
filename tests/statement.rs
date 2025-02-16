@@ -254,7 +254,7 @@ fn workflow_1() {
         statement: Statement<'l>,
     }
 
-    impl<'l> Database<'l> {
+    impl Database<'_> {
         fn run_once(&mut self) -> sqlite::Result<()> {
             self.statement.reset()?;
             self.statement.bind((":age", 40))?;
@@ -269,7 +269,7 @@ fn workflow_1() {
 
     let mut database = Database {
         connection: &connection,
-        statement: statement,
+        statement,
     };
 
     for _ in 0..5 {
