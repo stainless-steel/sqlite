@@ -189,6 +189,7 @@ impl Row {
         T::try_from(&self.values[column.index(self)])
     }
 
+    /// Iterate over the names and values.
     pub fn iter(&self) -> impl Iterator<Item = (&'_ str, &'_ Value)> + use<'_> {
         self.column_names.iter().map(|column_name| {
             (
