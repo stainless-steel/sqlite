@@ -190,9 +190,10 @@ impl Row {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&'_ str, &'_ Value)> + use<'_> {
-        self.column_mapping
+        self.column_names
             .iter()
-            .map(|x| (x.0.as_str(), &self.values[*x.1]))
+            .map(|x| (x, self.column_mapping[x]))
+            .map(|x| (x.0.as_str(), &self.values[x.1]))
     }
 }
 
