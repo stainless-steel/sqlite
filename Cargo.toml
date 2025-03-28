@@ -1,6 +1,6 @@
 [package]
 name = "sqlite"
-version = "0.36.2"
+version = "0.37.0"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 authors = [
@@ -40,9 +40,9 @@ encryption = ["sqlite3-sys/encryption"]
 linkage = ["sqlite3-sys/linkage"]
 
 [dependencies.sqlite3-sys]
-version = "0.17"
+version = "0.18"
 default-features = false
 
 [dev-dependencies]
-temporary = "0.6"
+temporary = "0.7"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

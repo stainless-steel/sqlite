@@ -14,14 +14,14 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - run: rustup toolchain install stable --profile=minimal --component clippy --component rustfmt
+      - run: rustup toolchain install stable --profile=minimal --component=clippy --component=rustfmt
       - run: cargo clippy -- -D warnings
       - run: cargo fmt --all -- --check
 
   bench:
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-latest, ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -31,9 +31,9 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-latest, ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - run: rustup toolchain install stable --profile=minimal
-      - run: cargo test --features bundled
+      - run: cargo test --features=bundled

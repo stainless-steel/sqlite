@@ -8,10 +8,10 @@ macro_rules! ok(($result:expr) => ($result.unwrap()));
 
 #[test]
 fn open_with_flags() {
-    use temporary::Directory;
+    use temporary::Folder;
 
-    let directory = ok!(Directory::new("sqlite"));
-    let path = directory.path().join("database.sqlite3");
+    let path = ok!(Folder::new("sqlite"));
+    let path = path.path().join("database.sqlite3");
     setup_users(&path);
 
     let flags = OpenFlags::new().with_read_only();
@@ -100,10 +100,10 @@ fn iterate() {
 #[test]
 fn set_busy_handler() {
     use std::thread::spawn;
-    use temporary::Directory;
+    use temporary::Folder;
 
-    let directory = ok!(Directory::new("sqlite"));
-    let path = directory.path().join("database.sqlite3");
+    let path = ok!(Folder::new("sqlite"));
+    let path = path.path().join("database.sqlite3");
     setup_users(&path);
 
     let guards = (0..10)
