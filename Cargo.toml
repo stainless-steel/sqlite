@@ -38,6 +38,7 @@ bundled = ["sqlite3-sys/bundled"]
 extension = []
 encryption = ["sqlite3-sys/encryption"]
 linkage = ["sqlite3-sys/linkage"]
+native = ["sqlite3-sys/native"]
 
 [dependencies.sqlite3-sys]
 version = "0.18"
