@@ -1,6 +1,6 @@
 # sql-peas
 
-sql-peas is yet another sync-first Rust wrapper for [sqlite3](https://www.sqlite.org)
+sql-peas is yet another [sqlite3](https://www.sqlite.org) synchronous Rust crate.
 
 With sql-peas, you can store prepared statements in the same struct as your sqlite connection, like peas in a pod:
 
