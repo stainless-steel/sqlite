@@ -1,6 +1,6 @@
 [package]
 name = "sql-peas"
-version = "0.38.0"
+version = "0.38.1"
 edition = "2021"
 license-file = "LICENSE.md"
 authors = [
