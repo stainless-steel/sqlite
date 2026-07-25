@@ -31,7 +31,7 @@ homepage = "https://github.com/ReactorScram/sqlite"
 repository = "https://github.com/ReactorScram/sqlite"
 readme = "README.md"
 categories = ["api-bindings", "database"]
-keywords = ["database"]
+keywords = ["database", "sqlite"]
 
 [features]
 default = ["linkage"]
