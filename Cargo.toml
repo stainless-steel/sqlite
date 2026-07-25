@@ -1,6 +1,6 @@
 [package]
 name = "sql-peas"
-version = "0.38.1"
+version = "0.38.2"
 edition = "2021"
 license-file = "LICENSE.md"
 authors = [
@@ -27,8 +27,8 @@ authors = [
 ]
 description = "The package provides an interface to SQLite."
 # documentation = "https://docs.rs/sqlite"
-homepage = "https://github.com/ReactorScram/sqlite"
-repository = "https://github.com/ReactorScram/sqlite"
+homepage = "https://github.com/ReactorScram/sql-peas"
+repository = "https://github.com/ReactorScram/sql-peas"
 readme = "README.md"
 categories = ["api-bindings", "database"]
 keywords = ["database", "sqlite"]

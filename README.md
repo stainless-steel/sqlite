@@ -1,5 +1,7 @@
 # sql-peas
 
+[docs.rs](https://docs.rs/sql-peas/) | [crates.io](https://crates.io/crates/sql-peas) | [GitHub](https://github.com/ReactorScram/sql-peas)
+
 sql-peas is yet another [sqlite3](https://www.sqlite.org) synchronous Rust crate.
 
 With sql-peas, you can store prepared statements in the same struct as your sqlite connection, like peas in a pod:

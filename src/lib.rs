@@ -1,4 +1,4 @@
-//! Interface to [SQLite][1].
+//! sql-peas is yet another [sqlite3](https://www.sqlite.org) synchronous Rust crate.
 //!
 //! ## Example
 //!
