@@ -2,7 +2,7 @@
 name = "sql-peas"
 version = "0.38.0"
 edition = "2021"
-license = "AGPL-v3.0"
+license-file = "LICENSE.md"
 authors = [
     "Alec Moskvin <alecm@gmx.com>",
     "Angel Leon <gubatron@gmail.com>",
