@@ -1,4 +1,5 @@
 use core::ffi::{c_char, c_int, c_void};
+use std::ffi::CString;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
@@ -30,13 +31,21 @@ impl Connection {
 
     /// Open a connection with specific flags.
     pub fn open_with_flags<T: AsRef<Path>>(path: T, flags: OpenFlags) -> Result<Connection> {
+        Self::open_with_flags_and_vfs(path, flags, None)
+    }
+
+    /// Open a connection with specific flags and a specific VFS.
+    pub fn open_with_flags_and_vfs<T: AsRef<Path>>(path: T, flags: OpenFlags, vfs: Option<&str>) -> Result<Connection> {
         let mut raw = std::ptr::null_mut();
+        let Ok(vsf) = vfs.map(|v| CString::new(v)).transpose() else {
+            raise!("VFS name contains a null byte");
+        };
         unsafe {
             let code = ffi::sqlite3_open_v2(
                 path_to_cstr!(path.as_ref()).as_ptr(),
                 &mut raw,
                 flags.0,
-                std::ptr::null(),
+                vsf.map(|vfs| vfs.as_ptr()).unwrap_or(std::ptr::null()),
             );
             match code {
                 ffi::SQLITE_OK => {}
