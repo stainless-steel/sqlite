@@ -542,7 +542,7 @@ impl ReadableWithIndex for String {
             let pointer =
                 ffi::sqlite3_column_text(statement.raw.0, index.index(statement)? as c_int);
             if pointer.is_null() {
-                raise!("cannot read a text column");
+                raise!("failed to read a text column");
             }
             Ok(c_str_to_string!(pointer))
         }
