@@ -35,7 +35,11 @@ impl Connection {
     }
 
     /// Open a connection with specific flags and a specific VFS.
-    pub fn open_with_flags_and_vfs<T: AsRef<Path>>(path: T, flags: OpenFlags, vfs: Option<&str>) -> Result<Connection> {
+    pub fn open_with_flags_and_vfs<T: AsRef<Path>>(
+        path: T,
+        flags: OpenFlags,
+        vfs: Option<&str>,
+    ) -> Result<Connection> {
         let mut raw = std::ptr::null_mut();
         let Ok(vsf) = vfs.map(|value| CString::new(value)).transpose() else {
             raise!("failed to process the VFS name");
