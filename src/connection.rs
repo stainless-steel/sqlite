@@ -1,5 +1,4 @@
 use core::ffi::{c_char, c_int, c_void};
-use std::ffi::CString;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
@@ -41,9 +40,7 @@ impl Connection {
         vfs: Option<&str>,
     ) -> Result<Connection> {
         let mut raw = std::ptr::null_mut();
-        let Ok(vsf) = vfs.map(|value| CString::new(value)).transpose() else {
-            raise!("failed to process the VFS name");
-        };
+        let vsf = vfs.map(|value| Ok(str_to_cstr!(value))).transpose()?;
         unsafe {
             let code = ffi::sqlite3_open_v2(
                 path_to_cstr!(path.as_ref()).as_ptr(),
