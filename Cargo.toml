@@ -36,11 +36,13 @@ keywords = ["database"]
 
 [features]
 default = ["linkage"]
-bundled = ["sqlite3-sys/bundled"]
-extension = []
-encryption = ["sqlite3-sys/encryption"]
+
 linkage = ["sqlite3-sys/linkage"]
+bundled = ["sqlite3-sys/bundled"]
 system = ["sqlite3-sys/system"]
+
+encryption = ["sqlite3-sys/encryption"]
+extension = []
 
 [dependencies.sqlite3-sys]
 version = "0.18.1"
