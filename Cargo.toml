@@ -1,6 +1,6 @@
 [package]
 name = "sqlite"
-version = "0.37.2"
+version = "0.37.3"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 authors = [
@@ -45,7 +45,7 @@ encryption = ["sqlite3-sys/encryption"]
 extension = []
 
 [dependencies.sqlite3-sys]
-version = "0.18.1"
+version = "0.18.2"
 default-features = false
 
 [dev-dependencies]
