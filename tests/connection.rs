@@ -68,15 +68,14 @@ fn open_with_flags() {
 fn open_with_flags_and_vfs() {
     let vfs = unsafe { sqlite3_sys::sqlite3_vfs_find(std::ptr::null()) };
     assert!(!vfs.is_null());
-    let name = unsafe { CStr::from_ptr((*vfs).zName) }.to_str().unwrap();
+    let name = ok!(unsafe { CStr::from_ptr((*vfs).zName) }.to_str());
 
-    let connection = Connection::open_with_flags_and_vfs(
+    let connection = ok!(Connection::open_with_flags_and_vfs(
         ":memory:",
         OpenFlags::new().with_read_write().with_create(),
         Some(name),
-    )
-    .unwrap();
-    connection.execute("SELECT 1").unwrap();
+    ));
+    ok!(connection.execute("SELECT 1"));
 }
 
 #[test]
