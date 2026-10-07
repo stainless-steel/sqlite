@@ -8,22 +8,6 @@ use common::setup_users;
 
 macro_rules! ok(($result:expr) => ($result.unwrap()));
 
-#[test]
-fn open_with_flags() {
-    use temporary::Folder;
-
-    let path = ok!(Folder::new("sqlite"));
-    let path = path.path().join("database.sqlite3");
-    setup_users(&path);
-
-    let flags = OpenFlags::new().with_read_only();
-    let connection = ok!(Connection::open_with_flags(path, flags));
-    match connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)") {
-        Err(_) => {}
-        _ => unreachable!(),
-    }
-}
-
 #[tokio::test]
 async fn open_thread_safe_async() {
     use std::sync::Arc;
@@ -62,6 +46,37 @@ fn open_thread_safe_sync() {
     for thread in threads {
         ok!(thread.join());
     }
+}
+
+#[test]
+fn open_with_flags() {
+    use temporary::Folder;
+
+    let path = ok!(Folder::new("sqlite"));
+    let path = path.path().join("database.sqlite3");
+    setup_users(&path);
+
+    let flags = OpenFlags::new().with_read_only();
+    let connection = ok!(Connection::open_with_flags(path, flags));
+    match connection.execute("INSERT INTO users VALUES (2, 'Bob', NULL, NULL)") {
+        Err(_) => {}
+        _ => unreachable!(),
+    }
+}
+
+#[test]
+fn open_with_flags_and_vfs() {
+    let vfs = unsafe { sqlite3_sys::sqlite3_vfs_find(std::ptr::null()) };
+    assert!(!vfs.is_null());
+    let name = unsafe { CStr::from_ptr((*vfs).zName) }.to_str().unwrap();
+
+    let connection = Connection::open_with_flags_and_vfs(
+        ":memory:",
+        OpenFlags::new().with_read_write().with_create(),
+        Some(name),
+    )
+    .unwrap();
+    connection.execute("SELECT 1").unwrap();
 }
 
 #[test]
@@ -171,19 +186,4 @@ fn change_count() {
     ok!(connection.execute("DELETE FROM users"));
     assert_eq!(connection.change_count(), 2);
     assert_eq!(connection.total_change_count(), 5);
-}
-
-#[test]
-fn open_with_flags_and_vfs() {
-    let vfs = unsafe { sqlite3_sys::sqlite3_vfs_find(std::ptr::null()) };
-    assert!(!vfs.is_null());
-    let name = unsafe { CStr::from_ptr((*vfs).zName) }.to_str().unwrap();
-
-    let connection = Connection::open_with_flags_and_vfs(
-        ":memory:",
-        OpenFlags::new().with_read_write().with_create(),
-        Some(name),
-    )
-    .unwrap();
-    connection.execute("SELECT 1").unwrap();
 }
