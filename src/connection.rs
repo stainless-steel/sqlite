@@ -46,7 +46,9 @@ impl Connection {
                 path_to_cstr!(path.as_ref()).as_ptr(),
                 &mut raw,
                 flags.0,
-                vsf.map(|vfs| vfs.as_ptr()).unwrap_or(std::ptr::null()),
+                vsf.as_ref()
+                    .map(|vfs| vfs.as_ptr())
+                    .unwrap_or(std::ptr::null()),
             );
             match code {
                 ffi::SQLITE_OK => {}
